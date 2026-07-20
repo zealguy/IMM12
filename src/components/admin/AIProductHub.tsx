@@ -79,11 +79,11 @@ export function useAliExpressValidator(urlInput: string) {
       return;
     }
 
-    // Check if input looks like a URL or references AliExpress
+    // Check if input looks like a URL or references supported platforms
     const isUrl = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?/i.test(trimmed) || trimmed.startsWith('localhost') || trimmed.includes('/');
-    const isAliExpress = trimmed.toLowerCase().includes('aliexpress');
+    const isSupported = trimmed.toLowerCase().includes('aliexpress') || trimmed.toLowerCase().includes('temu') || trimmed.toLowerCase().includes('jumia');
 
-    if (isUrl || isAliExpress) {
+    if (isUrl || isSupported) {
       const result = analyzeAliExpressUrl(trimmed);
       setIsValid(result.isValid);
       setValidationError(result.errorMessage);
@@ -410,7 +410,7 @@ export default function AIProductHub({
 
     // Check if the URL is invalid according to our validator
     if (!isAliUrlValid) {
-      setAiGenError(aliUrlError || "Incorrect URL format. Please enter a valid product link (e.g. https://www.aliexpress.com/item/1005001234.html)");
+      setAiGenError(aliUrlError || "Incorrect URL format. Please enter a valid product link from AliExpress, Temu, or Jumia GH.");
       return;
     }
 
@@ -513,6 +513,33 @@ export default function AIProductHub({
   // Convert AI generated product draft to standard draft and put in queue
   const handleAcceptAiGeneratedProduct = () => {
     if (!aiGenResult) return;
+    
+    // Select a beautiful Unsplash image based on the generated name or category
+    let finalImage = 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?q=80&w=600&auto=format&fit=crop'; // fallback smartwatch/gadget
+    const lowerName = (aiGenResult.name || '').toLowerCase();
+    const lowerCat = (aiGenResult.category || genCategory || '').toLowerCase();
+    
+    if (lowerName.includes('laptop') || lowerName.includes('notebook') || lowerName.includes('omen') || lowerCat.includes('laptop') || lowerCat.includes('computing')) {
+      finalImage = 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?q=80&w=600&auto=format&fit=crop'; // Omen Laptop
+    } else if (lowerName.includes('phone') || lowerName.includes('galaxy') || lowerName.includes('iphone') || lowerCat.includes('phone') || lowerCat.includes('mobile')) {
+      finalImage = 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?q=80&w=600&auto=format&fit=crop'; // Phone
+    } else if (lowerName.includes('watch') || lowerName.includes('smartwatch') || lowerName.includes('wearable') || lowerCat.includes('watch') || lowerCat.includes('wearable')) {
+      finalImage = 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?q=80&w=600&auto=format&fit=crop'; // Watch
+    } else if (lowerName.includes('headphone') || lowerName.includes('earbud') || lowerName.includes('audio') || lowerCat.includes('audio') || lowerCat.includes('headphone')) {
+      finalImage = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=600&auto=format&fit=crop'; // Audio
+    } else if (lowerName.includes('keyboard') || lowerName.includes('mouse') || lowerName.includes('gaming gear')) {
+      finalImage = 'https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?q=80&w=600&auto=format&fit=crop'; // Tech desk/keyboard
+    } else if (lowerName.includes('hub') || lowerName.includes('dock') || lowerName.includes('charger') || lowerName.includes('cable') || lowerName.includes('usb')) {
+      finalImage = 'https://images.unsplash.com/photo-1468495244123-6c6c332eeece?q=80&w=600&auto=format&fit=crop'; // Electronics / accessories
+    } else {
+      const techImages = [
+        'https://images.unsplash.com/photo-1468495244123-6c6c332eeece?q=80&w=600&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?q=80&w=600&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=600&auto=format&fit=crop'
+      ];
+      finalImage = techImages[Math.floor(Math.random() * techImages.length)];
+    }
+
     const item: QueuedProduct = {
       id: `q-ai-${Date.now()}`,
       name: aiGenResult.name,
@@ -526,7 +553,7 @@ export default function AIProductHub({
       barcode: `779${Math.floor(100000000+Math.random()*900000000)}`,
       description: aiGenResult.description,
       specs: aiGenResult.specs || {},
-      image: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?q=80&w=600&auto=format&fit=crop',
+      image: finalImage,
       status: 'Pending',
       flags: []
     };
@@ -1099,17 +1126,17 @@ export default function AIProductHub({
                       <div className="space-y-4">
                         <div className="space-y-1.5">
                           <div className="flex justify-between items-center">
-                            <label className="text-[10px] font-mono text-gray-400 uppercase font-extrabold block">Product Concept / AliExpress URL</label>
+                            <label className="text-[10px] font-mono text-gray-400 uppercase font-extrabold block">Product Concept / AliExpress, Temu, or Jumia URL</label>
                             {cleanAliUrl && (
                               <span className="text-[9px] font-mono font-bold text-emerald-500 uppercase tracking-wider animate-pulse flex items-center gap-1">
                                 <Check size={10} /> 
-                                {aliUrlType === 'product' ? 'Validated Product Link' : aliUrlType === 'category' ? 'Validated Category/Store Link' : 'Validated AliExpress Link'}
+                                {aliUrlType === 'product' ? 'Validated Product Link' : 'Validated E-Commerce Link'}
                               </span>
                             )}
                           </div>
                           <input 
                             type="text" 
-                            placeholder="e.g. https://www.aliexpress.com/item/100500123456.html or Product Title"
+                            placeholder="e.g. AliExpress, Temu, Jumia GH product URL or product title/concept"
                             value={genPrompt}
                             onChange={(e) => setGenPrompt(e.target.value)}
                             className={`w-full p-2.5 bg-black border ${!isAliUrlValid ? 'border-red-500/80 focus:border-red-500 text-red-400' : cleanAliUrl ? 'border-emerald-500/80 focus:border-emerald-500 text-emerald-400' : 'border-gray-800 text-white'} rounded-xl text-xs font-mono placeholder:text-gray-600 transition`}

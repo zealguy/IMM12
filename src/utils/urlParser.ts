@@ -150,15 +150,17 @@ export function analyzeAliExpressUrl(rawUrl: string): AliExpressUrlAnalysis {
     const urlObj = new URL(trimmed);
     const host = urlObj.hostname.toLowerCase();
 
-    // Verify it is an AliExpress domain
+    // Verify it is an AliExpress, Temu or Jumia domain
     const isAliExpress = host.includes('aliexpress.com') || 
                           host.includes('aliexpress.us') || 
                           host.includes('aliexpress.ru') ||
                           host.includes('aliexpress.fr') ||
                           host.includes('aliexpress.es') ||
                           host.includes('aliexpress.com.br');
+    const isTemu = host.includes('temu.com');
+    const isJumia = host.includes('jumia.com.gh');
 
-    if (!isAliExpress) {
+    if (!isAliExpress && !isTemu && !isJumia) {
       return {
         isValid: false,
         urlType: 'unknown',
@@ -166,7 +168,56 @@ export function analyzeAliExpressUrl(rawUrl: string): AliExpressUrlAnalysis {
         categoryId: null,
         sanitized: rawUrl,
         strippedParams: [],
-        errorMessage: "This domain is not a supported AliExpress catalog source. Only official 'aliexpress.com' domains are supported."
+        errorMessage: "This domain is not a supported catalog source. Only official 'aliexpress.com', 'temu.com', and 'jumia.com.gh' domains are supported."
+      };
+    }
+
+    if (isTemu) {
+      let productId = urlObj.searchParams.get('goods_id') || urlObj.searchParams.get('id');
+      if (!productId) {
+        const gMatch = urlObj.pathname.match(/\/g\/(\d+)/i);
+        if (gMatch && gMatch[1]) {
+          productId = gMatch[1];
+        }
+      }
+      if (!productId) {
+        const fallbackMatch = urlObj.pathname.match(/\/(\d{9,16})/);
+        if (fallbackMatch && fallbackMatch[1]) {
+          productId = fallbackMatch[1];
+        }
+      }
+      const isValid = !!productId;
+      return {
+        isValid,
+        urlType: isValid ? 'product' : 'unknown',
+        productId,
+        categoryId: null,
+        sanitized: urlObj.toString(),
+        strippedParams: [],
+        errorMessage: isValid ? null : "Could not extract a valid Temu goods ID. Please enter a valid Temu product link."
+      };
+    }
+
+    if (isJumia) {
+      let productId = null;
+      const htmlMatch = urlObj.pathname.match(/-(\d+)\.html/i);
+      if (htmlMatch && htmlMatch[1]) {
+        productId = htmlMatch[1];
+      } else {
+        const queryId = urlObj.searchParams.get('id');
+        if (queryId && /^\d+$/.test(queryId)) {
+          productId = queryId;
+        }
+      }
+      const isValid = !!productId;
+      return {
+        isValid,
+        urlType: isValid ? 'product' : 'unknown',
+        productId,
+        categoryId: null,
+        sanitized: urlObj.toString(),
+        strippedParams: [],
+        errorMessage: isValid ? null : "Could not extract a valid Jumia product ID. Please enter a valid Jumia Ghana product link."
       };
     }
 
