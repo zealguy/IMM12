@@ -1,0 +1,205 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Premium flagship electronics and smartphones listed in the shop catalog.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 128 },
+        "description": { "type": "string", "maxLength": 2048 },
+        "priceGHS": { "type": "number" },
+        "priceUSD": { "type": "number" },
+        "category": { "type": "string", "maxLength": 64 },
+        "brand": { "type": "string", "maxLength": 64 },
+        "image": { "type": "string", "maxLength": 512 },
+        "images": { "type": "array" },
+        "rating": { "type": "number" },
+        "reviewsCount": { "type": "number" },
+        "specs": { "type": "object" },
+        "colors": { "type": "array" },
+        "isNew": { "type": "boolean" },
+        "stock": { "type": "number" },
+        "isBestSeller": { "type": "boolean" },
+        "isNewArrival": { "type": "boolean" }
+      },
+      "required": ["id", "name", "priceGHS", "priceUSD", "category", "brand", "image", "stock"]
+    },
+    "RepairRequest": {
+      "title": "RepairRequest",
+      "description": "Certified technical repair and diagnostics booking requests.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "customerName": { "type": "string", "maxLength": 128 },
+        "customerPhone": { "type": "string", "maxLength": 64 },
+        "customerEmail": { "type": "string", "maxLength": 128 },
+        "deviceType": { "type": "string", "enum": ["Smartphone", "Laptop", "Tablet", "Other"] },
+        "brand": { "type": "string", "maxLength": 64 },
+        "model": { "type": "string", "maxLength": 64 },
+        "faultCategory": { "type": "string", "enum": ["Screen", "Battery", "Charging Port", "Water Damage", "Software", "Camera", "Motherboard", "Speaker", "Other"] },
+        "faultDescription": { "type": "string", "maxLength": 2048 },
+        "image": { "type": "string", "maxLength": 512 },
+        "status": { "type": "string", "enum": ["Pending", "In Progress", "Awaiting Parts", "Completed", "Returned"] },
+        "quotationGHS": { "type": "number" },
+        "quotationUSD": { "type": "number" },
+        "technicianNotes": { "type": "string", "maxLength": 2048 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "trackingNumber": { "type": "string", "maxLength": 64 },
+        "repairHistory": { "type": "array" }
+      },
+      "required": ["id", "customerName", "customerPhone", "deviceType", "faultCategory", "faultDescription", "status", "trackingNumber", "createdAt"]
+    },
+    "TradeInRequest": {
+      "title": "TradeInRequest",
+      "description": "Device trade-in and swap estimation requests.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "customerName": { "type": "string", "maxLength": 128 },
+        "customerPhone": { "type": "string", "maxLength": 64 },
+        "customerEmail": { "type": "string", "maxLength": 128 },
+        "deviceType": { "type": "string", "maxLength": 64 },
+        "brand": { "type": "string", "maxLength": 64 },
+        "model": { "type": "string", "maxLength": 64 },
+        "condition": { "type": "string", "enum": ["Like New", "Good", "Fair", "Broken"] },
+        "image": { "type": "string", "maxLength": 512 },
+        "valuationEstimateGHS": { "type": "number" },
+        "valuationEstimateUSD": { "type": "number" },
+        "finalOfferGHS": { "type": "number" },
+        "finalOfferUSD": { "type": "number" },
+        "status": { "type": "string", "enum": ["Submitted", "Inspected", "Offer Generated", "Approved", "Declined", "Completed"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "trackingNumber": { "type": "string", "maxLength": 64 },
+        "notes": { "type": "string", "maxLength": 2048 }
+      },
+      "required": ["id", "customerName", "customerPhone", "deviceType", "condition", "status", "trackingNumber", "createdAt"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "E-commerce store purchase orders with Accra dispatch information.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "items": { "type": "array" },
+        "totalGHS": { "type": "number" },
+        "totalUSD": { "type": "number" },
+        "status": { "type": "string", "enum": ["Pending", "Processing", "Shipped", "Out for Delivery", "Delivered", "Cancelled"] },
+        "paymentMethod": { "type": "string", "enum": ["Mobile Money", "Card"] },
+        "paymentProvider": { "type": "string", "maxLength": 64 },
+        "paymentStatus": { "type": "string", "enum": ["Unpaid", "Paid", "Refunded"] },
+        "customerName": { "type": "string", "maxLength": 128 },
+        "customerPhone": { "type": "string", "maxLength": 64 },
+        "customerEmail": { "type": "string", "maxLength": 128 },
+        "address": { "type": "string", "maxLength": 1024 },
+        "city": { "type": "string", "enum": ["Accra", "Kumasi", "Takoradi", "Cape Coast", "Tamale", "Other"] },
+        "deliveryOption": { "type": "string", "maxLength": 128 },
+        "deliveryCostGHS": { "type": "number" },
+        "trackingNumber": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "items", "totalGHS", "totalUSD", "status", "paymentMethod", "paymentStatus", "customerName", "customerPhone", "address", "city", "trackingNumber", "createdAt"]
+    },
+    "BlogPost": {
+      "title": "BlogPost",
+      "description": "TechLongevity and repair articles posted by the Immortal team.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 256 },
+        "content": { "type": "string", "maxLength": 10000 },
+        "author": { "type": "string", "maxLength": 128 },
+        "date": { "type": "string", "format": "date" },
+        "category": { "type": "string", "enum": ["Tech News", "Phone Reviews", "Repair Tips", "Buying Guides"] },
+        "readTime": { "type": "string", "maxLength": 64 },
+        "image": { "type": "string", "maxLength": 512 },
+        "likes": { "type": "number" },
+        "comments": { "type": "array" },
+        "tags": { "type": "array" }
+      },
+      "required": ["id", "title", "content", "author", "date", "category", "image"]
+    },
+    "Coupon": {
+      "title": "Coupon",
+      "description": "Promotional discount codes.",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string", "maxLength": 64 },
+        "discountPercent": { "type": "number" },
+        "active": { "type": "boolean" },
+        "minSpendGHS": { "type": "number" }
+      },
+      "required": ["code", "discountPercent", "active"]
+    },
+    "BulkInquiry": {
+      "title": "BulkInquiry",
+      "description": "Wholesale bulk purchase and B2B inquiries.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "companyName": { "type": "string", "maxLength": 128 },
+        "contactName": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 128 },
+        "phone": { "type": "string", "maxLength": 64 },
+        "productsOfInterest": { "type": "array" },
+        "estimatedQuantity": { "type": "string", "maxLength": 64 },
+        "message": { "type": "string", "maxLength": 2048 },
+        "timeline": { "type": "string", "maxLength": 128 },
+        "targetBudget": { "type": "string", "maxLength": 128 },
+        "deliveryLocation": { "type": "string", "maxLength": 256 },
+        "preferredPayment": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["Pending", "Contacted", "Quoted", "Closed"] }
+      },
+      "required": ["id", "companyName", "contactName", "email", "phone", "estimatedQuantity", "message", "status", "createdAt"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Customer reviews and ratings for specific products.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "productId": { "type": "string", "maxLength": 128 },
+        "reviewerName": { "type": "string", "maxLength": 128 },
+        "rating": { "type": "number" },
+        "reviewText": { "type": "string", "maxLength": 2048 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "productId", "reviewerName", "rating", "reviewText", "createdAt"]
+    }
+  },
+  "firestore": {
+    "products": {
+      "schema": "Product",
+      "description": "Shop catalog products."
+    },
+    "repairs": {
+      "schema": "RepairRequest",
+      "description": "Customer technical repair submissions."
+    },
+    "tradeins": {
+      "schema": "TradeInRequest",
+      "description": "Customer trade-in device appraisals."
+    },
+    "orders": {
+      "schema": "Order",
+      "description": "Customer purchase orders."
+    },
+    "blogs": {
+      "schema": "BlogPost",
+      "description": "Immortal tech and repair blog articles."
+    },
+    "coupons": {
+      "schema": "Coupon",
+      "description": "Discount coupon codes."
+    },
+    "bulkinquiries": {
+      "schema": "BulkInquiry",
+      "description": "Wholesale corporate inquiries."
+    },
+    "reviews": {
+      "schema": "Review",
+      "description": "Product customer reviews."
+    }
+  }
+}

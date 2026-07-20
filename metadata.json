@@ -1,0 +1,12 @@
+{
+  "name": "Copy of Immortal Electronics",
+  "description": "Ghana’s premium hub for high-end electronics, offering luxury smartphones, expert repairs, and trade-in services with a modern digital experience.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

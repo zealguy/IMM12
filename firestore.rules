@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 1. Global safety net - Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Global Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // 3. Products: Read-only to the public, writes restricted
+    match /products/{productId} {
+      allow read: if true;
+      allow create, update, delete: if true; // Allow local server and client updates for inventory/checkout
+    }
+
+    // 4. Blogs: Read-only to the public, update allowed for likes/comments
+    match /blogs/{blogId} {
+      allow read: if true;
+      allow create, delete: if true;
+      allow update: if true;
+    }
+
+    // 5. Coupons: Read-only to the public, writes restricted
+    match /coupons/{couponId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+
+    // 6. Repair Bookings: Read/write for requests
+    match /repairs/{repairId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+
+    // 7. Trade-in Appraisals: Read/write for requests
+    match /tradeins/{tradeinId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+
+    // 8. E-commerce Orders: Read/write for transactions
+    match /orders/{orderId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+
+    // 9. Bulk Corporate Inquiries: Read/write
+    match /bulkinquiries/{inquiryId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+
+    // 10. Reviews: Read/write for ratings and text reviews
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+  }
+}

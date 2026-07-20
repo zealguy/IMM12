@@ -1,0 +1,1587 @@
+[
+  {
+    "id": "prod-1784207725662",
+    "priceGHS": 1250,
+    "isNewArrival": true,
+    "colors": [
+      "Titanium Gray",
+      "Carbon Black"
+    ],
+    "brand": "HP",
+    "category": "Flagship Devices",
+    "image": "https://images.unsplash.com/photo-1603302576837-37561b2e2302?q=80&w=600&auto=format&fit=crop",
+    "stock": 5,
+    "name": "HP Mark Fairwhale 5031 New Top Brand Men's Quartz Watch Rotating Digital Dial Entertainment Cool Waterproof Night Light Watch reloj Elite Edition",
+    "priceUSD": 86,
+    "reviewsCount": 1,
+    "rating": 4.8,
+    "images": [
+      "https://images.unsplash.com/photo-1603302576837-37561b2e2302?q=80&w=600&auto=format&fit=crop"
+    ],
+    "isNew": true,
+    "description": "This ultimate high-performance gadget from HP represents next-generation computing capability. Tailored specifically for gaming and multi-threaded rendering in high-temperature tropical environments like Ghana. Optimized with high airflow coolers, robust voltage regulators, and high-frequency channels.",
+    "specs": {
+      "Memory": "16GB DDR5 Dual Channel",
+      "Processor": "Intel Core i7 Turbo",
+      "Warranty": "12 Months Local Immortal Tech Cover",
+      "Storage": "1TB NVMe PCIe 4.0 SSD"
+    }
+  },
+  {
+    "id": "prod-1784208155164",
+    "specs": {
+      "RAM": "16GB DDR4 Dual-Channel",
+      "OS": "Windows 11 Pro",
+      "Screen Size": "14-inch Full HD (1920x1080) IPS",
+      "Storage": "512GB PCIe NVMe M.2 SSD",
+      "Model No": "N/A",
+      "SKU": "SKU-HP-COMP-570",
+      "Processor": "Intel Core i7-1165G7 (Up to 4.7GHz)",
+      "Graphics": "Intel Iris Xe Graphics",
+      "Warranty": "1 Year Authorized Local Warranty"
+    },
+    "description": "Premium business-class laptop with Intel Core i7 11th Gen, 16GB RAM, and ultra-fast 512GB PCIe NVMe SSD. Features a gorgeous anti-glare display, premium aluminum chassis, and authorized local warranty.",
+    "isNew": true,
+    "name": "HP EliteBook 840 G8 Core i7",
+    "stock": 12,
+    "image": "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?q=80&w=600&auto=format&fit=crop",
+    "images": [
+      "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?q=80&w=600&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?q=80&w=600&auto=format&fit=crop"
+    ],
+    "rating": 4.9,
+    "reviewsCount": 0,
+    "priceUSD": 579,
+    "brand": "HP",
+    "category": "Computing",
+    "priceGHS": 8400,
+    "colors": [
+      "Titanium Charcoal",
+      "Aurora Silver"
+    ]
+  },
+  {
+    "id": "prod-3-axis-gimbal",
+    "specs": {
+      "Battery Capacity": "3200 mAh (Up to 8-10 hours runtime, removable/rechargeable)",
+      "Certifications": "CE, FCC, RoHS, KC",
+      "Size": "273 * 125 * 65 mm (Unfolded), 158 * 108 * 55 mm (Folded)",
+      "Material": "Premium ABS & High-strength Polycarbonate",
+      "Model Number": "Smart X Pro / Smart Stabilizer",
+      "Smart Features": "Smile Snapshot, Following Shooting Mode, Face & Body Recognition, Hitchcock Zoom, Track Delay Photography",
+      "Panning Angle": "310°",
+      "Supported Mobile Device Max Size": "55 - 90 mm width, up to 280g payload",
+      "Support Remote Control": "Yes (Via app or optional wireless remote)",
+      "Package Included": "Yes (Includes 3-Axis Stabilizer, Mini Extension Tripod, USB-C Cable, User Manual)",
+      "Number of Axes": "3-Axis (Pan, Tilt, Roll)",
+      "Weight": "350 g (0.77 lbs)",
+      "Tilting Angle": "345°",
+      "Max Controllable Speed": "83°/s",
+      "Communication": "Bluetooth",
+      "Vertical Shooting": "Yes (One-click landscape/portrait switch)",
+      "App Settings": "Yes (Companion iOS/Android App supporting Smart Templates)",
+      "Rolling Angle": "337°",
+      "Origin": "Mainland China"
+    },
+    "isNew": true,
+    "description": "Experience ultra-smooth, professional cinematic video recording right from your smartphone. This premium 3-Axis Handheld Gimbal Stabilizer features advanced triaxial active anti-shake motors, dynamic follow-focus roller control, and face/body auto-tracking 7.0 technology. Pocket-sized and lightweight at only 350g, its foldable design makes it the ultimate companion for content creators, vloggers, and travelers. Seamlessly configures via Bluetooth to companion iOS & Android apps to unlock creative modes like Hitchcock zoom, track delay photography, gesture capture, and professional panoramic sweeps.",
+    "isBestSeller": true,
+    "name": "3-Axis Gimbal Stabilizer for Smartphone Foldable Handheld Phone Video Record Vlog Anti-Shake Stabilizer PTZ for iPhone Android",
+    "stock": 45,
+    "image": "/src/assets/images/gimbal_main_pack_1784053681271.jpg",
+    "images": [
+      "/src/assets/images/gimbal_main_pack_1784053681271.jpg",
+      "/src/assets/images/gimbal_active_use_1784053692629.jpg",
+      "/src/assets/images/gimbal_pocket_size_1784053703654.jpg",
+      "/src/assets/images/gimbal_diagram_axes_1784053716767.jpg"
+    ],
+    "rating": 4.9,
+    "reviewsCount": 15,
+    "priceUSD": 100,
+    "brand": "AOCHUAN",
+    "category": "Accessories",
+    "isNewArrival": true,
+    "priceGHS": 1450,
+    "colors": [
+      "Carbon Black"
+    ]
+  },
+  {
+    "id": "prod-ankermini",
+    "category": "Accessories",
+    "brand": "Anker",
+    "colors": [
+      "Black",
+      "White"
+    ],
+    "priceGHS": 650,
+    "isBestSeller": true,
+    "specs": {
+      "Safety": "ActiveShield temperature monitoring",
+      "Compatibility": "Universal (MacBook, iPhone, Galaxy, Pixel)",
+      "Technology": "GaN II Technology",
+      "Output": "65W USB-C Power Delivery"
+    },
+    "description": "High-speed charging for laptops, tablets, and phones in an ultra-compact body. Powered by GaN tech.",
+    "isNew": false,
+    "rating": 4.8,
+    "reviewsCount": 230,
+    "priceUSD": 45,
+    "images": [
+      "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?q=80&w=600&auto=format&fit=crop"
+    ],
+    "stock": 50,
+    "image": "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?q=80&w=600&auto=format&fit=crop",
+    "name": "Anker PowerPort III 65W Pod"
+  },
+  {
+    "id": "prod-anti-spy-glass",
+    "isBestSeller": true,
+    "specs": {
+      "Hardness": "9H Hardness (Scratch Resistant)",
+      "Protection Features": "Anti-Spy Privacy, Anti-Fingerprint, Anti-Scratch, Anti-Shatter, Case-Friendly",
+      "Material": "High-quality Tempered Glass Film",
+      "Size": "5 * 10 * 5 cm (Packaging measurement)",
+      "Edge Alignment": "Case-friendly design, 1-2mm edge gap border clearance",
+      "Chemical Safety": "Free from high-concerned chemicals, safe for daily use",
+      "Weight (g)": "75g (0.075 kg packaging weight)",
+      "Compatible Models": "Galaxy S10e, S20 FE, S21, S21 FE, S22, S23 Plus, A34, A35, S24, S25 Ultra",
+      "Privacy Angle": "30° side-view block (90° clear front viewing)",
+      "Pack Options": "1PCS, 2PCS, or 3PCS bundles available"
+    },
+    "isNew": true,
+    "description": "Advanced Anti-Spy Privacy Protection: Shield your screen with Anti-Spy Tempered Glass that blocks side-view visibility, ensuring only you can see the content. Perfect for protecting sensitive data in public spaces.\n\nCompatible with Multiple Samsung Models: Designed for Galaxy S10e, S20 FE, S21, S21 FE, S22, S23 Plus, A34, A35, S24, S25 Ultra, this protector fits a wide range of popular Samsung devices with precision alignment.\n\nFull Cover Protection with Tempered Glass: Made from high-quality Tempered Glass Film, this Full Cover screen protector offers superior durability against drops, scratches, and shattering.\n\nEnhanced User Experience Features: Features Anti-Fingerprint, Anti-Scratch, and Anti-Shatter properties for a smooth, clean, and long-lasting screen surface with excellent touch sensitivity.\n\nAvailable in Multi-Pack Options: Choose from 1PCS, 2PCS, or 3PCS bundles to suit your needs—ideal for personal use, backup protection, or gifting to friends and family.",
+    "images": [
+      "/src/assets/images/privacy_glass_pack_1784054373374.jpg",
+      "/src/assets/images/privacy_glass_demo_1784054397921.jpg",
+      "/src/assets/images/privacy_glass_scratch_1784054413662.jpg",
+      "/src/assets/images/privacy_glass_border_1784054430233.jpg"
+    ],
+    "rating": 4.8,
+    "reviewsCount": 46,
+    "priceUSD": 6,
+    "name": "1-3PCS Anti-Spy Tempered Glass For Samsung S25 Ultra S24 Ultra S23 Plus A54 S22 S21FE A34 A35 S10e S20FE Screen Protector Privacy",
+    "stock": 120,
+    "image": "/src/assets/images/privacy_glass_pack_1784054373374.jpg",
+    "category": "Accessories",
+    "brand": "Samsung Compatible",
+    "colors": [
+      "Privacy Dark Tint"
+    ],
+    "isNewArrival": true,
+    "priceGHS": 85
+  },
+  {
+    "id": "prod-apple-airpods-pro-2",
+    "category": "Accessories",
+    "brand": "Apple",
+    "colors": [
+      "White"
+    ],
+    "priceGHS": 3800,
+    "isBestSeller": true,
+    "specs": {
+      "Battery Life": "Up to 6 hours active play (30 hours total with case)",
+      "Waterproof Rating": "IP54 Dust, Sweat, and Water Resistant",
+      "Noise Cancelling": "Active Noise Cancellation & Adaptive Audio transparency",
+      "Processor": "Apple H2 Audio System Processing Chip"
+    },
+    "description": "The pinnacle of personalized, intelligent listening. Rebuilt with the advanced H2 chip delivering up to 2x more Active Noise Cancellation, high-end adaptive transparency, and immersive spatial audio.",
+    "isNew": true,
+    "images": [
+      "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?q=80&w=600&auto=format&fit=crop"
+    ],
+    "rating": 4.9,
+    "reviewsCount": 120,
+    "priceUSD": 250,
+    "name": "Apple AirPods Pro (2nd Generation)",
+    "stock": 12,
+    "image": "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?q=80&w=600&auto=format&fit=crop"
+  },
+  {
+    "id": "prod-armorshield-tempered-glass",
+    "colors": [
+      "Clear Borderless",
+      "Privacy Filter Dark"
+    ],
+    "priceGHS": 120,
+    "category": "Accessories",
+    "brand": "ArmorShield",
+    "images": [
+      "https://images.unsplash.com/photo-1580910051074-3eb694886505?q=80&w=600&auto=format&fit=crop"
+    ],
+    "rating": 4.8,
+    "reviewsCount": 152,
+    "priceUSD": 8,
+    "name": "ArmorShield 9H Tempered Glass",
+    "image": "https://images.unsplash.com/photo-1580910051074-3eb694886505?q=80&w=600&auto=format&fit=crop",
+    "stock": 120,
+    "specs": {
+      "Thickness": "0.33mm Ultra-thin",
+      "Protection Type": "Anti-Fingerprint Hydrophobic Coating",
+      "Transparency": "99.9% High Definition Clarity",
+      "Hardness": "9H Mohs Scale Certified"
+    },
+    "isNew": true,
+    "description": "Military-grade 9H hardness tempered glass screen protector. Protects against scratches, shattering, and smudges with premium oleophobic coating and full edge-to-edge coverage."
+  },
+  {
+    "id": "prod-aura-active-smartwatch",
+    "isNew": true,
+    "description": "NORTH EDGE APACHE-46 Men Digital Watch Outdoor Sports Running Swimming Outdoor Sport Watches Altimeter Barometer Compass WR50M",
+    "specs": {
+      "Display Type": "Numberless",
+      "Boxes & Cases Material": "Paper",
+      "Band Width": "20 to 24 mm",
+      "Brand Name": "NORTH EDGE",
+      "Case Shape": "Round",
+      "Movement origin": "CN (Origin)",
+      "Band Material Type": "Nylon",
+      "Item Type": "Quartz Wristwatches",
+      "High-concerned chemical": "None",
+      "Feature": "Stop Watch, Back Light, Chronograph, Alarm, Compass, swim, Temperature Measurement, Pressure Measurement",
+      "Water Resistance Depth": "5Bar",
+      "Style": "SPORT",
+      "Model Number": "APACHE-46",
+      "Case Material": "Alloy",
+      "Dial Window Material Type": "Hardlex",
+      "Movement": "Digital",
+      "Band Length": "26cm",
+      "Battery Included": "Yes",
+      "Case Thickness": "14mm",
+      "Clasp Type": "Buckle"
+    },
+    "images": [
+      "/src/assets/images/apache_textile_strap_1784298342941.jpg",
+      "/src/assets/images/apache_rubber_strap_1784298359257.jpg",
+      "/src/assets/images/apache_altitude_action_1784298381001.jpg",
+      "/src/assets/images/apache_feature_breakdown_1784298396725.jpg",
+      "/src/assets/images/apache_barometer_action_1784298411904.jpg",
+      "/src/assets/images/apache_compass_action_1784298428947.jpg"
+    ],
+    "priceUSD": 98,
+    "reviewsCount": 46,
+    "rating": 4.7,
+    "name": "NORTH EDGE APACHE-46 Men Digital Watch",
+    "stock": 15,
+    "image": "/src/assets/images/apache_textile_strap_1784298342941.jpg",
+    "category": "Accessories",
+    "brand": "NORTH EDGE",
+    "colors": [
+      "Shadow Black",
+      "Sunset Orange",
+      "Cream Gold"
+    ],
+    "priceGHS": 1450,
+    "isNewArrival": true
+  },
+  {
+    "id": "prod-bulk-1-1784207128359",
+    "colors": [
+      "Standard"
+    ],
+    "priceGHS": 10800,
+    "category": "Computing",
+    "brand": "HP",
+    "images": [
+      "https://images.unsplash.com/photo-1603302576837-37561b2e2302?q=80&w=600&auto=format&fit=crop"
+    ],
+    "reviewsCount": 3,
+    "rating": 4.7,
+    "priceUSD": 745,
+    "name": "HP Omen Gaming Laptop 16-c0009ne",
+    "stock": 5,
+    "image": "https://images.unsplash.com/photo-1603302576837-37561b2e2302?q=80&w=600&auto=format&fit=crop",
+    "specs": {
+      "SKU": "SKU-BULK-975"
+    },
+    "description": "Bulk Upload Verified: Premium HP catalog listing registered automatically.",
+    "isNew": true
+  },
+  {
+    "id": "prod-bulk-2-1784207128359",
+    "specs": {
+      "SKU": "SKU-BULK-754"
+    },
+    "isNew": true,
+    "description": "Bulk Upload Verified: Premium Apple catalog listing registered automatically.",
+    "rating": 4.7,
+    "reviewsCount": 3,
+    "priceUSD": 1000,
+    "images": [
+      "https://images.unsplash.com/photo-1695048133142-1a20484d2569?q=80&w=600&auto=format&fit=crop"
+    ],
+    "image": "https://images.unsplash.com/photo-1695048133142-1a20484d2569?q=80&w=600&auto=format&fit=crop",
+    "stock": 8,
+    "name": "iPhone 15 Pro Max",
+    "category": "Smartphones",
+    "brand": "Apple",
+    "colors": [
+      "Standard"
+    ],
+    "priceGHS": 14500
+  },
+  {
+    "id": "prod-datavault-128gb-flashdrive",
+    "colors": [
+      "Polished Steel",
+      "Rose Gold Metal"
+    ],
+    "priceGHS": 220,
+    "category": "Accessories",
+    "brand": "DataVault",
+    "images": [
+      "https://images.unsplash.com/photo-1603302576837-37561b2e2302?q=80&w=600&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?q=80&w=600&auto=format&fit=crop"
+    ],
+    "priceUSD": 15,
+    "rating": 4.8,
+    "reviewsCount": 68,
+    "name": "DataVault 128GB USB 3.2 Flash Drive",
+    "image": "https://images.unsplash.com/photo-1603302576837-37561b2e2302?q=80&w=600&auto=format&fit=crop",
+    "stock": 90,
+    "isBestSeller": true,
+    "isNew": false,
+    "description": "High-speed metal USB 3.2 flash drive for rapid file transfers, backups, and secondary device storage. Resilient, stylish metal key ring chassis designed to withstand shock and water. <img src=\"https://images.unsplash.com/photo-1603302576837-37561b2e2302\" class=\"w-full h-auto rounded-xl\" /> <iframe width=\"100%\" height=\"315\" src=\"https://www.youtube.com/embed/xxxx\" /> <ul>\n  <li>Dual Heat dispersal pipes</li>\n  <li>Aura light keys</li>\n</ul> <ul>\n  <li>Dual Heat dispersal pipes</li>\n  <li>Aura light keys</li>\n</ul>",
+    "specs": {
+      "OS": "Windows 11 Home",
+      "Screen Size": "16.1-inch FHD, 144Hz IPS",
+      "RAM": "16GB DDR4 Dual-Channel",
+      "SKU": "SKU-DAT-ACCE-402",
+      "Model No": "N/A",
+      "Storage": "512GB PCIe NVMe M.2 SSD",
+      "Warranty": "1 Year Local Warranty by Immortal Tech",
+      "Graphics": "NVIDIA GeForce RTX 3060 (6GB GDDR6)",
+      "Processor": "AMD Ryzen 7 5800H"
+    }
+  },
+  {
+    "id": "prod-dust-free-glass",
+    "brand": "Apple Compatible",
+    "category": "Accessories",
+    "isNewArrival": true,
+    "priceGHS": 95,
+    "colors": [
+      "Ultra Clear"
+    ],
+    "specs": {
+      "Screen Protector Helper": "Auto Installation Tool (soft Cover)",
+      "Screen Protectors Material": "Tempered Glass Film",
+      "Dust Removal": "Integrated automatic pull-dust-free tape",
+      "Compatible Models": "iPhone 17, 18, 17 Pro, 17 Pro Max, 17 Air, 16, 16 Pro, 16 Pro Max, 16 Plus, 15, 15 Pro, 15 Pro Max, 15 Plus, 14, 14 Pro, 14 Pro Max, 14 Plus, 13, 13 Pro, 13 Pro Max, 13 Mini, 12, 12 Pro, 12 Pro Max, 12 Mini, 11, 11 Pro, 11 Pro Max, X, XS, XR, XS Max, SE 2020, SE 2022, 7, 8, 7 Plus, 8 Plus, 6, 6S, 6 Plus, 6S Plus",
+      "Features": "Anti-Fingerprint, High Definition, 8K Clarity",
+      "Type": "Front Film",
+      "High-concerned Chemical": "None"
+    },
+    "isNew": true,
+    "description": "High-concerned chemical: None.\n\nType: Front Film.\n\nFeatures: Anti-Fingerprint, High Definition, Oil/Water Smudge Protection.\n\nScreen protector helper: Auto Installation Tool (soft Cover) for automatic perfect alignment in 1 second.\n\nScreen protectors material: High-quality Tempered Glass Film with 8K ultra clarity and Zero Chromatic Aberration.\n\nEnjoy the real original screen experience with extreme durability, flawless touch sensitivity, and a bubble-free self-dust-removing film layer. Comes with the revolutionary auto alignment tray that anyone can use with zero experience.",
+    "isBestSeller": true,
+    "image": "/src/assets/images/iphone_dust_free_glass_pack_1784055335747.jpg",
+    "stock": 150,
+    "name": "1-3Pcs 8K HD Dust Free Tempered Glass For iPhone 17 18 Pro Max 13 16 15 14 11 12 16E XR Air XS Xs Max 7 8 Plus Screen Protector",
+    "rating": 4.9,
+    "reviewsCount": 58,
+    "priceUSD": 7,
+    "images": [
+      "/src/assets/images/iphone_dust_free_glass_pack_1784055335747.jpg",
+      "/src/assets/images/iphone_dust_free_pull_mechanism_1784055349046.jpg",
+      "/src/assets/images/iphone_dust_free_fingerprint_1784055362956.jpg",
+      "/src/assets/images/iphone_dust_free_hd_viewing_1784055375686.jpg"
+    ]
+  },
+  {
+    "id": "prod-extend-selfie-stick",
+    "category": "Accessories",
+    "brand": "SoloShot",
+    "colors": [
+      "Classic Black",
+      "Rose Pink"
+    ],
+    "priceGHS": 280,
+    "specs": {
+      "Battery Type": "Micro USB Rechargeable Li-polymer",
+      "Compatible Width": "5.5cm to 9.0cm devices",
+      "Remote Range": "Up to 10 meters",
+      "Extended Reach": "82cm (32.2 inches)"
+    },
+    "description": "Pocket-sized premium bluetooth selfie stick that seamlessly transforms into a sturdy tabletop tripod. Features an integrated rechargeable wireless remote, 360-degree rotation bracket, and high-tensile stainless steel body.",
+    "isNew": true,
+    "images": [
+      "https://images.unsplash.com/photo-1543857778-c4a1a3e0b2eb?q=80&w=600&auto=format&fit=crop"
+    ],
+    "reviewsCount": 19,
+    "rating": 4.5,
+    "priceUSD": 18,
+    "name": "Ultra-Extend Bluetooth Selfie Stick",
+    "image": "https://images.unsplash.com/photo-1543857778-c4a1a3e0b2eb?q=80&w=600&auto=format&fit=crop",
+    "stock": 60
+  },
+  {
+    "id": "prod-flexcord-braided-cable",
+    "isNew": true,
+    "description": "Extremely durable double-braided nylon charging and high-speed data transfer cable. Engineered to sustain over 30,000 extreme bends while maintaining super-fast charging performance.",
+    "specs": {
+      "Cable Length": "1.5 meters (5 feet)",
+      "Outer Coating": "Bulletproof ballistic nylon protective weave",
+      "Current Support": "Up to 100W Power Delivery (5A Max)",
+      "Connector Form": "Type-C to Type-C Ultra-Fast Charge"
+    },
+    "priceUSD": 7,
+    "rating": 4.8,
+    "reviewsCount": 125,
+    "images": [
+      "https://images.unsplash.com/photo-1558244661-d248897f7bc4?q=80&w=600&auto=format&fit=crop"
+    ],
+    "stock": 200,
+    "image": "https://images.unsplash.com/photo-1558244661-d248897f7bc4?q=80&w=600&auto=format&fit=crop",
+    "name": "FlexCord 1.5m Premium Braided Cable",
+    "category": "Accessories",
+    "brand": "FlexCord",
+    "colors": [
+      "Charcoal Black",
+      "Arctic Silver",
+      "Midnight Gold"
+    ],
+    "priceGHS": 110
+  },
+  {
+    "id": "prod-heavy-duty-tripod",
+    "specs": {
+      "Load Capacity": "Up to 5.0 kg",
+      "Folded Length": "45cm (17.7 inches)",
+      "Material": "Anodized Aluminum & Carbon Fiber",
+      "Mount Type": "Universal 1/4-inch screw & Phone Clamp",
+      "Maximum Height": "160cm (63 inches)"
+    },
+    "description": "Professional 1.6m adjustable tripod for smartphones and DSLR cameras. Designed with lightweight carbon-aluminum alloy, anti-shake fluid head, and quick-release plates. Perfect for outdoor vlogging and premium video capture.",
+    "isNew": true,
+    "images": [
+      "https://images.unsplash.com/photo-1614064641938-3bbee52942c7?q=80&w=600&auto=format&fit=crop"
+    ],
+    "rating": 4.7,
+    "reviewsCount": 38,
+    "priceUSD": 45,
+    "name": "Pro-Glide Heavy-Duty Tripod",
+    "stock": 45,
+    "image": "https://images.unsplash.com/photo-1614064641938-3bbee52942c7?q=80&w=600&auto=format&fit=crop",
+    "category": "Accessories",
+    "brand": "Pro-Glide",
+    "colors": [
+      "Space Gray",
+      "Raven Black"
+    ],
+    "priceGHS": 680
+  },
+  {
+    "id": "prod-immortal-buds-air",
+    "isNew": true,
+    "description": "High-fidelity True Wireless Stereo (TWS) earphones. Experience pure acoustic separation, high-performance active environmental noise cancellation, and deep punchy bass customized for music lovers.",
+    "specs": {
+      "IP Rating": "IPX5 Sweat & Rain proof",
+      "Drivers": "10mm Dynamic Titanium Composite Driver",
+      "Bluetooth Version": "v5.3 low latency audio sink",
+      "Battery Playtime": "Up to 32 hours with fast charging capsule"
+    },
+    "name": "Immortal Buds Air TWS Earphones",
+    "image": "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?q=80&w=600&auto=format&fit=crop",
+    "stock": 40,
+    "images": [
+      "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?q=80&w=600&auto=format&fit=crop"
+    ],
+    "priceUSD": 39,
+    "reviewsCount": 54,
+    "rating": 4.6,
+    "brand": "Immortal Buds",
+    "category": "Accessories",
+    "priceGHS": 580,
+    "isNewArrival": true,
+    "colors": [
+      "Stellar Black",
+      "Pearl White"
+    ]
+  },
+  {
+    "id": "prod-iphone15promax",
+    "colors": [
+      "Titanium Gray",
+      "Titanium Black",
+      "Titanium Blue",
+      "Titanium White"
+    ],
+    "priceGHS": 21500,
+    "category": "Smartphones",
+    "brand": "Apple",
+    "rating": 4.9,
+    "reviewsCount": 142,
+    "priceUSD": 1450,
+    "images": [
+      "https://images.unsplash.com/photo-1695048133142-1a20484d2569?q=80&w=600&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1695048132959-efd5bf9273c5?q=80&w=600&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1695048133116-3e8be899db94?q=80&w=600&auto=format&fit=crop"
+    ],
+    "stock": 12,
+    "image": "https://images.unsplash.com/photo-1695048133142-1a20484d2569?q=80&w=600&auto=format&fit=crop",
+    "name": "iPhone 15 Pro Max",
+    "isBestSeller": true,
+    "specs": {
+      "Storage": "256GB / 512GB / 1TB",
+      "Battery": "4441 mAh with fast charge",
+      "Processor": "Apple A17 Pro (3nm)",
+      "Display": "6.7-inch Super Retina XDR OLED, 120Hz",
+      "OS": "iOS 17 (upgradable to iOS 18)",
+      "Main Camera": "48MP Main + 12MP Telephoto (5x zoom) + 12MP Ultra-wide"
+    },
+    "description": "Flagship Apple iPhone with Aerospace-grade titanium design, A17 Pro chip, customizable Action button, and the most powerful iPhone camera system ever.",
+    "isNew": true
+  },
+  {
+    "id": "prod-macbookpro16",
+    "category": "Computing",
+    "brand": "Apple",
+    "colors": [
+      "Space Black",
+      "Silver"
+    ],
+    "priceGHS": 48000,
+    "isBestSeller": true,
+    "specs": {
+      "Storage": "1TB SSD",
+      "Battery": "Up to 22 hours",
+      "Processor": "Apple M3 Max (14-core CPU, 30-core GPU)",
+      "Display": "16.2-inch Liquid Retina XDR display (3456 x 2234)",
+      "Weight": "2.16 kg",
+      "RAM": "36GB Unified Memory"
+    },
+    "isNew": true,
+    "description": "The ultimate pro laptop. With the M3 Max chip, a stunning Liquid Retina XDR display, and up to 22 hours of battery life, it delivers performance without boundaries.",
+    "rating": 5,
+    "reviewsCount": 34,
+    "priceUSD": 3200,
+    "images": [
+      "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=600&auto=format&fit=crop"
+    ],
+    "stock": 3,
+    "image": "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=600&auto=format&fit=crop",
+    "name": "MacBook Pro 16\" M3 Max"
+  },
+  {
+    "id": "prod-maggrip-car-holder",
+    "brand": "MagGrip",
+    "category": "Accessories",
+    "priceGHS": 135,
+    "colors": [
+      "Carbon Black",
+      "Metallic Silver"
+    ],
+    "specs": {
+      "Compatibility": "Universal for all MagSafe devices or adhesive plates",
+      "Vent Attachment": "Flexible dual-thickness soft silicone clamp clip",
+      "Magnet Type": "6x N52 Neodymium Ring Magnets",
+      "Rotation": "Omnidirectional metal steel ball joint"
+    },
+    "description": "High-performance magnetic air vent car bracket. Built with six industrial-strength neodymium magnets providing a strong grip that safeguards phones from falling during bumpy rides.",
+    "isNew": false,
+    "stock": 50,
+    "image": "https://images.unsplash.com/photo-1507136566006-cfc505b114fc?q=80&w=600&auto=format&fit=crop",
+    "name": "MagGrip 360 Air Vent Car Phone Mount",
+    "rating": 4.5,
+    "reviewsCount": 22,
+    "priceUSD": 9,
+    "images": [
+      "https://images.unsplash.com/photo-1507136566006-cfc505b114fc?q=80&w=600&auto=format&fit=crop"
+    ]
+  },
+  {
+    "id": "prod-magsecure-iphone-case",
+    "category": "Accessories",
+    "brand": "MagSecure",
+    "colors": [
+      "Crystal Clear",
+      "Smoked Black",
+      "Sunset Gold Edge"
+    ],
+    "isNewArrival": true,
+    "priceGHS": 240,
+    "specs": {
+      "Compatibility": "iPhone 15, 14, 13 Series",
+      "Drop Rating": "10-foot Shockproof Air Armor",
+      "Magnet Strength": "1500g Pulling Force",
+      "Material": "Bayer Premium Anti-Yellow TPU & Polycarbonate"
+    },
+    "description": "Premium anti-yellowing clear protective cover for high-end iPhones. Features built-in N52 MagSafe magnets for ultra-strong grip and instant snap-on wireless charging. Mil-grade air cushion drop protection.",
+    "isNew": true,
+    "images": [
+      "https://images.unsplash.com/photo-1603302576837-37561b2e2302?q=80&w=600&auto=format&fit=crop"
+    ],
+    "reviewsCount": 94,
+    "rating": 4.7,
+    "priceUSD": 16,
+    "name": "MagSecure Crystal Clear iPhone Case",
+    "image": "https://images.unsplash.com/photo-1603302576837-37561b2e2302?q=80&w=600&auto=format&fit=crop",
+    "stock": 150
+  },
+  {
+    "id": "prod-mark-fairwhale-5031",
+    "isNewArrival": true,
+    "priceGHS": 490,
+    "colors": [
+      "Silver Green",
+      "Rose Gold Black"
+    ],
+    "brand": "MARK FAIRWHALE",
+    "category": "Accessories",
+    "stock": 120,
+    "image": "/src/assets/images/mark_fw_silver_front_1784293768698.jpg",
+    "name": "Mark Fairwhale 5031 New Top Brand Men's Quartz Watch Rotating Digital",
+    "rating": 4.9,
+    "reviewsCount": 42,
+    "priceUSD": 35,
+    "images": [
+      "/src/assets/images/mark_fw_silver_front_1784293768698.jpg",
+      "/src/assets/images/mark_fw_silver_angle_1784293780778.jpg",
+      "/src/assets/images/mark_fw_dial_zoom_ret_1784293809706.jpg",
+      "/src/assets/images/mark_fw_gold_front_1784293792410.jpg",
+      "/src/assets/images/mark_fw_caseback_specs_1784293821365.jpg",
+      "/src/assets/images/mark_fw_features_details_1784293833107.jpg"
+    ],
+    "specs": {
+      "Clasp Type": "Push Button Hidden Clasp",
+      "Battery Included": "Yes",
+      "Model Number": "FW 5031",
+      "Case Material": "Alloy",
+      "Feature": "Luminous,Water-Resistance,Luminous Hands",
+      "High-concerned chemical": "None",
+      "Origin": "Mainland China",
+      "Item Type": "Quartz Wristwatches",
+      "Band Material Type": "Stainless steel",
+      "Certification": "CE",
+      "Feature4": "watches for men,watch for men,luxury watch men,watches man",
+      "Dial Diameter": "40 to 44 mm",
+      "Brand Name": "MARK FAIRWHALE",
+      "Boxes & Cases Material": "No package",
+      "Suitable audience for wearing": "men, women, boys, girls, unisex, students, couples",
+      "Band Length": "22cm",
+      "Case Thickness": "14mm",
+      "Feature2": "montre homme,montres hommes,relogio masculino,relogios masculinos,relogio masculino",
+      "Movement": "Quartz",
+      "Dial Window Material Type": "Hardlex",
+      "Style": "Fashion & Casual",
+      "Water Resistance Depth": "3Bar",
+      "Movement origin": "CN (Origin)",
+      "Feature1": "relojes para hombres,reloj hombre,reloj,relojes para hombres",
+      "Band Width": "20 to 24 mm",
+      "Feature3": "herren uhren,reloj deportivo,horloge,orologio da uomo",
+      "Case Shape": "Round",
+      "Display Type": "Numberless"
+    },
+    "status": "Published",
+    "isNew": true,
+    "description": "Mark Fairwhale 5031 New Top Brand Men's Quartz Watch Rotating Digital Dial Entertainment Cool Waterproof Night Light Watch reloj",
+    "isBestSeller": true
+  },
+  {
+    "id": "prod-minifocus-pocket-rgb",
+    "brand": "MINIFOCUS",
+    "category": "Accessories",
+    "priceGHS": 380,
+    "isNewArrival": true,
+    "colors": [
+      "RGB Multi-color",
+      "Classic Black"
+    ],
+    "description": "A premium, high-intensity pocket-sized RGB LED fill light designed for mobile creators, DSLR photographers, and action videographers. Engineered with a durable, high-efficiency heat dispersion frame and packed with 60 advanced LED beads (20 White, 20 Warm, 20 RGB) delivering up to 800 LUX of pure luminance at 0.5m. It features a broad 2500K to 7000K variable color temperature version, seamless 0-100% dimming, and full 360-degree color adjustment. Includes a high-capacity 1800mAh rechargeable battery, universal cold shoe with 1/4 screw interface, and triple cold shoe mounts for accessory expansion.",
+    "isNew": true,
+    "status": "Published",
+    "specs": {
+      "Certification": "CE,FCC,RoHS",
+      "Lighting Type": "RGB Video Light",
+      "Communication": "Wired",
+      "Item Type": "RGB LED Light Rechargable 1800mAh Fill Lamp",
+      "Power Source": "AC&DC",
+      "Origin": "Mainland China",
+      "Brand Name": "MINIFOCUS",
+      "Compatibility": "for Nikon Canon Sony Camcorder DSLR Mirrorless Camera Gopro Action Camera",
+      "Bundle": "Bundle 1",
+      "Battery Included": "Yes",
+      "Inbox adaptor": "No",
+      "Package": "Yes",
+      "High-concerned chemical": "None",
+      "Compatible Devices": "Cameras Smartphones",
+      "USE": "LED Fill Lamp for DSLR Camcorder Gopro",
+      "Size": "Mini Pocket Video Portable Light on Camera",
+      "Model Number": "Full Color RGB LED Video Light",
+      "Color Temperature Version": "RGB Version",
+      "Color Temperature": "2700K-6500K",
+      "Type": "Mini LED Camera Light 1800mAh Rechargable LED Panel Lamp Photo Video Lighting",
+      "Product name": "RGB Video Light",
+      "Connectivity": "1/4 Screw & Cold Shoe Interface",
+      "Suitable": "for Smarthphone Camera Gopro Tiktok Video Photo Shooting Small Light Kit",
+      "Fit": "for Smartphone Photography DSLR Camera Gopro",
+      "Item Name": "RGB Camera Video Light",
+      "Voltage range": "USB (5-20V DC)",
+      "Brightness Adjustment Range": "0 - 100%",
+      "Product Features": "1800mAh Rechargeable with 3 Cold Shoe Light Attachment,Portable LED Camera Light Panel",
+      "Suit": "for Youtube Tik tok Vlog",
+      "Capable of camera mounting": "Yes"
+    },
+    "isBestSeller": true,
+    "image": "/src/assets/images/minifocus_rgb_main_1784290554080.jpg",
+    "stock": 85,
+    "name": "Pocket RGB Fill Light Portable LED",
+    "priceUSD": 25,
+    "reviewsCount": 36,
+    "rating": 4.8,
+    "images": [
+      "/src/assets/images/minifocus_rgb_main_1784290554080.jpg",
+      "/src/assets/images/minifocus_rgb_specs_1784290570088.jpg",
+      "/src/assets/images/minifocus_rgb_usage_1784290583639.jpg",
+      "/src/assets/images/minifocus_rgb_compatibility_1784290597437.jpg"
+    ]
+  },
+  {
+    "id": "prod-multilink-card-reader",
+    "colors": [
+      "Gunmetal Gray",
+      "Silver Metal"
+    ],
+    "priceGHS": 290,
+    "category": "Accessories",
+    "brand": "Multi-Link",
+    "images": [
+      "https://images.unsplash.com/photo-1541140111813-8222e9d90981?q=80&w=600&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?q=80&w=600&auto=format&fit=crop"
+    ],
+    "priceUSD": 20,
+    "reviewsCount": 28,
+    "rating": 4.6,
+    "name": "Multi-Link 4-in-1 USB 3.0 Card Reader",
+    "stock": 35,
+    "image": "https://images.unsplash.com/photo-1541140111813-8222e9d90981?q=80&w=600&auto=format&fit=crop",
+    "isNew": true,
+    "description": "High-speed card reader supporting SD, MicroSD, CF, and MS formats simultaneously. Built with a robust aluminum casing and dual USB-A / USB-C output interfaces.",
+    "specs": {
+      "Warranty": "1 Year Local Warranty by Immortal Tech",
+      "Processor": "AMD Ryzen 7 5800H",
+      "Graphics": "NVIDIA GeForce RTX 3060 (6GB GDDR6)",
+      "Screen Size": "16.1-inch FHD, 144Hz IPS",
+      "OS": "Windows 11 Home",
+      "RAM": "16GB DDR4 Dual-Channel",
+      "Storage": "512GB PCIe NVMe M.2 SSD",
+      "Model No": "N/A",
+      "SKU": "SKU-375549"
+    }
+  },
+  {
+    "id": "prod-netswift-4g-mini-router",
+    "category": "Accessories",
+    "brand": "NetSwift",
+    "colors": [
+      "Glossy White",
+      "Carbon Fiber Black"
+    ],
+    "priceGHS": 850,
+    "isNewArrival": true,
+    "description": "Compact 4G LTE-unlocked mobile hotspot/mini router. Insert any SIM card to enjoy blazing-fast Wi-Fi speeds on-the-go. Delivers high-speed connections for up to 10 devices.",
+    "isNew": true,
+    "specs": {
+      "Battery Capacity": "2100 mAh (up to 8 hours active use)",
+      "Network Support": "4G LTE FDD/TDD, 3G WCDMA",
+      "Wi-Fi Speed": "Up to 150 Mbps download / 50 Mbps upload",
+      "Sim Card Slot": "Standard 6-Pin Micro SIM Slot"
+    },
+    "images": [
+      "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?q=80&w=600&auto=format&fit=crop"
+    ],
+    "priceUSD": 58,
+    "rating": 4.6,
+    "reviewsCount": 31,
+    "name": "NetSwift Portable 4G Mini Router",
+    "stock": 22,
+    "image": "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?q=80&w=600&auto=format&fit=crop"
+  },
+  {
+    "id": "prod-north-edge-laker",
+    "colors": [
+      "Stealth Black",
+      "Tactical Green",
+      "Desert Sand"
+    ],
+    "priceGHS": 1100,
+    "isNewArrival": true,
+    "category": "Accessories",
+    "brand": "NORTH EDGE",
+    "images": [
+      "https://images.unsplash.com/photo-1547996160-81dfa63595aa?q=80&w=600&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?q=80&w=600&auto=format&fit=crop"
+    ],
+    "priceUSD": 75,
+    "reviewsCount": 38,
+    "rating": 4.7,
+    "name": "NORTH EDGE Men's Digital Watch Military Waterproof",
+    "image": "https://images.unsplash.com/photo-1547996160-81dfa63595aa?q=80&w=600&auto=format&fit=crop",
+    "stock": 25,
+    "isNew": true,
+    "description": "NORTH EDGE Men's Digital Watch Military Waterproof 50M Running Sports Pedometer Stopwatch Watch Heart Rate Wristband Android IOS",
+    "specs": {
+      "Clasp Type": "Buckle",
+      "Movement": "Digital",
+      "Band Length": "24cm",
+      "Case Thickness": "15mm",
+      "Battery Included": "Yes",
+      "Style": "SPORT",
+      "Feature": "Back Light, Shock Resistant, Repeater, Alarm, Week Display",
+      "Water Resistance Depth": "5Bar",
+      "Model Number": "Laker",
+      "Case Material": "Alloy",
+      "Dial Window Material Type": "Hardlex",
+      "High-concerned chemical": "None",
+      "Voltage": "<36V",
+      "Item Type": "Digital Wristwatches",
+      "Band Material Type": "Silicone",
+      "Rechargeable Battery Included": "No",
+      "Certification": "NONE",
+      "Display Type": "Digital",
+      "Boxes & Cases Material": "Paper",
+      "Band Width": "22mm",
+      "Case Shape": "Round",
+      "Brand Name": "NORTH EDGE",
+      "Wireless": "N",
+      "Dial Diameter": "44mm"
+    }
+  },
+  {
+    "id": "prod-north-edge-mars",
+    "priceGHS": 850,
+    "isNewArrival": true,
+    "colors": [
+      "Yellow",
+      "Red",
+      "Black"
+    ],
+    "brand": "NORTH EDGE",
+    "category": "Accessories",
+    "name": "NORTH EDGE Mens Digital Watch Women",
+    "image": "https://images.unsplash.com/photo-1546868871-7041f2a55e12?q=80&w=600&auto=format&fit=crop",
+    "stock": 30,
+    "images": [
+      "https://images.unsplash.com/photo-1546868871-7041f2a55e12?q=80&w=600&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1617345307221-724e8bf951c6?q=80&w=600&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?q=80&w=600&auto=format&fit=crop"
+    ],
+    "priceUSD": 58,
+    "reviewsCount": 42,
+    "rating": 4.6,
+    "description": "NORTH EDGE Mens Digital Watch Women Sportswatch Dual Time Running Pedometer Countdown Waterproof 50m Alarm Military Clock",
+    "isNew": true,
+    "specs": {
+      "Clasp Type": "Buckle",
+      "Battery Included": "Yes",
+      "Band Length": "24cm",
+      "Movement": "Digital",
+      "Case Material": "Plastic",
+      "Style": "SPORT",
+      "Feature": "Stop Watch, Steps Tracker, Calorie Counter, Back Light, Complete Calendar, Alarm, Week Display, Chronograph",
+      "Water Resistance Depth": "5Bar",
+      "High-concerned chemical": "None",
+      "Item Type": "Digital Wristwatches",
+      "Voltage": "<36V",
+      "Band Material Type": "Silicone",
+      "Rechargeable Battery Included": "No",
+      "Wireless": "N",
+      "Case Shape": "Round",
+      "Brand Name": "NORTH EDGE",
+      "Dial Diameter": "44mm",
+      "Display Type": "Digital"
+    }
+  },
+  {
+    "id": "prod-north-edge-women-watch",
+    "name": "NORTH EDGE Mens Digital Watch Women",
+    "image": "https://images.unsplash.com/photo-1547996160-81dfa63595aa?q=80&w=600&auto=format&fit=crop",
+    "stock": 24,
+    "images": [
+      "https://images.unsplash.com/photo-1547996160-81dfa63595aa?q=80&w=600&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1524805444758-089113d48a6d?q=80&w=600&auto=format&fit=crop"
+    ],
+    "priceUSD": 75,
+    "reviewsCount": 38,
+    "rating": 4.7,
+    "isNew": true,
+    "description": "NORTH EDGE Mens Digital Watch Women Sportswatch Dual Time Running Pedometer Countdown Waterproof 50m Alarm Military Clock",
+    "specs": {
+      "Battery Included": "Yes",
+      "Band Length": "24cm",
+      "Movement": "Digital",
+      "Clasp Type": "Buckle",
+      "High-concerned chemical": "None",
+      "Case Material": "Plastic",
+      "Style": "SPORT",
+      "Feature": "Stop Watch,Steps Tracker,Calorie Counter,Back Light,Complete Calendar,Alarm,Week Display,Chronograph",
+      "Water Resistance Depth": "5Bar",
+      "Rechargeable Battery Included": "No",
+      "Band Material Type": "Silicone",
+      "Item Type": "Digital Wristwatches",
+      "Voltage": "<36V",
+      "Brand Name": "NORTH EDGE",
+      "Case Shape": "Round",
+      "Dial Diameter": "44mm",
+      "Wireless": "N",
+      "Display Type": "Digital"
+    },
+    "priceGHS": 1100,
+    "isNewArrival": true,
+    "colors": [
+      "Yellow",
+      "Red",
+      "Black"
+    ],
+    "brand": "NORTH EDGE",
+    "category": "Accessories"
+  },
+  {
+    "id": "prod-nubia-z80-ultra",
+    "colors": [
+      "16GB 512GB Black",
+      "12GB 256GB Black"
+    ],
+    "isNewArrival": true,
+    "priceGHS": 15500,
+    "category": "Smartphones",
+    "brand": "nubia",
+    "reviewsCount": 19,
+    "rating": 5,
+    "priceUSD": 1050,
+    "images": [
+      "/src/assets/images/nubia_silver_side_1784297083308.jpg",
+      "/src/assets/images/nubia_silver_all_views_1784297097731.jpg",
+      "/src/assets/images/nubia_silver_back_flat_1784297108340.jpg"
+    ],
+    "image": "/src/assets/images/nubia_silver_side_1784297083308.jpg",
+    "stock": 45,
+    "name": "nubia Z80 Ultra",
+    "isBestSeller": true,
+    "status": "Published",
+    "specs": {
+      "Refurbished item grade": "premium",
+      "Charging Interface Type": "Type-C",
+      "Screen Refresh Rate": "144 Hz",
+      "Bluetooth Version": "YES",
+      "Brand Name": "nubia",
+      "Battery Capacity Range": "6000-7499mAh",
+      "Other Features": "Photograph Phone,5G Mobile Phone,Fast Charging Phone",
+      "Fast Charging": "Supercharge",
+      "WIFI": "Yes",
+      "Front Camera Pixel": "16MP",
+      "NFC": "Yes",
+      "Language": "Arabic,Polish,German,Russian,French,Korean,Norwegian,Portuguese,Japanese,Turkish,Spanish,Italian,English",
+      "High-concerned chemical": "None",
+      "Rear Camera Quantity": "3",
+      "SIM Card Quantity": "2 SIM Card",
+      "Display Size": "6.85",
+      "Wireless Charging": "Yes",
+      "Item Condition": "New",
+      "Design": "Bar",
+      "Touch Screen": "Yes",
+      "Display Resolution": "144 Hz",
+      "IP68/IP69K": "Yes",
+      "3.5mm Headphone Port": "Yes",
+      "Biometrics Technology": "In-Screen Fingerprint Recognition",
+      "Screen Type": "Full Screen",
+      "Screen Material": "AMOLED",
+      "Battery Capacity(mAh)": "7200",
+      "Front Camera Quantity": "3",
+      "Charging Power": "Other",
+      "Rear Camera Pixel": "50MP,≈ 64 MP",
+      "Battery Type": "Not Detachable",
+      "Operation System": "Android"
+    },
+    "description": "nubia Z80 Ultra 5G Smartphone Global Version Snapdragon 8 Elite Gen 5 7200mAh 6.85'' 144Hz Oled Display 90W Fast Charg",
+    "isNew": true
+  },
+  {
+    "id": "prod-pixel8pro",
+    "colors": [
+      "Bay Blue",
+      "Porcelain",
+      "Obsidian"
+    ],
+    "isNewArrival": true,
+    "priceGHS": 14500,
+    "category": "Smartphones",
+    "brand": "Google Pixel",
+    "reviewsCount": 65,
+    "rating": 4.7,
+    "priceUSD": 980,
+    "images": [
+      "https://images.unsplash.com/photo-1598327105666-5b89351aff97?q=80&w=600&auto=format&fit=crop"
+    ],
+    "image": "https://images.unsplash.com/photo-1598327105666-5b89351aff97?q=80&w=600&auto=format&fit=crop",
+    "stock": 5,
+    "name": "Google Pixel 8 Pro",
+    "specs": {
+      "Battery": "5050 mAh with 30W charging",
+      "Storage": "128GB / 256GB / 512GB",
+      "Processor": "Google Tensor G3 (4nm)",
+      "Display": "6.7-inch Super Actua LTPO OLED, 120Hz",
+      "OS": "Android 14",
+      "Main Camera": "50MP Main + 48MP Telephoto (5x) + 48MP Ultra-wide"
+    },
+    "description": "The all-pro phone engineered by Google. It has the best of Google AI, the most advanced Pixel Camera ever, and can help you get more done, faster.",
+    "isNew": true
+  },
+  {
+    "id": "prod-powersafe-25w-charger",
+    "category": "Accessories",
+    "brand": "PowerSafe",
+    "colors": [
+      "Clean White",
+      "Stealth Black"
+    ],
+    "priceGHS": 220,
+    "isBestSeller": true,
+    "specs": {
+      "Input Voltage": "AC 100V-240V dual global range",
+      "Protocols Supported": "PPS (Programmable Power Supply), QC 3.0",
+      "Safety Compliance": "CE/FCC/RoHS certified thermal chip",
+      "Max Output": "25W USB-C Power Delivery 3.0"
+    },
+    "description": "High-speed wall adapter powered by Power Delivery (PD) 3.0 technology. Charge the latest iPhone, Samsung, or Pixel from 0 to 50% in under 30 minutes with full thermal protection.",
+    "isNew": false,
+    "reviewsCount": 110,
+    "rating": 4.7,
+    "priceUSD": 15,
+    "images": [
+      "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?q=80&w=600&auto=format&fit=crop"
+    ],
+    "image": "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?q=80&w=600&auto=format&fit=crop",
+    "stock": 95,
+    "name": "PowerSafe 25W USB-C PD Wall Charger"
+  },
+  {
+    "id": "prod-ps5controller",
+    "description": "Discover a deeper, highly immersive gaming experience with the innovative new PS5 controller, featuring haptic feedback and dynamic trigger effects.",
+    "isNew": true,
+    "specs": {
+      "Battery": "Built-in rechargeable battery",
+      "Feedback": "Haptic feedback and adaptive triggers",
+      "Connection": "Bluetooth / USB-C",
+      "Microphone": "Built-in mic and headset jack"
+    },
+    "name": "PS5 DualSense Wireless Controller",
+    "image": "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?q=80&w=600&auto=format&fit=crop",
+    "stock": 15,
+    "images": [
+      "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?q=80&w=600&auto=format&fit=crop"
+    ],
+    "priceUSD": 80,
+    "reviewsCount": 112,
+    "rating": 4.7,
+    "brand": "Sony",
+    "category": "Gaming",
+    "priceGHS": 1200,
+    "isNewArrival": true,
+    "colors": [
+      "White",
+      "Midnight Black",
+      "Cosmic Red",
+      "Starlight Blue"
+    ]
+  },
+  {
+    "id": "prod-puretune-type-c-earphones",
+    "priceGHS": 150,
+    "colors": [
+      "Glacier White",
+      "Classic Black"
+    ],
+    "brand": "PureTune",
+    "category": "Accessories",
+    "stock": 110,
+    "image": "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?q=80&w=600&auto=format&fit=crop",
+    "name": "PureTune Type-C Wired Earphones",
+    "rating": 4.4,
+    "reviewsCount": 41,
+    "priceUSD": 10,
+    "images": [
+      "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?q=80&w=600&auto=format&fit=crop"
+    ],
+    "specs": {
+      "Frequency Range": "20Hz - 20,000Hz wide response",
+      "Cable Length": "1.2m reinforced TPE anti-tangle wire",
+      "Connector Type": "Reversible USB Type-C plug with DAC chip",
+      "Driver Size": "14.2mm large dynamic speaker unit"
+    },
+    "isNew": false,
+    "description": "Digital Type-C audio connector earphones with high-performance integrated DAC chipset. Crystal clear vocals, wide sound stage, and a solid physical remote control with premium microphone."
+  },
+  {
+    "id": "prod-roadguard-bike-mount",
+    "colors": [
+      "Deep Black",
+      "Neon Accented Black"
+    ],
+    "priceGHS": 180,
+    "category": "Accessories",
+    "brand": "RoadGuard",
+    "images": [
+      "https://images.unsplash.com/photo-1485965120184-e220f721d03e?q=80&w=600&auto=format&fit=crop"
+    ],
+    "rating": 4.6,
+    "reviewsCount": 14,
+    "priceUSD": 12,
+    "name": "RoadGuard Heavy-Duty Bicycle Phone Mount",
+    "image": "https://images.unsplash.com/photo-1485965120184-e220f721d03e?q=80&w=600&auto=format&fit=crop",
+    "stock": 35,
+    "specs": {
+      "Material": "High-density ABS combined with silicone buffer pads",
+      "Rotation": "360-degree adjustable viewing angle ball joint",
+      "Clamp Mechanism": "One-click automatic mechanical claw",
+      "Handlebar Diameter": "18mm to 32mm universal fit"
+    },
+    "isNew": true,
+    "description": "Extremely rugged mechanical bicycle & motorcycle phone mount. Crafted with four-corner auto-clamping grips and a fail-safe mechanical switch to lock your smartphone securely across rough trails."
+  },
+  {
+    "id": "prod-s24ultra",
+    "isBestSeller": true,
+    "specs": {
+      "Display": "6.8-inch Dynamic AMOLED 2X, QHD+, 120Hz",
+      "Processor": "Snapdragon 8 Gen 3 for Galaxy",
+      "Battery": "5000 mAh, 45W wired charging",
+      "Storage": "256GB / 512GB / 1TB",
+      "Main Camera": "200MP Main + 50MP + 12MP + 10MP Quad Camera",
+      "OS": "Android 14 (One UI 6.1)"
+    },
+    "isNew": true,
+    "description": "Welcome to the era of mobile AI. With Galaxy S24 Ultra in your hands, you can unleash whole new levels of creativity, productivity and possibility.",
+    "reviewsCount": 98,
+    "rating": 4.8,
+    "priceUSD": 1550,
+    "images": [
+      "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?q=80&w=600&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1707151019688-df0b4d4f26ec?q=80&w=600&auto=format&fit=crop"
+    ],
+    "image": "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?q=80&w=600&auto=format&fit=crop",
+    "stock": 8,
+    "name": "Samsung Galaxy S24 Ultra",
+    "category": "Smartphones",
+    "brand": "Samsung",
+    "colors": [
+      "Titanium Yellow",
+      "Titanium Violet",
+      "Titanium Gray",
+      "Titanium Black"
+    ],
+    "isNewArrival": true,
+    "priceGHS": 23000
+  },
+  {
+    "id": "prod-sandisk-128gb-microsd",
+    "colors": [
+      "Red/Gold"
+    ],
+    "priceGHS": 350,
+    "category": "Accessories",
+    "brand": "SanDisk",
+    "images": [
+      "https://images.unsplash.com/photo-1558485940-8feec5aa6f24?q=80&w=600&auto=format&fit=crop"
+    ],
+    "reviewsCount": 215,
+    "rating": 4.9,
+    "priceUSD": 24,
+    "name": "SanDisk Extreme 128GB MicroSDXC",
+    "image": "https://images.unsplash.com/photo-1558485940-8feec5aa6f24?q=80&w=600&auto=format&fit=crop",
+    "stock": 80,
+    "isBestSeller": true,
+    "specs": {
+      "Capacity": "128 GB",
+      "Format Class": "C10, U3, V30, A2",
+      "Write Speed": "Up to 90MB/s",
+      "Read Speed": "Up to 190MB/s"
+    },
+    "isNew": false,
+    "description": "Get extreme speeds for fast transfer, app performance, and 4K UHD. Ideal for your Android smartphone, action cameras, or drones, this high-performance microSD card does 4K UHD video recording."
+  },
+  {
+    "id": "prod-sandisk-sd-card",
+    "rating": 4.9,
+    "reviewsCount": 154,
+    "priceUSD": 5,
+    "images": [
+      "/src/assets/images/sandisk_main_cards_1784061615432.jpg",
+      "/src/assets/images/sandisk_four_cards_1784061626255.jpg",
+      "/src/assets/images/sandisk_retail_pack_1784061636169.jpg",
+      "/src/assets/images/sandisk_single_card_1784061647170.jpg"
+    ],
+    "image": "/src/assets/images/sandisk_main_cards_1784061615432.jpg",
+    "stock": 250,
+    "name": "Original Sandisk Memory Card 256GB 128GB 64GB 32GB TF micro sd card Class 10 UHS-1 flash card Memory Microsd for Samrtphone PC",
+    "isBestSeller": true,
+    "specs": {
+      "UHS Level": "U1",
+      "Application Performance Class": "A1",
+      "Brand Name": "Sandisk",
+      "SD Type": "microSDXC",
+      "Package": "Yes",
+      "High-concerned Chemical": "None",
+      "Origin": "Mainland China",
+      "Class Level": "C10",
+      "Type": "TF / Micro SD Card",
+      "Application": "High Speed Read and Write, MOBILE PHONE, TABLET, NOTEBOOK, Tachograph, Camera, Monitoring, Speakers, Digital Devices, Robot, UAV, File Storage, others",
+      "Certification": "CE, FCC",
+      "Video Speed Class": "V10"
+    },
+    "isNew": true,
+    "description": "High-concerned chemical: None.\n\nSD Type: microSDXC.\n\nApplication: High Speed Read and Write, MOBILE PHONE, TABLET, NOTEBOOK, Tachograph, Camera, Monitoring, Speakers, Digital Devices, Robot, UAV, File Storage, others.\n\nApplication Performance Class: A1.\n\nVideo Speed Class: V10.\n\nUHS Level: U1.\n\nClass Level: C10.\n\nPackage: Yes.\n\nType: TF / Micro SD Card.\n\nBrand Name: Sandisk.\n\nOrigin: Mainland China.\n\nCertification: CE, FCC.\n\nExperience high-speed, reliable data storage for your daily tech needs with the world-renowned SanDisk Ultra. Perfect for extending memory in smartphones, tablets, laptops, cameras, and drones, ensuring flawless media capture and fast app execution with A1 performance rating.",
+    "colors": [
+      "Red & Gray"
+    ],
+    "isNewArrival": true,
+    "priceGHS": 65,
+    "category": "Accessories",
+    "brand": "Sandisk"
+  },
+  {
+    "id": "prod-smartbulb",
+    "description": "Multicolor smart bulb with Wi-Fi, compatible with Alexa and Google Assistant. Schedule, dim, and paint your rooms with vibrant colors directly from your phone.",
+    "isNew": true,
+    "specs": {
+      "App Control": "Kasa Smart App (iOS/Android)",
+      "Hub Required": "No (Connects directly to 2.4GHz Wi-Fi)",
+      "Colors": "16 million dimmable colors",
+      "Brightness": "800 Lumens (equivalent to 60W)"
+    },
+    "images": [
+      "https://images.unsplash.com/photo-1550985616-10810253b84d?q=80&w=600&auto=format&fit=crop"
+    ],
+    "priceUSD": 30,
+    "reviewsCount": 45,
+    "rating": 4.6,
+    "name": "TP-Link Kasa Smart Bulb Duo",
+    "image": "https://images.unsplash.com/photo-1550985616-10810253b84d?q=80&w=600&auto=format&fit=crop",
+    "stock": 30,
+    "category": "Smart Home",
+    "brand": "TP-Link",
+    "colors": [
+      "RGB Multicolor"
+    ],
+    "priceGHS": 450
+  },
+  {
+    "id": "prod-sonicwave-portable-speaker",
+    "category": "Accessories",
+    "brand": "SonicWave",
+    "colors": [
+      "Stealth Black",
+      "Electric Blue",
+      "Forest Camo"
+    ],
+    "priceGHS": 720,
+    "isBestSeller": true,
+    "specs": {
+      "Battery": "3000 mAh Rechargeable (Up to 12 hours playtime)",
+      "Audio Output": "15W Dual Neodymium Drivers with Passive Radiator",
+      "Connectivity": "Bluetooth 5.3, AUX Input, MicroSD Slot",
+      "Waterproof Rating": "IPX7 Fully Waterproof/Dustproof"
+    },
+    "description": "Ultra-portable rugged Bluetooth 5.3 speaker with rich deep bass, crisp mids, and beautiful dynamic RGB LED pulsing light circles. Perfect for backyard hangs and small gatherings.",
+    "isNew": true,
+    "rating": 4.8,
+    "reviewsCount": 55,
+    "priceUSD": 48,
+    "images": [
+      "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?q=80&w=600&auto=format&fit=crop"
+    ],
+    "stock": 18,
+    "image": "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?q=80&w=600&auto=format&fit=crop",
+    "name": "SonicWave 15W Portable Speaker"
+  },
+  {
+    "id": "prod-sonywh1000xm5",
+    "priceGHS": 5800,
+    "colors": [
+      "Black",
+      "Platinum Silver",
+      "Midnight Blue"
+    ],
+    "brand": "Sony",
+    "category": "Accessories",
+    "image": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=600&auto=format&fit=crop",
+    "stock": 10,
+    "name": "Sony WH-1000XM5 Headphones",
+    "priceUSD": 390,
+    "reviewsCount": 88,
+    "rating": 4.9,
+    "images": [
+      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=600&auto=format&fit=crop"
+    ],
+    "description": "Industry-leading noise canceling overhead headphones with premium sound quality, crystal clear hands-free calling, and Alexa Voice Control.",
+    "isNew": true,
+    "specs": {
+      "Driver": "30mm specially designed dome driver",
+      "Microphones": "8 microphones for outstanding call clarity",
+      "Connection": "Bluetooth 5.2, Multipoint connection",
+      "Battery Life": "Up to 30 hours (ANC ON)",
+      "ANC": "Industry-leading Auto NC Optimizer"
+    },
+    "isBestSeller": true
+  },
+  {
+    "id": "prod-tf-3120-tripod",
+    "category": "Accessories",
+    "brand": "Universal",
+    "colors": [
+      "Silver with Clamp",
+      "Sleek Black"
+    ],
+    "isNewArrival": true,
+    "priceGHS": 145,
+    "specs": {
+      "High-concerned chemical": "None",
+      "Use/Compatibility": "Smartphones, Action Cameras (GoPro), Ring Lights, Small Projectors, DSLRs",
+      "Weight": "420 g (0.42 kg / 0.92 lbs)",
+      "Wireless Bluetooth Remote": "Included (Detachable, up to 10m range)",
+      "Package Included": "Yes (Includes Tripod Stand, Detachable Phone Mount, Wireless Remote, Travel Bag)",
+      "Material": "Aluminum & Premium ABS Plastic",
+      "Model Number": "3120",
+      "Folded Length": "330 mm (13 inches)",
+      "Mounting Thread": "Standard 1/4-inch Screw",
+      "Rotation": "360° Panoramic Pan, 180° Vertical Tilting, 90° Portrait Alignment",
+      "Maximum Extended Length": "1020 mm (102 cm / 40 inches)",
+      "Origin": "Mainland China"
+    },
+    "description": "A versatile, ultra-lightweight adjustable tripod engineered for seamless smartphone, action camera, and digital video recording. Extends up to 102cm (1020mm), with a 330mm folded length and weighing just 420g, making it highly portable for travel. Features a high-quality 3-way pan head supporting 360° horizontal panoramic shooting, 180° up/down angle adjustments, and 90° vertical portrait setup. Complete with a detachable wireless Bluetooth remote, a standard 1/4-inch mounting screw, and a secure universal phone clamp mount.",
+    "isNew": true,
+    "images": [
+      "/src/assets/images/tripod_silver_clamp_1784033227693.jpg",
+      "/src/assets/images/tripod_shooting_angles_1784033292414.jpg",
+      "/src/assets/images/tripod_anatomy_diagram_1784033277754.jpg",
+      "/src/assets/images/tripod_height_options_1784033262603.jpg",
+      "/src/assets/images/tripod_bluetooth_remote_1784033309689.jpg",
+      "/src/assets/images/tripod_versatile_mounts_1784033244460.jpg"
+    ],
+    "rating": 4.7,
+    "reviewsCount": 24,
+    "priceUSD": 10,
+    "name": "Tripod For Phone 102cm Video Recording Phone Tripod Stand with Bluetooth Remote Universal Camera Phone Photography Holder Stand",
+    "image": "/src/assets/images/tripod_silver_clamp_1784033227693.jpg",
+    "stock": 85
+  },
+  {
+    "id": "prod-tripod-60",
+    "reviewsCount": 38,
+    "rating": 4.8,
+    "priceUSD": 20,
+    "images": [
+      "/src/assets/images/tripod_versatile_mounts_1784033244460.jpg",
+      "/src/assets/images/tripod_silver_clamp_1784033227693.jpg",
+      "/src/assets/images/tripod_height_options_1784033262603.jpg",
+      "/src/assets/images/tripod_anatomy_diagram_1784033277754.jpg",
+      "/src/assets/images/tripod_shooting_angles_1784033292414.jpg",
+      "/src/assets/images/tripod_bluetooth_remote_1784033309689.jpg"
+    ],
+    "image": "/src/assets/images/tripod_versatile_mounts_1784033244460.jpg",
+    "stock": 95,
+    "name": "Tripod, 60\" Camera Tripod with Travel Bag, Cell Phone Tripod with Remote, Professional Aluminum Portable Tripod Stand",
+    "isBestSeller": true,
+    "specs": {
+      "Wireless Remote": "Included (Detachable, up to 10m range)",
+      "Folded Length": "43 cm (16.9 inches)",
+      "Compatibility": "Universal (Cell Phones 4\"-7\", DSLR/SLR, Projector, Webcam, Ring Light)",
+      "Weight": "0.58 kg (1.28 lbs)",
+      "Maximum Height": "152 cm (60 inches)",
+      "Material": "High-grade Aluminum Alloy & Durable ABS",
+      "Tripod Legs": "Quick-release Flip Locks & Silicone Non-Slip Feet"
+    },
+    "isNew": true,
+    "description": "【152cm/60\" Extendable Tripod】 Extends from 48cm/18.9 in to 152cm/60 in by flip lock , this camera tripod fully adapts to a range of different heights with the locking-pad locked. 43cm/16.9\" compact size make tripod carry with travel bag conveniently. (Note: without the phone mount, the maximum height is 146cm/57.5 inches.)\n\n【Multiple Shooting Angles】With a 3-way pan head, the camera tripod supports 360° horizontal panoramic shooting, up and down shooting, and 90° vertical portraits, which creates various angles and heights for you to pick up while taking panoramic photos/videos/live-streaming.\n\n【Sturdy & Stability】Made of aluminum alloy, this tripod stand is sturdy enough to support heavy equipment. The reinforced triangular structure makes the tripod stand more stable and more resistant to wind while outdoors shooting. Non-slip pads provide strong grip, allowing the phone camera tripod perfect for panoramic shots without shaking.\n\n【Detachable Remote】After fast pairing without password, you can take photos or record videos freely within 10 meters with the remote control, which makes distance and height are no more limitations for your picture or video. And a special remote control slot on the tripod legs is designed for you to store the shutter.\n\n【Versatile Tripod】Equipped with a standard 1/4 screw and a detachable phone mount, the tripods would work with all 4''-7'' cell phones and DSLR/SLR Cameras, projector, webcam, ring light, monitor, spotting scope, laser, binocular, etc. (Note: The phone and camera tripod is not designed for the tablet.)",
+    "colors": [
+      "Sleek Black"
+    ],
+    "isNewArrival": true,
+    "priceGHS": 295,
+    "category": "Accessories",
+    "brand": "Universal"
+  },
+  {
+    "id": "prod-turbodrive-45w-car-charger",
+    "category": "Accessories",
+    "brand": "Anker",
+    "colors": [
+      "Matte Black",
+      "Brushed Aluminum"
+    ],
+    "priceGHS": 195,
+    "isBestSeller": true,
+    "isNew": false,
+    "description": "Compact dual-port car power adapter delivering up to 45W via Power Delivery (PD) 3.0. Features multi-safety protection systems, scratch-resistant aluminum housing, and dynamic blue soft LED ring.",
+    "specs": {
+      "Total Output": "45W Max Power Delivery",
+      "Input Voltage": "DC 12V-24V for Cars and Trucks",
+      "Safety": "Over-current, over-heat, over-voltage protection",
+      "Ports": "1x USB-C PD (30W) + 1x USB-A QC 3.0 (15W)"
+    },
+    "images": [
+      "https://images.unsplash.com/photo-1563161433-1299976b3cf9?q=80&w=600&auto=format&fit=crop"
+    ],
+    "priceUSD": 13,
+    "reviewsCount": 42,
+    "rating": 4.8,
+    "name": "TurboDrive 45W Dual Fast Car Charger",
+    "image": "https://images.unsplash.com/photo-1563161433-1299976b3cf9?q=80&w=600&auto=format&fit=crop",
+    "stock": 65
+  },
+  {
+    "id": "prod-turbodrive-max-charger",
+    "category": "Accessories",
+    "brand": "Anker",
+    "colors": [
+      "Stellar Gray",
+      "Stealth Black"
+    ],
+    "isNewArrival": true,
+    "priceGHS": 350,
+    "specs": {
+      "Total Output": "95W Max Dynamic Charging Output",
+      "Ports": "2x USB-C PD (65W + 20W) & 1x USB-A (15W)",
+      "Chipset": "SmartPower dynamic distribution controller",
+      "Casing": "Flame-retardant PC combined with brushed metal"
+    },
+    "isNew": true,
+    "description": "High-wattage multi-port vehicle adapter. Power up heavy laptops, tablets, and mobile devices at the same time using a single accessory. Compact, fireproof, and highly safe.",
+    "images": [
+      "https://images.unsplash.com/photo-1591488320449-011701bb6704?q=80&w=600&auto=format&fit=crop"
+    ],
+    "rating": 4.9,
+    "reviewsCount": 16,
+    "priceUSD": 24,
+    "name": "TurboDrive Max 95W Triple Car Charger",
+    "image": "https://images.unsplash.com/photo-1591488320449-011701bb6704?q=80&w=600&auto=format&fit=crop",
+    "stock": 30
+  },
+  {
+    "id": "prod-uniplug-otg-adapter",
+    "priceGHS": 85,
+    "colors": [
+      "Space Gray Metal",
+      "Brushed Gold"
+    ],
+    "brand": "UniPlug",
+    "category": "Accessories",
+    "stock": 140,
+    "image": "https://images.unsplash.com/photo-1546868871-7041f2a55e12?q=80&w=600&auto=format&fit=crop",
+    "name": "UniPlug Type-C & Micro to USB OTG",
+    "priceUSD": 6,
+    "rating": 4.7,
+    "reviewsCount": 79,
+    "images": [
+      "https://images.unsplash.com/photo-1546868871-7041f2a55e12?q=80&w=600&auto=format&fit=crop"
+    ],
+    "description": "Ultra-durable, highly-portable 2-in-1 OTG adapter. Convert your Type-C or Micro-USB smartphone port into a standard USB-A 3.0 interface to plug in gamepads, flash drives, keyboards, or cameras instantly.",
+    "isNew": true,
+    "specs": {
+      "Compatibility": "Universal Android OTG-enabled phones/tablets",
+      "Connectors": "Male Type-C & Male Micro USB to Female USB 3.0",
+      "Material": "Rugged Zinc Alloy Shell with heat sync protection",
+      "Speed": "Up to 5 Gbps superspeed data transfer"
+    }
+  },
+  {
+    "id": "prod-usb-hub-8in2",
+    "brand": "Generic Compatible",
+    "category": "Accessories",
+    "priceGHS": 145,
+    "isNewArrival": true,
+    "colors": [
+      "Space Gray"
+    ],
+    "isNew": true,
+    "description": "High-concerned chemical: None.\n\nType: USB + Type C HUB Docking Station.\n\nFeatures: 3.5mm Audio Jack Adapter, Micro SD Card Reader, Laptop Tablet Phone Disk Converter.\n\nEnjoy versatile multi-port connectivity with this compact and sturdy docking station. Features a dual input plug design supporting both standard USB-A and USB-C devices instantly. Expands your workspace with multiple high-speed USB ports, memory card slots, and an integrated audio interface.",
+    "specs": {
+      "Dimensions": "138mm x 28mm x 10mm",
+      "Material": "Sleek aluminum alloy housing",
+      "Type": "USB + Type-C Hub Docking Station",
+      "Compatible Devices": "Laptops, Tablets, Phones, Flash Disks, Projectors",
+      "Cable Length": "135mm connection cable",
+      "Features": "3.5mm Audio Jack, Micro SD Card Reader, USB 3.0, Dual Input Connector",
+      "High-concerned Chemical": "None"
+    },
+    "isBestSeller": true,
+    "name": "8 in 2 USB +Type C HUB Docking Station with 3.5mm Audio Jack Adapter for Micro SD Card Reader Laptop Tablet Phone Disk Converter",
+    "image": "/src/assets/images/hub_main_isolated_1784057253571.jpg",
+    "stock": 85,
+    "images": [
+      "/src/assets/images/hub_main_isolated_1784057253571.jpg",
+      "/src/assets/images/hub_multi_device_1784057268725.jpg",
+      "/src/assets/images/hub_smartphone_plugged_1784057282526.jpg",
+      "/src/assets/images/hub_specs_diagram_1784057299640.jpg"
+    ],
+    "priceUSD": 12,
+    "rating": 4.8,
+    "reviewsCount": 42
+  },
+  {
+    "id": "prod-usb-hub-rj45",
+    "stock": 95,
+    "image": "/src/assets/images/hub_rj45_main_1784060154308.jpg",
+    "name": "USB 3.0 Hub For Laptop Adapter PC Computer PD Charge Dock Station RJ45 HDMI-compatible TF/SD Card Notebook Type-C Splitter",
+    "priceUSD": 16,
+    "reviewsCount": 74,
+    "rating": 4.9,
+    "images": [
+      "/src/assets/images/hub_rj45_main_1784060154308.jpg",
+      "/src/assets/images/hub_rj45_sd_reader_1784060171511.jpg",
+      "/src/assets/images/hub_rj45_pd_charging_1784060188105.jpg",
+      "/src/assets/images/hub_rj45_phone_host_1784060203108.jpg"
+    ],
+    "description": "Universal USB 3.0 Hub for Laptops: The USB 3.0 Hub For Laptop supports high-speed data transfer, ideal for connecting multiple devices to your notebook or PC with reliable performance and fast connectivity.\n\nMultiple Port Options Available: Choose from 4 in 1, 5 in 1, 6 in 1, 7 in 1, and 8 in 1 hub configurations to match your device needs and expand your laptop’s connectivity options effortlessly.\n\nPower Delivery & Charging Support: This PD Charge Dock Station enables fast charging via USB-C, allowing you to power your laptop while using multiple peripherals without needing extra adapters.\n\nHigh-Quality Aluminum Build: Crafted from durable aluminum, the hub ensures excellent heat dissipation and a sleek, premium finish that enhances both performance and aesthetics.\n\nCompatible with HDMI & RJ45: Supports HDMI and RJ45 connections, enabling high-resolution video output and stable wired internet, perfect for professional and home office use.\n\nIncludes TF/SD Card Slots: Equipped with TF/SD card slots, this hub allows quick access to memory cards, making it ideal for photographers, content creators, and mobile users.\n\nCompact & Lightweight Design: Measuring 15 x 15 x 5 cm and weighing only 0.070 kg, the hub is portable and easy to carry, making it a perfect travel companion for on-the-go professionals.",
+    "isNew": true,
+    "specs": {
+      "Wired Connection": "RJ45 port for stable high-speed internet access",
+      "Card Reader Slots": "Dual TF/SD card reader",
+      "Housing Material": "Durable premium aluminum alloy with superior heat dissipation",
+      "Dimensions & Weight": "15 x 15 x 5 cm, 0.070 kg",
+      "Type": "USB 3.0 Hub Docking Station",
+      "Port Configurations": "4-in-1 / 5-in-1 / 6-in-1 / 7-in-1 / 8-in-1 Options",
+      "Power Delivery": "Supports PD charging via USB-C (Input up to 87W, output 65W)",
+      "Video Output": "HDMI compatible up to 4K (3840x2160 @ 30Hz)",
+      "Compatibility": "Laptops, Notebooks, PCs, Tablets, Phones (e.g. Huawei Mate/P-series desktop mode)"
+    },
+    "isBestSeller": true,
+    "priceGHS": 195,
+    "isNewArrival": true,
+    "colors": [
+      "Deep Space Gray"
+    ],
+    "brand": "Universal Compatible",
+    "category": "Accessories"
+  },
+  {
+    "id": "prod-voltgrip-wireless-mouse",
+    "brand": "VoltGrip",
+    "category": "Accessories",
+    "priceGHS": 290,
+    "colors": [
+      "Midnight Black",
+      "Platinum Gray",
+      "Chalk White"
+    ],
+    "specs": {
+      "Power": "1x AA battery with smart auto-sleep function",
+      "Wireless Range": "2.4GHz with nano USB dongle, up to 10m",
+      "Switches": "Silent Click Dampeners (reduces 90% sound)",
+      "DPI Levels": "800 / 1200 / 1600 / 2400 Adjustable DPI"
+    },
+    "description": "A masterpiece of desktop productivity. Ergonomically sculpted wireless mouse with ultra-silent click switches, precision optical tracking engine, and multi-surface capability.",
+    "isNew": false,
+    "name": "VoltGrip Ergonomic Wireless Mouse",
+    "image": "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?q=80&w=600&auto=format&fit=crop",
+    "stock": 55,
+    "images": [
+      "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?q=80&w=600&auto=format&fit=crop"
+    ],
+    "reviewsCount": 33,
+    "rating": 4.5,
+    "priceUSD": 19
+  }
+]
