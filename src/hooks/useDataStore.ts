@@ -9,25 +9,40 @@ import {
   BulkInquiry 
 } from '../types';
 
-// Helper to safely fetch JSON from endpoints without throwing on empty or error responses
-const safeFetchJson = async (url: string, fallback: any) => {
-  try {
-    const r = await fetch(url);
-    if (!r.ok) {
-      console.error(`Fetch failed for ${url} with status ${r.status}`);
-      return fallback;
+// Helper to safely fetch JSON from endpoints with exponential backoff retries for robust initialization
+const safeFetchJson = async (url: string, fallback: any, retries = 5, delayMs = 300) => {
+  let currentDelay = delayMs;
+  for (let i = 0; i < retries; i++) {
+    try {
+      const r = await fetch(url);
+      if (r.ok) {
+        const contentType = r.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const text = await r.text();
+          if (!text) return fallback;
+          return JSON.parse(text);
+        }
+        return fallback;
+      }
+      
+      // If server returned non-200 but was reachable (e.g. during server start/restart)
+      if (i === retries - 1) {
+        console.warn(`Fetch failed for ${url} with status ${r.status}`);
+        return fallback;
+      }
+      console.warn(`[useDataStore] Fetch for ${url} returned status ${r.status}, retrying... (${i + 1}/${retries})`);
+    } catch (e) {
+      // Network failure or connection refused (e.g. server booting up)
+      if (i === retries - 1) {
+        console.warn(`Error fetching ${url}:`, e);
+        return fallback;
+      }
+      console.warn(`[useDataStore] Failed to fetch ${url} (${e instanceof Error ? e.message : String(e)}), retrying in ${currentDelay}ms... (${i + 1}/${retries})`);
     }
-    const contentType = r.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-      const text = await r.text();
-      if (!text) return fallback;
-      return JSON.parse(text);
-    }
-    return fallback;
-  } catch (e) {
-    console.error(`Error fetching ${url}:`, e);
-    return fallback;
+    await new Promise(resolve => setTimeout(resolve, currentDelay));
+    currentDelay *= 2; // Exponential backoff
   }
+  return fallback;
 };
 
 export function useDataStore() {
@@ -78,7 +93,7 @@ export function useDataStore() {
       setBulkInquiries(Array.isArray(resInq) ? resInq : []);
       setIsLoading(false);
     } catch (err) {
-      console.error('[useDataStore] Error hydrating data in useDataStore:', err);
+      console.warn('[useDataStore] Error hydrating data in useDataStore:', err);
       setError(err instanceof Error ? err : new Error(String(err)));
       setIsLoading(false);
     }

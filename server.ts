@@ -2453,6 +2453,7 @@ app.get('/api/diagnostics', (req, res) => {
     const hasFirestore = !!firestoreDb;
     const totalProducts = db.products.length;
     const firstProduct = db.products[0] || null;
+    const hasGeminiKey = !!process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY';
 
     res.json({
       status: 'OK',
@@ -2469,6 +2470,10 @@ app.get('/api/diagnostics', (req, res) => {
           category: firstProduct.category,
           price: `₵${firstProduct.priceGHS.toLocaleString()} / $${firstProduct.priceUSD.toLocaleString()}`
         } : null
+      },
+      gemini: {
+        configured: hasGeminiKey,
+        status: hasGeminiKey ? 'Active' : 'Unconfigured'
       },
       api: {
         status: 'Operational',
@@ -2674,56 +2679,55 @@ ${textContent}
 
 // AI Diagnostic Advisor Chatbot API
 app.post('/api/ai/advisor', async (req, res) => {
-  const { message, context, chatHistory } = req.body;
-  if (!message) {
-    return res.status(400).json({ error: 'Message query is required' });
-  }
-
-  // Detect if this is an AI Product Importer request
-  const isProductGen = message.includes('Generate structured JSON format') || message.includes('Respond ONLY with a JSON object');
-
-  if (isProductGen) {
-    const urlMatch = message.match(/(https?:\/\/[^\s"'<>]+)/gi);
-    let crawlerContext = '';
-    let targetUrl = '';
-
-    if (urlMatch && urlMatch.length > 0) {
-      targetUrl = urlMatch[0];
-      console.log(`[Autopilot Importer] Starting server-side proxy crawl for URL: ${targetUrl}`);
-      crawlerContext = await scrapeUrlContent(targetUrl);
+  try {
+    const { message, context, chatHistory } = req.body || {};
+    if (!message) {
+      return res.status(400).json({ success: false, error: 'Message query is required' });
     }
 
-    const client = getGeminiClient();
+    // Detect if this is an AI Product Importer request
+    const isProductGen = message.includes('Generate structured JSON format') || message.includes('Respond ONLY with a JSON object');
 
-    if (!client) {
-      console.log('Gemini API Key missing or default. Executing client-side fallback mockup for product generation.');
-      const mockName = targetUrl 
-        ? targetUrl.split('/').pop()?.replace('.html', '').replace(/-/g, ' ').substring(0, 45) || 'Imported Premium Product'
-        : 'Imported Premium Product';
-      
-      const fallbackResponse = JSON.stringify({
-        name: `${mockName.toUpperCase().replace(/\b\w/g, c => c.toUpperCase())} Elite Edition`,
-        description: `Directly imported from factory supplier on-demand. Optimized for heavy duty and local high-humidity/tropical climate durability in Ghana. Features extreme durability, highly stable voltage input adapters, and standard accessories.`,
-        highlights: [
-          'High efficiency thermal architecture preserves performance',
-          'Premium finish with scratch-resistant space aluminum panel',
-          'Standard international specs with complete local compatibility'
-        ],
-        specs: {
-          'Import Channel': 'AliExpress Autopilot Core',
-          'Condition': 'Brand New Factory Standard',
-          'Operational Class': 'Grade-A Heavy Duty'
-        },
-        tags: ['aliexpress', 'autopilot-import', 'factory-fresh', 'premium-electronics'],
-        category: 'Flagship Gadgets'
-      });
-      return res.json({ success: true, response: fallbackResponse, modelUsed: 'Offline Product Generator Fallback' });
-    }
+    if (isProductGen) {
+      console.log('[DEBUG Autopilot Importer] AI Product generation request received:', message.substring(0, 150));
+      const urlMatch = message.match(/(https?:\/\/[^\s"'<>]+)/gi);
+      let crawlerContext = '';
+      let targetUrl = '';
 
-    try {
-      let finalPrompt = message;
-      if (crawlerContext) {
-        finalPrompt = `
+      if (urlMatch && urlMatch.length > 0) {
+        targetUrl = urlMatch[0];
+        console.log(`[DEBUG Autopilot Importer] Extracted target URL for server crawl: ${targetUrl}`);
+        try {
+          crawlerContext = await scrapeUrlContent(targetUrl);
+          console.log(`[DEBUG Autopilot Importer] Scrape completed successfully. Context length: ${crawlerContext?.length || 0} characters.`);
+        } catch (crawlErr: any) {
+          console.error(`[DEBUG Autopilot Importer] Scrape proxy execution error for URL: ${targetUrl}:`, crawlErr);
+        }
+      }
+
+      // Actionable Scrape Block validation
+      if (targetUrl && (!crawlerContext || crawlerContext.includes('[Direct Fetch Error:') || crawlerContext.includes('[Crawl execution bypassed]'))) {
+        console.warn(`[DEBUG Autopilot Importer] Crawler proxy warning: Scrape blocked or bypassed for target: ${targetUrl}`);
+        return res.status(400).json({
+          success: false,
+          error: `Import Crawler Proxy Blocked:\nUnable to dynamically read contents from "${targetUrl}". The target host appears to be blocking automated requests or requiring active session authentication cookies. To bypass this, please paste the raw product specifications/details into the "Raw Supplier Specifications" text area below, and try again.`
+        });
+      }
+
+      const client = getGeminiClient();
+
+      if (!client) {
+        console.warn('[DEBUG Autopilot Importer] Pre-flight validation failed: GEMINI_API_KEY is missing or set to placeholder.');
+        return res.status(400).json({
+          success: false,
+          error: "Configuration Error:\nYour Gemini API key (GEMINI_API_KEY) is either missing, unconfigured, or using the default placeholder in environment variables. To run live AI-powered catalog synchronization and crawls, please go to the Settings menu (Settings > Secrets) in your AI Studio dashboard, configure a valid GEMINI_API_KEY, and restart the server."
+        });
+      }
+
+      try {
+        let finalPrompt = message;
+        if (crawlerContext) {
+          finalPrompt = `
 We are performing an automatic, server-side product import from a live URL: ${targetUrl}
 Below is the page structure, metadata, and body content scraped through our server proxy:
 ${crawlerContext}
@@ -2733,91 +2737,73 @@ Please analyze this crawled content very carefully to understand the item specs,
 User Request instructions:
 ${message}
 `;
-      }
+        }
 
-      let response;
-      let modelUsed = 'gemini-3.5-flash-grounded';
-      try {
-        // Query Gemini with Google Search tool grounding enabled to query and verify product data automatically
-        response = await client.models.generateContent({
-          model: 'gemini-3.5-flash',
-          contents: finalPrompt,
-          config: {
-            tools: [{ googleSearch: {} }],
-            temperature: 0.2, // lower temperature for high-fidelity schema mapping
-          }
+        let response;
+        let modelUsed = 'gemini-3.5-flash-grounded';
+        try {
+          console.log('[DEBUG Autopilot Importer] Initiating Google Search Grounded model request...');
+          response = await client.models.generateContent({
+            model: 'gemini-3.5-flash',
+            contents: finalPrompt,
+            config: {
+              tools: [{ googleSearch: {} }],
+              temperature: 0.2,
+            }
+          });
+        } catch (searchError: any) {
+          console.log('[DEBUG Autopilot Importer] Search grounding unavailable/exhausted, falling back to direct synthesis. Reason:', searchError?.message || searchError);
+          response = await client.models.generateContent({
+            model: 'gemini-3.5-flash',
+            contents: finalPrompt,
+            config: {
+              temperature: 0.2,
+            }
+          });
+          modelUsed = 'gemini-3.5-flash-direct';
+        }
+
+        console.log(`[DEBUG Autopilot Importer] Success! Synthesized product specification returned via ${modelUsed}.`);
+        return res.json({ success: true, response: response.text, modelUsed });
+      } catch (error: any) {
+        console.error('[DEBUG Autopilot Importer] Critical generation failure:', error);
+        return res.status(400).json({
+          success: false,
+          error: `AI Generation Blocked / Failed:\n${error.message || String(error)}.\nPlease ensure your Google Gemini API key is valid, contains sufficient usage quota, and try importing again.`
         });
-      } catch (searchError: any) {
-        console.log('[Autopilot Importer] Search grounding is unavailable or quota limit reached. Proceeding with offline-first or direct synthesis.');
-        // Fallback to standard text generation without search grounding tool
-        response = await client.models.generateContent({
-          model: 'gemini-3.5-flash',
-          contents: finalPrompt,
-          config: {
-            temperature: 0.2,
-          }
-        });
-        modelUsed = 'gemini-3.5-flash-direct';
       }
-
-      return res.json({ success: true, response: response.text, modelUsed });
-    } catch (error: any) {
-      console.log('[Autopilot Importer] Info: Using default pre-compiled offline specification synthesis.');
-      const mockName = targetUrl 
-        ? targetUrl.split('/').pop()?.replace('.html', '').replace(/-/g, ' ').substring(0, 45) || 'Imported Premium Product'
-        : 'Imported Premium Product';
-      
-      const fallbackResponse = JSON.stringify({
-        name: `${mockName.toUpperCase().replace(/\b\w/g, c => c.toUpperCase())} Elite Edition`,
-        description: `Directly imported from factory supplier on-demand. Optimized for heavy duty and local high-humidity/tropical climate durability in Ghana. Features extreme durability, highly stable voltage input adapters, and standard accessories.`,
-        highlights: [
-          'High efficiency thermal architecture preserves performance',
-          'Premium finish with scratch-resistant space aluminum panel',
-          'Standard international specs with complete local compatibility'
-        ],
-        specs: {
-          'Import Channel': 'AliExpress Autopilot Core',
-          'Condition': 'Brand New Factory Standard',
-          'Operational Class': 'Grade-A Heavy Duty'
-        },
-        tags: ['aliexpress', 'autopilot-import', 'factory-fresh', 'premium-electronics'],
-        category: 'Flagship Gadgets'
-      });
-      return res.json({ success: true, response: fallbackResponse, modelUsed: 'Offline Product Generator Fallback (AI API Unavailable)' });
-    }
-  }
-
-  const client = getGeminiClient();
-
-  if (!client) {
-    // Simulated Offline AI Diagnostic Response with rich technical credibility
-    console.log('Gemini API Key missing or default. Executing client-side fallback simulation.');
-    const msgLower = message.toLowerCase();
-    let reply = "Hello! I am your Immortal Electronics AI Advisor. I am currently running in standby mode. How can I assist you with smartphone purchases, custom repairs, or device valuations in Accra today?";
-
-    if (msgLower.includes('screen') || msgLower.includes('cracked') || msgLower.includes('broken')) {
-      reply = "It sounds like your screen has sustained physical impact. At our Accra workshop, we offer premium replacement panels (OLED/Super Retina) for iPhones and Samsungs. Screen replacement takes 45 minutes and starts around GHS 1,800. I highly advise booking a service online to reserve a certified panel and avoid walk-in delays.";
-    } else if (msgLower.includes('battery') || msgLower.includes('charge') || msgLower.includes('drain')) {
-      reply = "Rapid battery drain in Ghana is often exacerbated by tropical heat (over 30°C). If your battery health is below 80%, a premium lithium-ion swap is highly recommended. Our battery replacements start at GHS 650, take just 30 minutes, and come with a 6-month warranty. Would you like to book a repair or do a trade-in?";
-    } else if (msgLower.includes('water') || msgLower.includes('liquid') || msgLower.includes('rain')) {
-      reply = "CRITICAL ADVICE: If your device has water damage, power it off immediately. Do NOT put it in rice (this blocks air vents with fine starch dust and speeds up interior corrosion). Bring it to Immortal Electronics in Accra as soon as possible. Our water damage ultrasonic treatment and chemical decontamination starts at GHS 1,200.";
-    } else if (msgLower.includes('trade') || msgLower.includes('swap') || msgLower.includes('sell')) {
-      reply = "Our Premium Trade-In Program lets you exchange your older phone for credit towards a brand new model like the iPhone 15 Pro Max or Galaxy S24 Ultra. Just specify your device and condition in our Trade-In tab, and our systems will instantly provide an estimated appraisal value. We pay top market value in GHS!";
-    } else if (msgLower.includes('iphone 15') || msgLower.includes('recommend') || msgLower.includes('buy')) {
-      reply = "For high performance and ultimate longevity, we strongly recommend the iPhone 15 Pro Max (GHS 21,500) or Samsung Galaxy S24 Ultra (GHS 23,000). Both offer exceptional cameras and high resell value in Ghana. If you are on a budget, consider a certified pre-owned flagship from our store, backed by our local warranty!";
     }
 
-    return res.json({ success: true, response: reply, modelUsed: 'Immortal Offline Advisor' });
-  }
+    const client = getGeminiClient();
 
-  try {
-    const formattedHistory = (chatHistory || []).map((chat: any) => ({
-      role: chat.role === 'user' ? 'user' : 'model',
-      parts: [{ text: chat.text }]
-    }));
+    if (!client) {
+      console.log('Gemini API Key missing or default. Executing client-side fallback simulation.');
+      const msgLower = message.toLowerCase();
+      let reply = "Hello! I am your Immortal Electronics AI Advisor. I am currently running in standby mode. How can I assist you with smartphone purchases, custom repairs, or device valuations in Accra today?";
 
-    // Add current context
-    const currentPrompt = `
+      if (msgLower.includes('screen') || msgLower.includes('cracked') || msgLower.includes('broken')) {
+        reply = "It sounds like your screen has sustained physical impact. At our Accra workshop, we offer premium replacement panels (OLED/Super Retina) for iPhones and Samsungs. Screen replacement takes 45 minutes and starts around GHS 1,800. I highly advise booking a service online to reserve a certified panel and avoid walk-in delays.";
+      } else if (msgLower.includes('battery') || msgLower.includes('charge') || msgLower.includes('drain')) {
+        reply = "Rapid battery drain in Ghana is often exacerbated by tropical heat (over 30°C). If your battery health is below 80%, a premium lithium-ion swap is highly recommended. Our battery replacements start at GHS 650, take just 30 minutes, and come with a 6-month warranty. Would you like to book a repair or do a trade-in?";
+      } else if (msgLower.includes('water') || msgLower.includes('liquid') || msgLower.includes('rain')) {
+        reply = "CRITICAL ADVICE: If your device has water damage, power it off immediately. Do NOT put it in rice (this blocks air vents with fine starch dust and speeds up interior corrosion). Bring it to Immortal Electronics in Accra as soon as possible. Our water damage ultrasonic treatment and chemical decontamination starts at GHS 1,200.";
+      } else if (msgLower.includes('trade') || msgLower.includes('swap') || msgLower.includes('sell')) {
+        reply = "Our Premium Trade-In Program lets you exchange your older phone for credit towards a brand new model like the iPhone 15 Pro Max or Galaxy S24 Ultra. Just specify your device and condition in our Trade-In tab, and our systems will instantly provide an estimated appraisal value. We pay top market value in GHS!";
+      } else if (msgLower.includes('iphone 15') || msgLower.includes('recommend') || msgLower.includes('buy')) {
+        reply = "For high performance and ultimate longevity, we strongly recommend the iPhone 15 Pro Max (GHS 21,500) or Samsung Galaxy S24 Ultra (GHS 23,000). Both offer exceptional cameras and high resell value in Ghana. If you are on a budget, consider a certified pre-owned flagship from our store, backed by our local warranty!";
+      }
+
+      return res.json({ success: true, response: reply, modelUsed: 'Immortal Offline Advisor' });
+    }
+
+    try {
+      const formattedHistory = (chatHistory || []).map((chat: any) => ({
+        role: chat.role === 'user' ? 'user' : 'model',
+        parts: [{ text: chat.text }]
+      }));
+
+      // Add current context
+      const currentPrompt = `
 Context details of current customer: ${JSON.stringify(context || {})}
 Customer inquiry: "${message}"
 
@@ -2825,38 +2811,42 @@ Generate a helpful, highly professional, polite response as the "Immortal Electr
 Format numbers nicely in Ghana Cedis (GHS) or USD. Keep it informative, highlighting repairs, e-commerce products, or trade-in services.
 `;
 
-    const chatInstance = client.chats.create({
-      model: 'gemini-3.5-flash',
-      config: {
-        systemInstruction: `You are the ultra-premium AI Assistant and Technical Advisor for "Immortal Electronics" located in Accra, Ghana.
+      const chatInstance = client.chats.create({
+        model: 'gemini-3.5-flash',
+        config: {
+          systemInstruction: `You are the ultra-premium AI Assistant and Technical Advisor for "Immortal Electronics" located in Accra, Ghana.
 You help customers choose the best smartphones (Apple, Samsung, Google Pixel), accessories, laptops, and smart home gadgets.
 You provide instant, expert repair advice for screens, batteries, charging ports, motherboard repairs, and water damage.
 Explain issues clearly, professionally, and quote realistic Ghana Cedi prices. Maintain an encouraging, premium, trustworthy corporate brand tone (comparable to Apple Genius Bar or Samsung Premium care).`,
-        temperature: 0.7
-      },
-      history: formattedHistory
-    });
+          temperature: 0.7
+        },
+        history: formattedHistory
+      });
 
-    const response = await chatInstance.sendMessage({ message: currentPrompt });
-    res.json({ response: response.text, modelUsed: 'gemini-3.5-flash' });
-  } catch (error: any) {
-    console.error('Gemini API execution error, falling back to offline diagnostic simulation:', error);
-    const msgLower = message.toLowerCase();
-    let reply = "Hello! I am your Immortal Electronics AI Advisor. I am currently running in offline backup mode due to high cloud service demand. How can I assist you with smartphone purchases, custom repairs, or device valuations in Accra today?";
+      const response = await chatInstance.sendMessage({ message: currentPrompt });
+      return res.json({ response: response.text, modelUsed: 'gemini-3.5-flash' });
+    } catch (error: any) {
+      console.error('Gemini API execution error, falling back to offline diagnostic simulation:', error);
+      const msgLower = message.toLowerCase();
+      let reply = "Hello! I am your Immortal Electronics AI Advisor. I am currently running in offline backup mode due to high cloud service demand. How can I assist you with smartphone purchases, custom repairs, or device valuations in Accra today?";
 
-    if (msgLower.includes('screen') || msgLower.includes('cracked') || msgLower.includes('broken')) {
-      reply = "It sounds like your screen has sustained physical impact. At our Accra workshop, we offer premium replacement panels (OLED/Super Retina) for iPhones and Samsungs. Screen replacement takes 45 minutes and starts around GHS 1,800. I highly advise booking a service online to reserve a certified panel and avoid walk-in delays.";
-    } else if (msgLower.includes('battery') || msgLower.includes('charge') || msgLower.includes('drain')) {
-      reply = "Rapid battery drain in Ghana is often exacerbated by tropical heat (over 30°C). If your battery health is below 80%, a premium lithium-ion swap is highly recommended. Our battery replacements start at GHS 650, take just 30 minutes, and come with a 6-month warranty. Would you like to book a repair or do a trade-in?";
-    } else if (msgLower.includes('water') || msgLower.includes('liquid') || msgLower.includes('rain')) {
-      reply = "CRITICAL ADVICE: If your device has water damage, power it off immediately. Do NOT put it in rice (this blocks air vents with fine starch dust and speeds up interior corrosion). Bring it to Immortal Electronics in Accra as soon as possible. Our water damage ultrasonic treatment and chemical decontamination starts at GHS 1,200.";
-    } else if (msgLower.includes('trade') || msgLower.includes('swap') || msgLower.includes('sell')) {
-      reply = "Our Premium Trade-In Program lets you exchange your older phone for credit towards a brand new model like the iPhone 15 Pro Max or Galaxy S24 Ultra. Just specify your device and condition in our Trade-In tab, and our systems will instantly provide an estimated appraisal value. We pay top market value in GHS!";
-    } else if (msgLower.includes('iphone 15') || msgLower.includes('recommend') || msgLower.includes('buy')) {
-      reply = "For high performance and ultimate longevity, we strongly recommend the iPhone 15 Pro Max (GHS 21,500) or Samsung Galaxy S24 Ultra (GHS 23,000). Both offer exceptional cameras and high resell value in Ghana. If you are on a budget, consider a certified pre-owned flagship from our store, backed by our local warranty!";
+      if (msgLower.includes('screen') || msgLower.includes('cracked') || msgLower.includes('broken')) {
+        reply = "It sounds like your screen has sustained physical impact. At our Accra workshop, we offer premium replacement panels (OLED/Super Retina) for iPhones and Samsungs. Screen replacement takes 45 minutes and starts around GHS 1,800. I highly advise booking a service online to reserve a certified panel and avoid walk-in delays.";
+      } else if (msgLower.includes('battery') || msgLower.includes('charge') || msgLower.includes('drain')) {
+        reply = "Rapid battery drain in Ghana is often exacerbated by tropical heat (over 30°C). If your battery health is below 80%, a premium lithium-ion swap is highly recommended. Our battery replacements start at GHS 650, take just 30 minutes, and come with a 6-month warranty. Would you like to book a repair or do a trade-in?";
+      } else if (msgLower.includes('water') || msgLower.includes('liquid') || msgLower.includes('rain')) {
+        reply = "CRITICAL ADVICE: If your device has water damage, power it off immediately. Do NOT put it in rice (this blocks air vents with fine starch dust and speeds up interior corrosion). Bring it to Immortal Electronics in Accra as soon as possible. Our water damage ultrasonic treatment and chemical decontamination starts at GHS 1,200.";
+      } else if (msgLower.includes('trade') || msgLower.includes('swap') || msgLower.includes('sell')) {
+        reply = "Our Premium Trade-In Program lets you exchange your older phone for credit towards a brand new model like the iPhone 15 Pro Max or Galaxy S24 Ultra. Just specify your device and condition in our Trade-In tab, and our systems will instantly provide an estimated appraisal value. We pay top market value in GHS!";
+      } else if (msgLower.includes('iphone 15') || msgLower.includes('recommend') || msgLower.includes('buy')) {
+        reply = "For high performance and ultimate longevity, we strongly recommend the iPhone 15 Pro Max (GHS 21,500) or Samsung Galaxy S24 Ultra (GHS 23,000). Both offer exceptional cameras and high resell value in Ghana. If you are on a budget, consider a certified pre-owned flagship from our store, backed by our local warranty!";
+      }
+
+      return res.json({ response: reply, modelUsed: 'Immortal Offline Advisor (AI API Unavailable Fallback)' });
     }
-
-    res.json({ response: reply, modelUsed: 'Immortal Offline Advisor (AI API Unavailable Fallback)' });
+  } catch (outerErr: any) {
+    console.error('Critical outer exception in /api/ai/advisor:', outerErr);
+    return res.status(400).json({ success: false, error: outerErr?.message || String(outerErr) });
   }
 });
 

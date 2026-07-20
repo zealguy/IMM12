@@ -273,6 +273,21 @@ export default function AIProductHub({
     setLocalProducts([...products]);
   }, [products]);
 
+  const [geminiConfigured, setGeminiConfigured] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch('/api/diagnostics')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.gemini) {
+          setGeminiConfigured(data.gemini.configured);
+        }
+      })
+      .catch(err => {
+        console.error('[AI Product Hub] Failed to fetch system diagnostics:', err);
+      });
+  }, []);
+
   // Smart Pricing computations helper
   const calcSmartPricing = (costGHS: number, markupPercent: number) => {
     const profit = Math.round(costGHS * (markupPercent / 100));
@@ -1051,11 +1066,34 @@ export default function AIProductHub({
               {activeTab === 'ai_generator' && (
                 <div className="space-y-6">
                   <div className="bg-[#121216] border border-gray-800 rounded-2xl p-6 space-y-4">
-                    <h3 className="text-sm font-black uppercase tracking-tight text-white font-mono flex items-center gap-1.5">
-                      <Cpu size={14} className="text-amber-500" />
-                      Gemini High-Performance Product Composer
-                    </h3>
-                    <p className="text-[10px] text-gray-500 leading-relaxed">Enter a raw description or manufacturer bullet points. Gemini AI compiles polished titles, descriptive marketing copy (avoiding copying verbatim), structured spec tables, tags and taxonomies.</p>
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-800 pb-4">
+                      <div className="space-y-1">
+                        <h3 className="text-sm font-black uppercase tracking-tight text-white font-mono flex items-center gap-1.5">
+                          <Cpu size={14} className="text-amber-500" />
+                          Gemini High-Performance Product Composer
+                        </h3>
+                        <p className="text-[10px] text-gray-500 leading-relaxed">Enter a raw description or manufacturer bullet points. Gemini AI compiles polished titles, descriptive marketing copy (avoiding copying verbatim), structured spec tables, tags and taxonomies.</p>
+                      </div>
+                      
+                      {/* Connection Diagnostic Badges */}
+                      <div className="flex items-center gap-2">
+                        {geminiConfigured === null ? (
+                          <span className="text-[9px] font-mono font-bold text-gray-500 bg-gray-900 border border-gray-800 px-2.5 py-1 rounded-full uppercase tracking-wider animate-pulse">
+                            Checking Gemini Status...
+                          </span>
+                        ) : geminiConfigured ? (
+                          <span className="text-[9px] font-mono font-bold text-emerald-500 bg-emerald-950/20 border border-emerald-800/60 px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" />
+                            Gemini Autopilot Connected
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-mono font-bold text-amber-500 bg-amber-950/20 border border-amber-800/60 px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5" title="No valid GEMINI_API_KEY detected in environment secrets. Default fallback mode enabled.">
+                            <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
+                            Offline Mock Mode Active
+                          </span>
+                        )}
+                      </div>
+                    </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <div className="space-y-4">
@@ -1177,8 +1215,13 @@ export default function AIProductHub({
                         {aiGenError ? (
                           <div className="flex-1 flex flex-col items-center justify-center p-6 text-rose-500 gap-3">
                             <AlertCircle size={32} className="text-rose-500 animate-bounce" />
-                            <span className="text-xs font-bold font-mono uppercase tracking-wider text-rose-400">Import Blocked / Warning</span>
-                            <p className="text-[11px] leading-relaxed text-gray-400 text-center font-mono">
+                            <span className="text-xs font-bold font-mono uppercase tracking-wider text-rose-400">
+                              {aiGenError.includes('Configuration Error') ? 'Gemini Key Missing' :
+                               aiGenError.includes('Proxy Blocked') ? 'Crawler Proxy Blocked' :
+                               aiGenError.includes('quota') || aiGenError.includes('Quota') ? 'Gemini Quota Exceeded' :
+                               'Import Sync Failure'}
+                            </span>
+                            <p className="text-[11px] leading-relaxed text-gray-400 text-center font-mono whitespace-pre-line">
                               {aiGenError}
                             </p>
                           </div>
