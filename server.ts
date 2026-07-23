@@ -6,7 +6,7 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, GenerateVideosOperation } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 import { Product, RepairRequest, TradeInRequest, Order, BlogPost, Coupon, BulkInquiry, Review } from './src/types.js';
 
@@ -1312,6 +1312,52 @@ const initialProducts: Product[] = [
     isNewArrival: true,
     isBestSeller: true,
     status: 'Published'
+  },
+  {
+    id: "prod-magnetic-octopus-tripod",
+    name: "Magnetic Octopus Suction Tripod with 360° Adjustable Flexible Tripod for Iphone 17 16 15 Android Car Vlog",
+    description: "Compact and portable design Measuring 16.5 x 6 x 5 cm when folded, this flexible tripod is ultra-portable and fits easily in a bag or pocket. Its lightweight build makes it ideal for travel and on-the-go vlogging.\n\n360° adjustable flexible legs Featuring 360° adjustable flexible legs, the PodZillaᵀᴹ adapts to any surface, from desks to car dashboards. This ensures stable positioning for smartphones and other devices.\n\nStrong magnetic suction base Equipped with a neodymium magnet and a strong suction cup, this tripod securely attaches to metal surfaces. It holds your phone firmly during recording or viewing.\n\nCompatible with all smartphones Designed for use with iPhone 17, 16, 15, and most Android smartphones, this tripod supports a wide range of devices. It’s perfect for vloggers and content creators.\n\nMaximum extension of 165 mm The tripod extends up to 165 mm, offering flexible height adjustment for various shooting angles. It’s ideal for both close-up and overhead shots.\n\nSupports up to 500g With a safe load capacity of 500g , it securely holds most smartphones and small accessories. This ensures stability during extended recording sessions.\n\nLightweight and durable construction Weighing only 146g , this tripod is lightweight yet built with aluminum alloy, stainless steel, and silicone for long-lasting performance and reliability",
+    priceGHS: 350,
+    priceUSD: 28,
+    category: "Accessories",
+    brand: "Ulanzi",
+    image: "/src/assets/images/magnetic_octopus_main_1784550027355.jpg",
+    images: [
+      "/src/assets/images/magnetic_octopus_main_1784550027355.jpg",
+      "/src/assets/images/magnetic_octopus_rock_1784550042970.jpg",
+      "/src/assets/images/magnetic_octopus_mirror_1784550056903.jpg",
+      "/src/assets/images/magnetic_octopus_car_1784550068536.jpg",
+      "/src/assets/images/magnetic_octopus_railing_1784550083380.jpg",
+      "/src/assets/images/magnetic_octopus_stand_1784550094998.jpg"
+    ],
+    rating: 5.0,
+    reviewsCount: 0,
+    colors: [
+      "Light Grey",
+      "Red"
+    ],
+    stock: 40,
+    isNew: true,
+    isNewArrival: true,
+    isBestSeller: false,
+    status: "Published",
+    specs: {
+      "High-concerned chemical": "None",
+      "Max Extened Length (mm)": "165mm",
+      "Folded Length (mm)": "165mm",
+      "Package": "Yes",
+      "Model Number": "PZ01",
+      "Use": "Smartphones",
+      "Type": "Flexible Tripod",
+      "Material": "Plastic",
+      "Brand Name": "Ulanzi",
+      "Origin": "Mainland China",
+      "Weight (g)": "146",
+      "Materials": "Silicone, Nylon, Aluminum Alloy, Stainless Steel, Neodymium Magnet",
+      "Folded Size": "16.5*6*5cm / 6.5*2.36*1.97in",
+      "Weight": "146g=10g/ 5.15oz#0.35oz",
+      "Safe Load Capacity": "500g/1.1llb"
+    }
   }
 ];
 
@@ -1449,7 +1495,7 @@ try {
     for (const p of initialProducts) {
       if (!loadedIds.has(p.id)) {
         mergedProducts.push(p);
-      } else if (p.id === 'prod-tf-3120-tripod' || p.id === 'prod-3-axis-gimbal' || p.id === 'prod-anti-spy-glass' || p.id === 'prod-dust-free-glass' || p.id === 'prod-usb-hub-8in2' || p.id === 'prod-usb-hub-rj45' || p.id === 'prod-sandisk-sd-card' || p.id === 'prod-aura-active-smartwatch' || p.id === 'prod-north-edge-laker' || p.id === 'prod-north-edge-mars' || p.id === 'prod-minifocus-pocket-rgb' || p.id === 'prod-mark-fairwhale-5031' || p.id === 'prod-nubia-z80-ultra') {
+      } else if (p.id === 'prod-tf-3120-tripod' || p.id === 'prod-3-axis-gimbal' || p.id === 'prod-anti-spy-glass' || p.id === 'prod-dust-free-glass' || p.id === 'prod-usb-hub-8in2' || p.id === 'prod-usb-hub-rj45' || p.id === 'prod-sandisk-sd-card' || p.id === 'prod-aura-active-smartwatch' || p.id === 'prod-north-edge-laker' || p.id === 'prod-north-edge-mars' || p.id === 'prod-minifocus-pocket-rgb' || p.id === 'prod-mark-fairwhale-5031' || p.id === 'prod-nubia-z80-ultra' || p.id === 'prod-magnetic-octopus-tripod') {
         // Force-update the product fields if it already exists in the local JSON
         const existing = mergedProducts.find(item => item.id === p.id);
         if (existing) {
@@ -1752,6 +1798,20 @@ async function _initializeAndLoadFromFirestoreInternal() {
       nubiaProduct.specs = nubiaSeed.specs;
       nubiaProduct.brand = nubiaSeed.brand;
       await setDoc(doc(firestoreDb, 'products', 'prod-nubia-z80-ultra'), nubiaProduct);
+    }
+
+    // Force-update Magnetic Octopus Tripod in Firestore
+    const octopusProduct = products.find(p => p.id === 'prod-magnetic-octopus-tripod');
+    const octopusSeed = initialProducts.find(p => p.id === 'prod-magnetic-octopus-tripod');
+    if (octopusProduct && octopusSeed && (octopusProduct.image !== octopusSeed.image || octopusProduct.name !== octopusSeed.name)) {
+      console.log('[Firestore] Force-updating Magnetic Octopus Tripod with newly updated specs...');
+      octopusProduct.name = octopusSeed.name;
+      octopusProduct.description = octopusSeed.description;
+      octopusProduct.image = octopusSeed.image;
+      octopusProduct.images = octopusSeed.images;
+      octopusProduct.specs = octopusSeed.specs;
+      octopusProduct.brand = octopusSeed.brand;
+      await setDoc(doc(firestoreDb, 'products', 'prod-magnetic-octopus-tripod'), octopusProduct);
     }
   }
 
@@ -2837,20 +2897,78 @@ Generate a helpful, highly professional, polite response as the "Immortal Electr
 Format numbers nicely in Ghana Cedis (GHS) or USD. Keep it informative, highlighting repairs, e-commerce products, or trade-in services.
 `;
 
-      const chatInstance = client.chats.create({
-        model: 'gemini-3.5-flash',
-        config: {
-          systemInstruction: `You are the ultra-premium AI Assistant and Technical Advisor for "Immortal Electronics" located in Accra, Ghana.
+      // Detect grounding mode dynamically
+      let useSearch = false;
+      let useMaps = false;
+      const msgLower = message.toLowerCase();
+
+      if (req.body.useSearch || msgLower.includes('search') || msgLower.includes('google') || msgLower.includes('web') || msgLower.includes('latest') || msgLower.includes('price') || msgLower.includes('trend') || msgLower.includes('vs') || msgLower.includes('compare')) {
+        useSearch = true;
+      } else if (req.body.useMaps || msgLower.includes('where') || msgLower.includes('location') || msgLower.includes('address') || msgLower.includes('map') || msgLower.includes('directions') || msgLower.includes('branch') || msgLower.includes('accra') || msgLower.includes('shop') || msgLower.includes('store')) {
+        useMaps = true;
+      }
+
+      let responseText = '';
+      let modelUsed = 'gemini-3.5-flash';
+
+      if (useSearch) {
+        console.log('[Advisor] Dynamic Search Grounding Active.');
+        const response = await client.models.generateContent({
+          model: 'gemini-3.5-flash',
+          contents: [
+            ...formattedHistory.flatMap((h: any) => h.parts.map((p: any) => p.text)),
+            currentPrompt
+          ],
+          config: {
+            systemInstruction: `You are the ultra-premium AI Assistant and Technical Advisor for "Immortal Electronics" located in Accra, Ghana.
+You help customers choose the best smartphones (Apple, Samsung, Google Pixel), accessories, laptops, and smart home gadgets.
+You provide instant, expert repair advice for screens, batteries, charging ports, motherboard repairs, and water damage.
+Explain issues clearly, professionally, and quote realistic Ghana Cedi prices. Maintain an encouraging, premium, trustworthy corporate brand tone (comparable to Apple Genius Bar or Samsung Premium care).
+Use Google Search Grounding to provide accurate up-to-date specs, reviews, or Accra pricing trends. Include relevant source titles/urls if requested.`,
+            tools: [{ googleSearch: {} }],
+            temperature: 0.5
+          }
+        });
+        responseText = response.text || '';
+        modelUsed = 'gemini-3.5-flash (Search Grounded)';
+      } else if (useMaps) {
+        console.log('[Advisor] Dynamic Maps Grounding Active.');
+        const response = await client.models.generateContent({
+          model: 'gemini-3.5-flash',
+          contents: [
+            ...formattedHistory.flatMap((h: any) => h.parts.map((p: any) => p.text)),
+            currentPrompt
+          ],
+          config: {
+            systemInstruction: `You are the ultra-premium AI Assistant and Technical Advisor for "Immortal Electronics" located in Accra, Ghana.
+You help customers choose the best smartphones (Apple, Samsung, Google Pixel), accessories, laptops, and smart home gadgets.
+You provide instant, expert repair advice for screens, batteries, charging ports, motherboard repairs, and water damage.
+Explain issues clearly, professionally, and quote realistic Ghana Cedi prices. Maintain an encouraging, premium, trustworthy corporate brand tone (comparable to Apple Genius Bar or Samsung Premium care).
+Use Google Maps Grounding to specify correct Accra locations, branches, landmarks, and routes. Provide reference coordinates or map links if available.`,
+            tools: [{ googleMaps: {} }],
+            temperature: 0.5
+          }
+        });
+        responseText = response.text || '';
+        modelUsed = 'gemini-3.5-flash (Maps Grounded)';
+      } else {
+        const chatInstance = client.chats.create({
+          model: 'gemini-3.5-flash',
+          config: {
+            systemInstruction: `You are the ultra-premium AI Assistant and Technical Advisor for "Immortal Electronics" located in Accra, Ghana.
 You help customers choose the best smartphones (Apple, Samsung, Google Pixel), accessories, laptops, and smart home gadgets.
 You provide instant, expert repair advice for screens, batteries, charging ports, motherboard repairs, and water damage.
 Explain issues clearly, professionally, and quote realistic Ghana Cedi prices. Maintain an encouraging, premium, trustworthy corporate brand tone (comparable to Apple Genius Bar or Samsung Premium care).`,
-          temperature: 0.7
-        },
-        history: formattedHistory
-      });
+            temperature: 0.7
+          },
+          history: formattedHistory
+        });
 
-      const response = await chatInstance.sendMessage({ message: currentPrompt });
-      return res.json({ response: response.text, modelUsed: 'gemini-3.5-flash' });
+        const response = await chatInstance.sendMessage({ message: currentPrompt });
+        responseText = response.text || '';
+      }
+
+      return res.json({ response: responseText, modelUsed });
     } catch (error: any) {
       console.error('Gemini API execution error, falling back to offline diagnostic simulation:', error);
       const msgLower = message.toLowerCase();
@@ -2873,6 +2991,199 @@ Explain issues clearly, professionally, and quote realistic Ghana Cedi prices. M
   } catch (outerErr: any) {
     console.error('Critical outer exception in /api/ai/advisor:', outerErr);
     return res.status(400).json({ success: false, error: outerErr?.message || String(outerErr) });
+  }
+});
+
+// Google Search Grounding Endpoint
+app.post('/api/ai/search-grounding', async (req, res) => {
+  try {
+    const { prompt } = req.body || {};
+    if (!prompt) return res.status(400).json({ success: false, error: 'Prompt is required' });
+    const client = getGeminiClient();
+    if (!client) return res.status(400).json({ success: false, error: 'Gemini Client not initialized. Please configure API key.' });
+
+    console.log('[Search Grounding] Generating content for prompt:', prompt);
+    const response = await client.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: prompt,
+      config: {
+        tools: [{ googleSearch: {} }],
+        temperature: 0.5,
+      },
+    });
+
+    const text = response.text || '';
+    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+    const webSources = chunks
+      .filter((c: any) => c.web)
+      .map((c: any) => ({ title: c.web.title, uri: c.web.uri }));
+
+    return res.json({ success: true, text, sources: webSources });
+  } catch (error: any) {
+    console.error('Error in /api/ai/search-grounding:', error);
+    return res.status(500).json({ success: false, error: error.message || String(error) });
+  }
+});
+
+// Google Maps Grounding Endpoint
+app.post('/api/ai/maps-grounding', async (req, res) => {
+  try {
+    const { prompt } = req.body || {};
+    if (!prompt) return res.status(400).json({ success: false, error: 'Prompt is required' });
+    const client = getGeminiClient();
+    if (!client) return res.status(400).json({ success: false, error: 'Gemini Client not initialized. Please configure API key.' });
+
+    console.log('[Maps Grounding] Generating location info for prompt:', prompt);
+    const response = await client.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: prompt,
+      config: {
+        tools: [{ googleMaps: {} }],
+        temperature: 0.5,
+      },
+    });
+
+    const text = response.text || '';
+    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+    const mapSources = chunks
+      .filter((c: any) => c.web)
+      .map((c: any) => ({ title: c.web.title, uri: c.web.uri }));
+
+    return res.json({ success: true, text, sources: mapSources });
+  } catch (error: any) {
+    console.error('Error in /api/ai/maps-grounding:', error);
+    return res.status(500).json({ success: false, error: error.message || String(error) });
+  }
+});
+
+// AI High-Quality Image Generator Endpoint (Supports Aspect Ratios & Res)
+app.post('/api/ai/generate-image', async (req, res) => {
+  try {
+    const { prompt, model, aspectRatio, imageSize } = req.body || {};
+    if (!prompt) return res.status(400).json({ success: false, error: 'Prompt is required' });
+    const client = getGeminiClient();
+    if (!client) return res.status(400).json({ success: false, error: 'Gemini Client not initialized. Please configure API key.' });
+
+    const targetModel = model || 'gemini-3.1-flash-image-preview';
+    console.log(`[Image Generator] Calling model ${targetModel} with aspect ratio ${aspectRatio || '1:1'} and image size ${imageSize || '1K'}`);
+
+    const response = await client.models.generateContent({
+      model: targetModel,
+      contents: { parts: [{ text: prompt }] },
+      config: {
+        imageConfig: {
+          aspectRatio: aspectRatio || "1:1",
+          imageSize: imageSize || "1K"
+        }
+      }
+    });
+
+    let base64Image = '';
+    const parts = response.candidates?.[0]?.content?.parts || [];
+    for (const part of parts) {
+      if (part.inlineData && part.inlineData.data) {
+        base64Image = part.inlineData.data;
+        break;
+      }
+    }
+
+    if (!base64Image) {
+      return res.status(500).json({ success: false, error: 'Model response did not contain image data parts. Please check your prompt or API restrictions.' });
+    }
+
+    return res.json({ success: true, imageUrl: `data:image/png;base64,${base64Image}` });
+  } catch (error: any) {
+    console.error('Error in /api/ai/generate-image:', error);
+    return res.status(500).json({ success: false, error: error.message || String(error) });
+  }
+});
+
+// AI Veo Video Animator Endpoint
+app.post('/api/ai/generate-video', async (req, res) => {
+  try {
+    const { prompt, imageBase64, imageMimeType, aspectRatio } = req.body || {};
+    const client = getGeminiClient();
+    if (!client) return res.status(400).json({ success: false, error: 'Gemini Client not initialized. Please configure API key.' });
+
+    console.log(`[Video Generator] Initiating Veo Video Generation (veo-3.1-fast-generate-preview) with aspect ratio ${aspectRatio || '16:9'}`);
+
+    const payload: any = {
+      model: 'veo-3.1-fast-generate-preview',
+      config: {
+        numberOfVideos: 1,
+        resolution: '720p',
+        aspectRatio: aspectRatio || '16:9'
+      }
+    };
+
+    if (prompt) {
+      payload.prompt = prompt;
+    }
+
+    if (imageBase64) {
+      const pureBase64 = imageBase64.includes('base64,') ? imageBase64.split('base64,')[1] : imageBase64;
+      payload.image = {
+        imageBytes: pureBase64,
+        mimeType: imageMimeType || 'image/png'
+      };
+    }
+
+    const operation = await client.models.generateVideos(payload);
+    return res.json({ success: true, operationName: operation.name });
+  } catch (error: any) {
+    console.error('Error in /api/ai/generate-video:', error);
+    return res.status(500).json({ success: false, error: error.message || String(error) });
+  }
+});
+
+// AI Video Generation Polling Status Endpoint
+app.post('/api/ai/video-status', async (req, res) => {
+  try {
+    const { operationName } = req.body || {};
+    if (!operationName) return res.status(400).json({ success: false, error: 'OperationName is required' });
+
+    const client = getGeminiClient();
+    if (!client) return res.status(400).json({ success: false, error: 'Gemini Client not initialized.' });
+
+    const op = new GenerateVideosOperation();
+    op.name = operationName;
+    const updated = await client.operations.getVideosOperation({ operation: op });
+    return res.json({ success: true, done: updated.done, error: updated.error });
+  } catch (error: any) {
+    console.error('Error in /api/ai/video-status:', error);
+    return res.status(500).json({ success: false, error: error.message || String(error) });
+  }
+});
+
+// AI Video Download Endpoint (Streams downloaded video from Gemini backend safely)
+app.post('/api/ai/video-download', async (req, res) => {
+  try {
+    const { operationName } = req.body || {};
+    if (!operationName) return res.status(400).json({ success: false, error: 'OperationName is required' });
+
+    const client = getGeminiClient();
+    if (!client) return res.status(400).json({ success: false, error: 'Gemini Client not initialized.' });
+
+    const op = new GenerateVideosOperation();
+    op.name = operationName;
+    const updated = await client.operations.getVideosOperation({ operation: op });
+    const uri = updated.response?.generatedVideos?.[0]?.video?.uri;
+    if (!uri) {
+      return res.status(400).json({ success: false, error: 'Video URI not found on completed operation' });
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    const videoRes = await fetch(uri, {
+      headers: { 'x-goog-api-key': apiKey || '' },
+    });
+
+    res.setHeader('Content-Type', 'video/mp4');
+    const arrayBuffer = await videoRes.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    res.send(buffer);
+  } catch (error: any) {
+    console.error('Error in /api/ai/video-download:', error);
+    return res.status(500).json({ success: false, error: error.message || String(error) });
   }
 });
 

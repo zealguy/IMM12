@@ -36,34 +36,35 @@ export default function Hero({ onShopClick, onRepairClick, onWhatsAppClick, onVi
           {/* Text Content */}
           <div className="sm:text-center md:max-w-2xl md:mx-auto lg:col-span-7 lg:text-left">
             <div className="inline-flex items-center space-x-2 bg-[#0066FF]/10 text-[#0066FF] px-3 py-1 rounded-full border border-[#0066FF]/20 text-xs font-mono mb-6 animate-pulse">
-              <Shield className="w-3.5 h-3.5" />
-              <span>Accra's Certified Flagship Hub & Support Care</span>
+              <span className="text-amber-400">⚡</span>
+              <span>HP OMEN | iPhone | Samsung Galaxy</span>
             </div>
             
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-sans font-extrabold tracking-tight">
-              <span className="block text-white">Your Trusted Destination for</span>
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#0066FF] via-[#00CCFF] to-amber-400">
-                Smartphones, Gadgets & Repairs
+              <span className="block text-white uppercase tracking-tight">THE FUTURE OF</span>
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#0066FF] via-[#00CCFF] to-amber-400 uppercase tracking-tight">
+                TECHNOLOGY STARTS HERE
               </span>
             </h1>
             
-            <p className="mt-4 text-base sm:text-lg text-gray-300 max-w-xl mx-auto lg:mx-0">
-              Discover the latest flagship iPhones, Galaxies, and premium computing gear with high-speed local warranty. Experience Accra's premier, technician-led diagnostic and motherboard repair service.
-            </p>
+            <div className="mt-4 text-base sm:text-lg text-gray-300 max-w-xl mx-auto lg:mx-0 space-y-2">
+              <p className="font-bold text-white">Premium New & Pre-Owned Smartphones, Laptops, Gaming PCs</p>
+              <p className="text-gray-400">Professional Device Repairs & Genuine Accessories</p>
+            </div>
 
             <div className="mt-8 sm:max-w-lg sm:mx-auto lg:mx-0 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <button
                 onClick={onShopClick}
                 id="hero-cta-shop"
-                className="w-full sm:w-auto px-8 py-4 rounded-xl font-medium bg-[#0066FF] hover:bg-[#0055DD] text-white shadow-lg shadow-[#0066FF]/30 hover:scale-105 active:scale-95 transition-all duration-200"
+                className="w-full sm:w-auto px-8 py-4 rounded-xl font-semibold bg-[#0066FF] hover:bg-[#0055DD] text-white shadow-lg shadow-[#0066FF]/30 hover:scale-105 active:scale-95 transition-all duration-200 uppercase tracking-wider text-xs"
               >
-                Shop Gadgets
+                Shop Now
               </button>
               
               <button
                 onClick={onRepairClick}
                 id="hero-cta-repair"
-                className="w-full sm:w-auto px-8 py-4 rounded-xl font-medium bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-md hover:scale-105 active:scale-95 transition-all duration-200"
+                className="w-full sm:w-auto px-8 py-4 rounded-xl font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-md hover:scale-105 active:scale-95 transition-all duration-200 uppercase tracking-wider text-xs"
               >
                 Book a Repair
               </button>
@@ -73,8 +74,13 @@ export default function Hero({ onShopClick, onRepairClick, onWhatsAppClick, onVi
                 id="hero-cta-whatsapp"
                 className="w-full sm:w-auto px-8 py-4 rounded-xl font-medium bg-[#25D366] hover:bg-[#20ba5a] text-white shadow-lg shadow-green-500/20 flex items-center justify-center space-x-2 hover:scale-105 active:scale-95 transition-all duration-200"
               >
-                <span>💬 WhatsApp Us</span>
+                <span>💬 WhatsApp</span>
               </button>
+            </div>
+
+            <div className="mt-6 flex items-center justify-center lg:justify-start space-x-2 bg-white/5 py-1.5 px-3 rounded-lg border border-white/10 w-fit mx-auto lg:mx-0">
+              <span className="text-amber-400 text-sm">★★★★★</span>
+              <span className="text-xs font-semibold text-gray-300">Trusted by Customers Across Ghana</span>
             </div>
 
             {/* Quick Metrics */}

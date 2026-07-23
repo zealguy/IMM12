@@ -268,6 +268,40 @@ export default function AIProductHub({
   ]);
   const [draggedBlockIndex, setDraggedBlockIndex] = useState<number | null>(null);
 
+  // --- TAB: AI MEDIA & GROUNDING LAB STATES ---
+  const [studioActiveSection, setStudioActiveSection] = useState<'search' | 'maps' | 'image' | 'video'>('search');
+  
+  // Search Grounding
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchingGround, setIsSearchingGround] = useState(false);
+  const [searchResult, setSearchResult] = useState<{ text: string; sources: Array<{ title: string; uri: string }> } | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
+
+  // Maps Grounding
+  const [mapsQuery, setMapsQuery] = useState('');
+  const [isMapsGrounding, setIsMapsGrounding] = useState(false);
+  const [mapsResult, setMapsResult] = useState<{ text: string; sources: Array<{ title: string; uri: string }> } | null>(null);
+  const [mapsError, setMapsError] = useState<string | null>(null);
+
+  // Image Gen
+  const [imgPrompt, setImgPrompt] = useState('');
+  const [imgModel, setImgModel] = useState<'gemini-3-pro-image-preview' | 'gemini-3.1-flash-image-preview'>('gemini-3-pro-image-preview');
+  const [imgSize, setImgSize] = useState<'1K' | '2K' | '4K'>('1K');
+  const [imgAspect, setImgAspect] = useState<'1:1' | '2:3' | '3:2' | '3:4' | '4:3' | '9:16' | '16:9' | '21:9'>('16:9');
+  const [isGeneratingImg, setIsGeneratingImg] = useState(false);
+  const [generatedImgUrl, setGeneratedImgUrl] = useState<string | null>(null);
+  const [imgError, setImgError] = useState<string | null>(null);
+
+  // Video Gen (Veo)
+  const [videoPrompt, setVideoPrompt] = useState('');
+  const [videoAspect, setVideoAspect] = useState<'16:9' | '9:16'>('16:9');
+  const [videoSourceImage, setVideoSourceImage] = useState<string | null>(null);
+  const [videoSourceImageMime, setVideoSourceImageMime] = useState('image/png');
+  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
+  const [videoStatusLogs, setVideoStatusLogs] = useState<string[]>([]);
+  const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
+  const [videoError, setVideoError] = useState<string | null>(null);
+
   // Sync products list locally on updates
   useEffect(() => {
     setLocalProducts([...products]);
@@ -287,6 +321,197 @@ export default function AIProductHub({
         console.error('[AI Product Hub] Failed to fetch system diagnostics:', err);
       });
   }, []);
+
+  // --- AI STUDIO LAB ACTIONS ---
+  
+  // 1. Google Search Grounding Action
+  const handleSearchGroundingRun = async (queryToUse?: string) => {
+    const q = queryToUse || searchQuery;
+    if (!q.trim()) return;
+    setIsSearchingGround(true);
+    setSearchError(null);
+    setSearchResult(null);
+    try {
+      const response = await fetch('/api/ai/search-grounding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: q })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setSearchResult({ text: data.text, sources: data.sources || [] });
+      } else {
+        setSearchError(data.error || 'Failed to complete search grounded inquiry.');
+      }
+    } catch (err: any) {
+      setSearchError(err.message || String(err));
+    } finally {
+      setIsSearchingGround(false);
+    }
+  };
+
+  // 2. Google Maps Grounding Action
+  const handleMapsGroundingRun = async (queryToUse?: string) => {
+    const q = queryToUse || mapsQuery;
+    if (!q.trim()) return;
+    setIsMapsGrounding(true);
+    setMapsError(null);
+    setMapsResult(null);
+    try {
+      const response = await fetch('/api/ai/maps-grounding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: q })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setMapsResult({ text: data.text, sources: data.sources || [] });
+      } else {
+        setMapsError(data.error || 'Failed to complete maps grounded inquiry.');
+      }
+    } catch (err: any) {
+      setMapsError(err.message || String(err));
+    } finally {
+      setIsMapsGrounding(false);
+    }
+  };
+
+  // 3. AI Image Generation Action
+  const handleImageGenerationRun = async () => {
+    if (!imgPrompt.trim()) return;
+    setIsGeneratingImg(true);
+    setImgError(null);
+    setGeneratedImgUrl(null);
+    try {
+      const response = await fetch('/api/ai/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: imgPrompt,
+          model: imgModel,
+          aspectRatio: imgAspect,
+          imageSize: imgSize
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setGeneratedImgUrl(data.imageUrl);
+      } else {
+        setImgError(data.error || 'Failed to generate image.');
+      }
+    } catch (err: any) {
+      setImgError(err.message || String(err));
+    } finally {
+      setIsGeneratingImg(false);
+    }
+  };
+
+  // 4. AI Veo Video Generation Action
+  const handleVideoGenerationRun = async () => {
+    if (!videoPrompt.trim() && !videoSourceImage) {
+      setVideoError('Please enter a description prompt or upload a source image to animate.');
+      return;
+    }
+    setIsGeneratingVideo(true);
+    setVideoError(null);
+    setGeneratedVideoUrl(null);
+    setVideoStatusLogs(['Initializing Veo video model thread...']);
+
+    try {
+      // Step A: Trigger Video Generation Operation
+      const triggerRes = await fetch('/api/ai/generate-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: videoPrompt,
+          imageBase64: videoSourceImage,
+          imageMimeType: videoSourceImageMime,
+          aspectRatio: videoAspect
+        })
+      });
+      const triggerData = await triggerRes.json();
+      if (!triggerData.success) {
+        throw new Error(triggerData.error || 'Failed to trigger video generation operation');
+      }
+
+      const operationName = triggerData.operationName;
+      setVideoStatusLogs(prev => [...prev, `Operation scheduled: ${operationName}`, 'Veo rendering pipelines active. Polling status...']);
+
+      // Step B: Polling status until 'done'
+      let isDone = false;
+      let attempts = 0;
+      const maxAttempts = 60; // 5 minutes max (5 seconds polling interval)
+      
+      while (!isDone && attempts < maxAttempts) {
+        attempts++;
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        
+        setVideoStatusLogs(prev => [
+          ...prev, 
+          `[${attempts * 5}s] Checking pipeline thread status...`
+        ]);
+
+        const statusRes = await fetch('/api/ai/video-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ operationName })
+        });
+        const statusData = await statusRes.json();
+        
+        if (!statusData.success) {
+          throw new Error(statusData.error || 'Failed to poll video generation operation status');
+        }
+
+        if (statusData.error) {
+          throw new Error(statusData.error.message || 'Operation failed during video rendering');
+        }
+
+        if (statusData.done) {
+          isDone = true;
+          setVideoStatusLogs(prev => [...prev, 'Veo pipeline completed rendering! Fetching video file streams...']);
+          
+          // Step C: Stream download video file back from backend proxy
+          const downloadRes = await fetch('/api/ai/video-download', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ operationName })
+          });
+          
+          if (!downloadRes.ok) {
+            throw new Error('Failed to download compiled video file from server stream.');
+          }
+
+          const blob = await downloadRes.blob();
+          const localUrl = URL.createObjectURL(blob);
+          setGeneratedVideoUrl(localUrl);
+          setVideoStatusLogs(prev => [...prev, 'Success! Video compiled and loaded in media player.']);
+          break;
+        }
+      }
+
+      if (!isDone) {
+        throw new Error('Video rendering exceeded maximum polling limit (5 minutes). Please retry.');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setVideoError(err.message || String(err));
+      setVideoStatusLogs(prev => [...prev, `[ERROR] ${err.message || String(err)}`]);
+    } finally {
+      setIsGeneratingVideo(false);
+    }
+  };
+
+  const handleVideoImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setVideoSourceImageMime(file.type);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setVideoSourceImage(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Smart Pricing computations helper
   const calcSmartPricing = (costGHS: number, markupPercent: number) => {
@@ -786,6 +1011,7 @@ export default function AIProductHub({
                 { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
                 { id: 'import_center', label: 'Import Center', icon: Upload },
                 { id: 'ai_generator', label: 'AI Product Generator', icon: Cpu },
+                { id: 'ai_studio', label: 'AI Media & Grounding Lab', icon: Sparkles },
                 { id: 'import_history', label: 'Import History', icon: History },
                 { id: 'review_queue', label: 'Review Queue', icon: Inbox },
                 { id: 'pending_products', label: 'Pending Products', icon: Sliders },
@@ -1325,13 +1551,632 @@ export default function AIProductHub({
                         {aiGenResult && (
                           <button 
                             onClick={handleAcceptAiGeneratedProduct}
-                            className="w-full p-2 bg-green-500 hover:bg-green-600 text-black rounded-xl font-bold font-mono text-[11px] transition text-center uppercase"
+                            className="w-full mt-4 p-2 bg-green-500 hover:bg-green-600 text-black rounded-xl font-bold font-mono text-[11px] transition text-center uppercase"
                           >
                             Accept & Add to Review Queue
                           </button>
                         )}
                       </div>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB: AI STUDIO SUITE (MEDIA & GROUNDING LAB) */}
+              {activeTab === 'ai_studio' && (
+                <div className="space-y-6">
+                  {/* Outer Lab Frame */}
+                  <div className="bg-[#121216] border border-gray-800 rounded-2xl p-6 space-y-6 animate-fadeIn">
+                    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-800 pb-4">
+                      <div className="space-y-1">
+                        <h3 className="text-sm font-black uppercase tracking-tight text-white font-mono flex items-center gap-1.5">
+                          <Sparkles size={14} className="text-amber-500 animate-pulse" />
+                          AI Media & Grounding Lab Studio
+                        </h3>
+                        <p className="text-[10px] text-gray-400 leading-relaxed font-mono">
+                          Provision up-to-the-minute web information, geographical telemetry, studio-quality images, and cinematic Veo animations.
+                        </p>
+                      </div>
+
+                      {/* Studio Tab selectors */}
+                      <div className="flex bg-black/40 border border-gray-800 p-1 rounded-xl">
+                        {[
+                          { id: 'search', label: 'Search Grounding', icon: Globe },
+                          { id: 'maps', label: 'Maps Grounding', icon: Navigation },
+                          { id: 'image', label: 'Image Creator', icon: Image },
+                          { id: 'video', label: 'Veo Video Animator', icon: Play }
+                        ].map((sect) => {
+                          const IconComp = sect.icon;
+                          const isSectActive = studioActiveSection === sect.id;
+                          return (
+                            <button
+                              key={sect.id}
+                              onClick={() => setStudioActiveSection(sect.id as any)}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold font-mono tracking-tight transition-all ${
+                                isSectActive
+                                  ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/10'
+                                  : 'text-gray-400 hover:text-white'
+                              }`}
+                            >
+                              <IconComp size={11} />
+                              <span>{sect.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Section 1: Google Search Grounding */}
+                    {studioActiveSection === 'search' && (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Control panel */}
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <label className="text-[10px] uppercase font-mono font-bold tracking-wider text-amber-500 block">[1] Query Specifications</label>
+                            <span className="text-[10px] text-gray-500 leading-normal block">
+                              Enter a query requiring real-time web retrieval. Gemini will crawl Google Search live indices and construct factual answers with cited URLs.
+                            </span>
+                          </div>
+
+                          <div className="space-y-3">
+                            <textarea
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              placeholder="e.g. Compare the wholesale and retail prices of premium Apple iPhone 15 Pro Max in Accra shops today."
+                              rows={4}
+                              className="w-full bg-[#09090D] border border-gray-800 focus:border-amber-500 text-xs text-white p-3.5 rounded-xl font-mono focus:outline-none resize-none placeholder-gray-600"
+                            />
+
+                            <button
+                              onClick={() => handleSearchGroundingRun()}
+                              disabled={isSearchingGround}
+                              className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-black rounded-xl font-bold font-mono text-[11px] uppercase transition flex items-center justify-center gap-1.5"
+                            >
+                              {isSearchingGround ? (
+                                <>
+                                  <RefreshCw size={12} className="animate-spin text-black" />
+                                  <span>Crawling Web Indices...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Globe size={12} className="text-black" />
+                                  <span>Run Search Grounded Query</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+
+                          {/* Quick Suggestions */}
+                          <div className="space-y-2 pt-2">
+                            <span className="text-[9px] uppercase font-mono font-bold text-gray-500 block">Suggested Prompts:</span>
+                            <div className="flex flex-wrap gap-2">
+                              {[
+                                "Price trends for Samsung S24 Ultra in Accra",
+                                "iPhone 15 Pro Max vs Pro specs differences",
+                                "Global smartphone market share 2026",
+                                "Official warranty duration for brand new Apple products"
+                              ].map((suggest, idx) => (
+                                <button
+                                  key={idx}
+                                  onClick={() => {
+                                    setSearchQuery(suggest);
+                                    handleSearchGroundingRun(suggest);
+                                  }}
+                                  className="text-[9px] font-mono bg-black/30 border border-gray-850 hover:border-gray-700 hover:bg-black/50 px-2 py-1 rounded text-gray-400"
+                                >
+                                  {suggest}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Output panel */}
+                        <div className="bg-black/30 border border-gray-850 rounded-2xl p-4 flex flex-col justify-between min-h-[300px]">
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between border-b border-gray-850 pb-2">
+                              <span className="text-[10px] font-mono uppercase font-bold text-gray-400">[Output telemetry]</span>
+                              {isSearchingGround && <span className="text-[9px] font-mono text-amber-500 animate-pulse">Retrieved Grounding Active</span>}
+                            </div>
+
+                            {searchError && (
+                              <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl font-mono text-[10px]">
+                                {searchError}
+                              </div>
+                            )}
+
+                            {searchResult ? (
+                              <div className="space-y-4 text-xs">
+                                <div className="text-gray-300 leading-relaxed whitespace-pre-wrap font-mono">
+                                  {searchResult.text}
+                                </div>
+
+                                {searchResult.sources && searchResult.sources.length > 0 && (
+                                  <div className="pt-4 border-t border-gray-850 space-y-2">
+                                    <span className="text-[9px] font-mono uppercase font-bold text-amber-500 block">Verified Google Search Sources:</span>
+                                    <div className="grid grid-cols-1 gap-1.5">
+                                      {searchResult.sources.map((src, sIdx) => (
+                                        <a
+                                          key={sIdx}
+                                          href={src.uri}
+                                          target="_blank"
+                                          rel="referrer noopener"
+                                          className="flex items-center gap-1 text-[9px] font-mono text-blue-400 hover:underline hover:text-blue-300 truncate"
+                                        >
+                                          <ArrowUpRight size={10} />
+                                          <span>{src.title || src.uri}</span>
+                                        </a>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ) : !isSearchingGround ? (
+                              <div className="flex flex-col items-center justify-center py-16 text-gray-600 font-mono text-center space-y-2">
+                                <Globe size={20} className="text-gray-800" />
+                                <span className="text-[10px] font-bold">Search Grounding Idle</span>
+                                <p className="text-[8px] max-w-xs leading-normal">Results are augmented with factual source data directly from Google Search engine.</p>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center py-16 text-amber-500 font-mono text-center space-y-2">
+                                <RefreshCw size={24} className="animate-spin text-amber-500" />
+                                <span className="text-[10px] font-bold animate-pulse">Assembling live indexes...</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Section 2: Google Maps Grounding */}
+                    {studioActiveSection === 'maps' && (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Control panel */}
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <label className="text-[10px] uppercase font-mono font-bold tracking-wider text-amber-500 block">[1] Location & Directions Specifications</label>
+                            <span className="text-[10px] text-gray-500 leading-normal block">
+                              Query routes, landmarks, branch operating hours, and location data in Ghana using live Google Maps coordinates grounding.
+                            </span>
+                          </div>
+
+                          <div className="space-y-3">
+                            <textarea
+                              value={mapsQuery}
+                              onChange={(e) => setMapsQuery(e.target.value)}
+                              placeholder="e.g. Find directions to Immortal Electronics repair workshop branch near Circle Ebony in Accra, Ghana."
+                              rows={4}
+                              className="w-full bg-[#09090D] border border-gray-800 focus:border-amber-500 text-xs text-white p-3.5 rounded-xl font-mono focus:outline-none resize-none placeholder-gray-600"
+                            />
+
+                            <button
+                              onClick={() => handleMapsGroundingRun()}
+                              disabled={isMapsGrounding}
+                              className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-black rounded-xl font-bold font-mono text-[11px] uppercase transition flex items-center justify-center gap-1.5"
+                            >
+                              {isMapsGrounding ? (
+                                <>
+                                  <RefreshCw size={12} className="animate-spin text-black" />
+                                  <span>Retrieving Coordinates...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Navigation size={12} className="text-black" />
+                                  <span>Run Maps Grounded Query</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+
+                          {/* Quick Suggestions */}
+                          <div className="space-y-2 pt-2">
+                            <span className="text-[9px] uppercase font-mono font-bold text-gray-500 block">Suggested Prompts:</span>
+                            <div className="flex flex-wrap gap-2">
+                              {[
+                                "Where is Immortal Electronics Accra branch located?",
+                                "Directions to Immortal Electronics from Accra Mall",
+                                "Opening hours and contact phone for Benjamin Danso",
+                                "Nearest courier delivery partner in Accra"
+                              ].map((suggest, idx) => (
+                                <button
+                                  key={idx}
+                                  onClick={() => {
+                                    setMapsQuery(suggest);
+                                    handleMapsGroundingRun(suggest);
+                                  }}
+                                  className="text-[9px] font-mono bg-black/30 border border-gray-850 hover:border-gray-700 hover:bg-black/50 px-2 py-1 rounded text-gray-400"
+                                >
+                                  {suggest}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Output panel */}
+                        <div className="bg-black/30 border border-gray-850 rounded-2xl p-4 flex flex-col justify-between min-h-[300px]">
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between border-b border-gray-850 pb-2">
+                              <span className="text-[10px] font-mono uppercase font-bold text-gray-400">[Maps output]</span>
+                              {isMapsGrounding && <span className="text-[9px] font-mono text-amber-500 animate-pulse">Maps Grounding Active</span>}
+                            </div>
+
+                            {mapsError && (
+                              <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl font-mono text-[10px]">
+                                {mapsError}
+                              </div>
+                            )}
+
+                            {mapsResult ? (
+                              <div className="space-y-4 text-xs">
+                                <div className="text-gray-300 leading-relaxed whitespace-pre-wrap font-mono">
+                                  {mapsResult.text}
+                                </div>
+
+                                {mapsResult.sources && mapsResult.sources.length > 0 && (
+                                  <div className="pt-4 border-t border-gray-850 space-y-2">
+                                    <span className="text-[9px] font-mono uppercase font-bold text-amber-500 block">Verified Coordinates & Location links:</span>
+                                    <div className="grid grid-cols-1 gap-1.5">
+                                      {mapsResult.sources.map((src, sIdx) => (
+                                        <a
+                                          key={sIdx}
+                                          href={src.uri}
+                                          target="_blank"
+                                          rel="referrer noopener"
+                                          className="flex items-center gap-1 text-[9px] font-mono text-green-400 hover:underline hover:text-green-300 truncate"
+                                        >
+                                          <Navigation size={10} />
+                                          <span>{src.title || src.uri}</span>
+                                        </a>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ) : !isMapsGrounding ? (
+                              <div className="flex flex-col items-center justify-center py-16 text-gray-600 font-mono text-center space-y-2">
+                                <Navigation size={20} className="text-gray-800" />
+                                <span className="text-[10px] font-bold">Maps Grounding Idle</span>
+                                <p className="text-[8px] max-w-xs leading-normal">Results are fully mapped using geographical coordinates and directions references in Ghana.</p>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center py-16 text-amber-500 font-mono text-center space-y-2">
+                                <RefreshCw size={24} className="animate-spin text-amber-500" />
+                                <span className="text-[10px] font-bold animate-pulse">Triangulating geo-telemetry...</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Section 3: AI High-Quality Image Creator */}
+                    {studioActiveSection === 'image' && (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Controls */}
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <label className="text-[10px] uppercase font-mono font-bold tracking-wider text-amber-500 block">[1] Visual Prompts & Parameters</label>
+                            <span className="text-[10px] text-gray-500 leading-normal block">
+                              Synthesize high-fidelity product images, hero catalog banners or illustrative graphics. Customize resolution and dimensions.
+                            </span>
+                          </div>
+
+                          <div className="space-y-4">
+                            {/* Prompt */}
+                            <div className="space-y-1.5">
+                              <span className="text-[9px] font-mono uppercase font-bold text-gray-400">Image Description Prompt</span>
+                              <textarea
+                                value={imgPrompt}
+                                onChange={(e) => setImgPrompt(e.target.value)}
+                                placeholder="e.g. Studio product shot of an Apple iPhone 15 Pro Max, floating elegantly on a clean dark slate background, professional lighting, metallic accents, hyperrealistic."
+                                rows={3}
+                                className="w-full bg-[#09090D] border border-gray-800 focus:border-amber-500 text-xs text-white p-3 rounded-xl font-mono focus:outline-none resize-none placeholder-gray-600"
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                              {/* Model Selection */}
+                              <div className="space-y-1.5">
+                                <span className="text-[9px] font-mono uppercase font-bold text-gray-400 block">Model Presets</span>
+                                <select
+                                  value={imgModel}
+                                  onChange={(e: any) => setImgModel(e.target.value)}
+                                  className="w-full bg-[#09090D] border border-gray-800 text-[10px] text-white p-2 rounded-xl font-mono focus:outline-none"
+                                >
+                                  <option value="gemini-3-pro-image-preview">gemini-3-pro-image (Studio)</option>
+                                  <option value="gemini-3.1-flash-image-preview">gemini-3.1-flash-image (General)</option>
+                                </select>
+                              </div>
+
+                              {/* Size Selection */}
+                              <div className="space-y-1.5">
+                                <span className="text-[9px] font-mono uppercase font-bold text-gray-400 block">Image Resolution</span>
+                                <select
+                                  value={imgSize}
+                                  onChange={(e: any) => setImgSize(e.target.value)}
+                                  className="w-full bg-[#09090D] border border-gray-800 text-[10px] text-white p-2 rounded-xl font-mono focus:outline-none"
+                                >
+                                  <option value="1K">1K (Standard HD)</option>
+                                  <option value="2K">2K (Studio QHD)</option>
+                                  <option value="4K">4K (Ultra UHD)</option>
+                                </select>
+                              </div>
+
+                              {/* Aspect Ratio */}
+                              <div className="space-y-1.5">
+                                <span className="text-[9px] font-mono uppercase font-bold text-gray-400 block">Aspect Ratio</span>
+                                <select
+                                  value={imgAspect}
+                                  onChange={(e: any) => setImgAspect(e.target.value)}
+                                  className="w-full bg-[#09090D] border border-gray-800 text-[10px] text-white p-2 rounded-xl font-mono focus:outline-none"
+                                >
+                                  <option value="1:1">1:1 (Square)</option>
+                                  <option value="2:3">2:3 (Portrait Slim)</option>
+                                  <option value="3:2">3:2 (Landscape Classic)</option>
+                                  <option value="3:4">3:4 (Portrait Standard)</option>
+                                  <option value="4:3">4:3 (Landscape Standard)</option>
+                                  <option value="9:16">9:16 (Story/Short Portrait)</option>
+                                  <option value="16:9">16:9 (Cinema Landscape)</option>
+                                  <option value="21:9">21:9 (Ultrawide Panoramic)</option>
+                                </select>
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={handleImageGenerationRun}
+                              disabled={isGeneratingImg}
+                              className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-black rounded-xl font-bold font-mono text-[11px] uppercase transition flex items-center justify-center gap-1.5"
+                            >
+                              {isGeneratingImg ? (
+                                <>
+                                  <RefreshCw size={12} className="animate-spin text-black" />
+                                  <span>Compiling Image Models...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Sparkles size={12} className="text-black" />
+                                  <span>Synthesize Creative Asset</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Result Display */}
+                        <div className="bg-black/30 border border-gray-850 rounded-2xl p-4 flex flex-col justify-between min-h-[300px]">
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between border-b border-gray-850 pb-2">
+                              <span className="text-[10px] font-mono uppercase font-bold text-gray-400">[Visual preview canvas]</span>
+                              {imgSize && <span className="text-[9px] font-mono text-amber-500">{imgSize} Res • Aspect {imgAspect}</span>}
+                            </div>
+
+                            {imgError && (
+                              <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl font-mono text-[10px]">
+                                {imgError}
+                              </div>
+                            )}
+
+                            {generatedImgUrl ? (
+                              <div className="space-y-4 animate-fadeIn">
+                                <div className="border border-gray-800 rounded-xl overflow-hidden bg-black/40 flex items-center justify-center max-h-[250px] overflow-y-auto">
+                                  <img
+                                    src={generatedImgUrl}
+                                    alt="Generated Asset"
+                                    referrerPolicy="no-referrer"
+                                    className="max-w-full max-h-[240px] object-contain transition duration-300"
+                                  />
+                                </div>
+
+                                <div className="flex gap-2 pt-2">
+                                  <a
+                                    href={generatedImgUrl}
+                                    download="generated_asset.png"
+                                    className="flex-1 py-1.5 bg-[#1C1C24] border border-gray-800 hover:border-gray-700 text-[10px] text-white font-bold font-mono rounded-lg text-center transition"
+                                  >
+                                    Download Asset File
+                                  </a>
+                                  <button
+                                    onClick={() => {
+                                      // Push to Image Manager files
+                                      const newFile = {
+                                        id: `asset-${Date.now()}`,
+                                        url: generatedImgUrl,
+                                        name: `Generated_Asset_${Date.now()}.png`,
+                                        size: `${Math.round(imgPrompt.length * 0.15)} KB`,
+                                        status: 'Completed' as const,
+                                        format: 'PNG',
+                                        altText: imgPrompt
+                                      };
+                                      setImageManagerFiles(prev => [newFile, ...prev]);
+                                      alert('Successfully exported to Global Image Manager.');
+                                    }}
+                                    className="flex-1 py-1.5 bg-amber-500 hover:bg-amber-600 text-[10px] text-black font-bold font-mono rounded-lg text-center transition"
+                                  >
+                                    Export to Image Manager
+                                  </button>
+                                </div>
+                              </div>
+                            ) : !isGeneratingImg ? (
+                              <div className="flex flex-col items-center justify-center py-16 text-gray-600 font-mono text-center space-y-2">
+                                <Image size={24} className="text-gray-800" />
+                                <span className="text-[10px] font-bold">Preview Canvas Blank</span>
+                                <p className="text-[8px] max-w-xs leading-normal">Enter parameters on the left and synthesize to compose original, high-contrast creative content.</p>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center py-16 text-amber-500 font-mono text-center space-y-2">
+                                <RefreshCw size={24} className="animate-spin text-amber-500" />
+                                <span className="text-[10px] font-bold animate-pulse">Running Diffusion Pipelines...</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Section 4: AI Veo Video Animator */}
+                    {studioActiveSection === 'video' && (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Controls */}
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <label className="text-[10px] uppercase font-mono font-bold tracking-wider text-amber-500 block">[1] Video Motion Parameters</label>
+                            <span className="text-[10px] text-gray-500 leading-normal block">
+                              Upload a reference image and input camera instructions. Veo Generative Video model compiles realistic cinematic motion clips.
+                            </span>
+                          </div>
+
+                          <div className="space-y-4 text-xs font-mono">
+                            {/* Image Uploader */}
+                            <div className="space-y-1.5">
+                              <span className="text-[9px] uppercase font-bold text-gray-400 block">Upload Reference Image (Required)</span>
+                              <div className="border border-dashed border-gray-800 rounded-xl p-4 bg-black/20 text-center relative hover:border-gray-600 transition">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={handleVideoImageUpload}
+                                  className="absolute inset-0 opacity-0 cursor-pointer"
+                                />
+                                {videoSourceImage ? (
+                                  <div className="flex items-center gap-3 justify-center">
+                                    <img
+                                      src={videoSourceImage}
+                                      alt="Source Thumbnail"
+                                      className="w-12 h-12 rounded object-cover border border-gray-800"
+                                    />
+                                    <div className="text-left">
+                                      <span className="text-[9px] text-green-400 font-bold block">✓ Image Uploaded</span>
+                                      <span className="text-[8px] text-gray-500">Click or Drag to replace</span>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-1">
+                                    <Upload size={14} className="mx-auto text-gray-500" />
+                                    <span className="text-[9px] text-gray-400 block">Click or Drag to upload JPEG/PNG</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Prompt instructions */}
+                            <div className="space-y-1.5">
+                              <span className="text-[9px] uppercase font-bold text-gray-400">Cinematic Motion Instructions</span>
+                              <textarea
+                                value={videoPrompt}
+                                onChange={(e) => setVideoPrompt(e.target.value)}
+                                placeholder="e.g. Slowly zoom into the phone display with professional subtle 3D depth, cinematic particle effects drifting in background, 8k, slow motion."
+                                rows={2}
+                                className="w-full bg-[#09090D] border border-gray-800 focus:border-amber-500 text-xs text-white p-2.5 rounded-xl focus:outline-none resize-none placeholder-gray-600"
+                              />
+                            </div>
+
+                            {/* Aspect Ratio */}
+                            <div className="space-y-1.5">
+                              <span className="text-[9px] uppercase font-bold text-gray-400 block">Dimensions</span>
+                              <div className="grid grid-cols-2 gap-3">
+                                {[
+                                  { id: '16:9', label: '16:9 (Landscape Cinema)' },
+                                  { id: '9:16', label: '9:16 (Mobile Portrait)' }
+                                ].map((asp) => (
+                                  <button
+                                    key={asp.id}
+                                    type="button"
+                                    onClick={() => setVideoAspect(asp.id as any)}
+                                    className={`p-2 rounded-lg border text-[10px] text-center font-bold tracking-tight transition ${
+                                      videoAspect === asp.id
+                                        ? 'bg-amber-500 text-black border-amber-500'
+                                        : 'bg-[#09090D] text-gray-400 border-gray-800 hover:text-white'
+                                    }`}
+                                  >
+                                    {asp.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={handleVideoGenerationRun}
+                              disabled={isGeneratingVideo}
+                              className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-black rounded-xl font-bold font-mono text-[11px] uppercase transition flex items-center justify-center gap-1.5"
+                            >
+                              {isGeneratingVideo ? (
+                                <>
+                                  <RefreshCw size={12} className="animate-spin text-black" />
+                                  <span>Rendering Video on Veo...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Play size={12} className="text-black fill-current" />
+                                  <span>Compile Veo Animation</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Rendering Output/Logs & Video player */}
+                        <div className="bg-black/30 border border-gray-850 rounded-2xl p-4 flex flex-col justify-between min-h-[300px]">
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between border-b border-gray-850 pb-2">
+                              <span className="text-[10px] font-mono uppercase font-bold text-gray-400">[Veo rendering monitor]</span>
+                              {videoAspect && <span className="text-[9px] font-mono text-amber-500">Resolution 720p • Ratio {videoAspect}</span>}
+                            </div>
+
+                            {videoError && (
+                              <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl font-mono text-[10px]">
+                                {videoError}
+                              </div>
+                            )}
+
+                            {generatedVideoUrl ? (
+                              <div className="space-y-4 animate-fadeIn">
+                                <div className="border border-gray-800 rounded-xl overflow-hidden bg-black/40 flex items-center justify-center">
+                                  <video
+                                    src={generatedVideoUrl}
+                                    controls
+                                    autoPlay
+                                    loop
+                                    muted
+                                    className="max-w-full rounded"
+                                    style={{ maxHeight: '220px' }}
+                                  />
+                                </div>
+
+                                <a
+                                  href={generatedVideoUrl}
+                                  download="veo_animation.mp4"
+                                  className="block w-full py-2 bg-amber-500 hover:bg-amber-600 text-black text-[11px] font-bold font-mono rounded-xl text-center transition uppercase"
+                                >
+                                  Download Video MP4 File
+                                </a>
+                              </div>
+                            ) : isGeneratingVideo ? (
+                              <div className="space-y-3 font-mono text-xs">
+                                <div className="flex flex-col items-center justify-center py-6 text-amber-500 text-center space-y-2">
+                                  <RefreshCw size={24} className="animate-spin text-amber-500" />
+                                  <span className="text-[10px] font-bold animate-pulse">Veo Generative Render Active...</span>
+                                </div>
+                                <div className="bg-[#09090D] border border-gray-850 rounded-xl p-3 h-[130px] overflow-y-auto text-[9px] text-gray-400 leading-normal space-y-1 scrollbar-thin">
+                                  {videoStatusLogs.map((log, lIdx) => (
+                                    <div key={lIdx} className="flex gap-1.5">
+                                      <span className="text-gray-600">[{new Date().toLocaleTimeString()}]</span>
+                                      <span className={log.startsWith('[ERROR]') ? 'text-red-400' : log.includes('Success') ? 'text-green-400' : 'text-gray-300'}>{log}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center py-16 text-gray-600 font-mono text-center space-y-2">
+                                <Play size={24} className="text-gray-800" />
+                                <span className="text-[10px] font-bold">Veo Display Standby</span>
+                                <p className="text-[8px] max-w-xs leading-normal">Upload an image and click compile. Animating standard images can take a few minutes as Veo is a massive model.</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                   </div>
                 </div>
               )}

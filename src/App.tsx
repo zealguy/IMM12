@@ -245,6 +245,10 @@ export default function App() {
   const [inStockOnly, setInStockOnly] = useState(false);
   const [sortBy, setSortBy] = useState<string>('default');
 
+  // Curated Collections States
+  const [customCollections, setCustomCollections] = useState<any[]>([]);
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string>('All');
+
   // Cart Drawer & Coupon State
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -641,6 +645,38 @@ export default function App() {
       }
     }
   }, [checkoutPhone]);
+
+  // Curated Collections Live Sync Loader
+  useEffect(() => {
+    const fetchCollections = async () => {
+      try {
+        const { getDocs, collection } = await import('firebase/firestore');
+        const { db } = await import('./lib/firebase');
+        const colSnap = await getDocs(collection(db, 'collections'));
+        const cols: any[] = [];
+        colSnap.forEach((doc) => {
+          cols.push({ id: doc.id, ...doc.data() });
+        });
+        if (cols.length > 0) {
+          setCustomCollections(cols);
+        } else {
+          const defaults = [
+            { id: 'col-new-arrivals', name: 'New Arrivals', description: 'Fresh premium stock newly arrived in Accra', productIds: [], isFeaturedHome: true },
+            { id: 'col-best-sellers', name: 'Best Sellers', description: 'Most popular customer devices and computers', productIds: [], isFeaturedHome: true },
+            { id: 'col-flagship-deals', name: 'Flagship Deals', description: 'Premium discounted offers', productIds: [], isFeaturedHome: true }
+          ];
+          setCustomCollections(defaults);
+        }
+      } catch (err) {
+        console.warn('Could not fetch custom collections, using LocalStorage fallback:', err);
+        const localCols = localStorage.getItem('immortal_custom_collections');
+        if (localCols) {
+          setCustomCollections(JSON.parse(localCols));
+        }
+      }
+    };
+    fetchCollections();
+  }, [isAdminOpen]); // Refetch when admin closes to keep storefront fresh!
 
   // Check URL parameters for search and product sharing link once products are loaded
   useEffect(() => {
@@ -1045,7 +1081,13 @@ export default function App() {
     const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesBrand && matchesStock && matchesSearch;
+
+    const matchesCollection = selectedCollectionId === 'All' || (() => {
+      const activeCol = customCollections.find(c => c.id === selectedCollectionId);
+      return activeCol ? activeCol.productIds?.includes(p.id) : false;
+    })();
+
+    return matchesCategory && matchesBrand && matchesStock && matchesSearch && matchesCollection;
   }).sort((a, b) => {
     if (sortBy === 'price-low-high') {
       const priceA = currency === 'GHS' ? a.priceGHS : a.priceUSD;
@@ -1101,9 +1143,8 @@ export default function App() {
     <div className={`min-h-screen font-sans antialiased text-gray-900 dark:text-gray-100 ${theme === 'dark' ? 'bg-[#0B0B0B] dark' : 'bg-gray-50'}`}>
       
       {/* Top Notification banner */}
-      <div className="bg-[#0066FF] text-white text-center py-2 px-4 text-xs font-semibold tracking-wider flex items-center justify-center space-x-2 relative z-50 animate-pulse">
-        <Sparkles className="w-4 h-4 text-amber-400" />
-        <span>Ghana's Premier Tech Station. Visit our Accra Store or Book Repairs Online. We accept Mobile Money (MoMo).</span>
+      <div className="bg-[#0066FF] text-white text-center py-2 px-4 text-xs font-semibold tracking-wider flex items-center justify-center space-x-2 relative z-50">
+        <span>🇬🇭 FREE DELIVERY IN ACCRA | Call/WhatsApp: +233 54 795 6875 | Open Today</span>
       </div>
 
       {/* Navigation Header */}
@@ -1202,6 +1243,44 @@ export default function App() {
             />
             
             <div id="shop-section-anchor" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+              {/* Curated Collections Filter Row */}
+              {customCollections.length > 0 && (
+                <div className="flex flex-col md:flex-row md:items-center gap-3 bg-gray-50 dark:bg-gray-900/40 p-3.5 rounded-xl border border-gray-100 dark:border-gray-850 shadow-sm">
+                  <div className="flex items-center space-x-2">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                    </span>
+                    <span className="text-[10px] font-black text-amber-500 font-mono uppercase tracking-widest whitespace-nowrap">CURATED COLLECTIONS:</span>
+                  </div>
+                  <div className="flex items-center space-x-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none max-w-full">
+                    <button
+                      onClick={() => setSelectedCollectionId('All')}
+                      className={`px-3 py-1.5 text-xs rounded-lg font-bold font-mono uppercase tracking-wider transition-all shrink-0 ${
+                        selectedCollectionId === 'All'
+                          ? 'bg-amber-500 text-black shadow-sm font-black scale-105'
+                          : 'bg-white dark:bg-gray-850 text-gray-600 dark:text-gray-450 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200/50 dark:border-gray-800/40'
+                      }`}
+                    >
+                      All Products
+                    </button>
+                    {customCollections.map(col => (
+                      <button
+                        key={col.id}
+                        onClick={() => setSelectedCollectionId(col.id)}
+                        className={`px-3 py-1.5 text-xs rounded-lg font-bold font-mono uppercase tracking-wider transition-all shrink-0 ${
+                          selectedCollectionId === col.id
+                            ? 'bg-amber-500 text-black shadow-sm font-black scale-105'
+                            : 'bg-white dark:bg-gray-850 text-gray-600 dark:text-gray-450 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200/50 dark:border-gray-800/40'
+                        }`}
+                      >
+                        {col.name} ({col.productIds?.length || 0})
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Filter controls */}
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-gray-200 dark:border-gray-800 pb-6">
                 <div>

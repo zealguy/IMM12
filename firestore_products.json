@@ -1583,5 +1583,51 @@
     "reviewsCount": 33,
     "rating": 4.5,
     "priceUSD": 19
+  },
+  {
+    "id": "prod-magnetic-octopus-tripod",
+    "name": "Magnetic Octopus Suction Tripod with 360° Adjustable Flexible Tripod for Iphone 17 16 15 Android Car Vlog",
+    "description": "Compact and portable design Measuring 16.5 x 6 x 5 cm when folded, this flexible tripod is ultra-portable and fits easily in a bag or pocket. Its lightweight build makes it ideal for travel and on-the-go vlogging.\n\n360° adjustable flexible legs Featuring 360° adjustable flexible legs, the PodZillaᵀᴹ adapts to any surface, from desks to car dashboards. This ensures stable positioning for smartphones and other devices.\n\nStrong magnetic suction base Equipped with a neodymium magnet and a strong suction cup, this tripod securely attaches to metal surfaces. It holds your phone firmly during recording or viewing.\n\nCompatible with all smartphones Designed for use with iPhone 17, 16, 15, and most Android smartphones, this tripod supports a wide range of devices. It’s perfect for vloggers and content creators.\n\nMaximum extension of 165 mm The tripod extends up to 165 mm, offering flexible height adjustment for various shooting angles. It’s ideal for both close-up and overhead shots.\n\nSupports up to 500g With a safe load capacity of 500g , it securely holds most smartphones and small accessories. This ensures stability during extended recording sessions.\n\nLightweight and durable construction Weighing only 146g , this tripod is lightweight yet built with aluminum alloy, stainless steel, and silicone for long-lasting performance and reliability",
+    "priceGHS": 350,
+    "priceUSD": 28,
+    "category": "Accessories",
+    "brand": "Ulanzi",
+    "image": "/src/assets/images/magnetic_octopus_main_1784550027355.jpg",
+    "images": [
+      "/src/assets/images/magnetic_octopus_main_1784550027355.jpg",
+      "/src/assets/images/magnetic_octopus_rock_1784550042970.jpg",
+      "/src/assets/images/magnetic_octopus_mirror_1784550056903.jpg",
+      "/src/assets/images/magnetic_octopus_car_1784550068536.jpg",
+      "/src/assets/images/magnetic_octopus_railing_1784550083380.jpg",
+      "/src/assets/images/magnetic_octopus_stand_1784550094998.jpg"
+    ],
+    "rating": 5.0,
+    "reviewsCount": 0,
+    "colors": [
+      "Light Grey",
+      "Red"
+    ],
+    "stock": 40,
+    "isNew": true,
+    "isNewArrival": true,
+    "isBestSeller": false,
+    "status": "Published",
+    "specs": {
+      "High-concerned chemical": "None",
+      "Max Extened Length (mm)": "165mm",
+      "Folded Length (mm)": "165mm",
+      "Package": "Yes",
+      "Model Number": "PZ01",
+      "Use": "Smartphones",
+      "Type": "Flexible Tripod",
+      "Material": "Plastic",
+      "Brand Name": "Ulanzi",
+      "Origin": "Mainland China",
+      "Weight (g)": "146",
+      "Materials": "Silicone, Nylon, Aluminum Alloy, Stainless Steel, Neodymium Magnet",
+      "Folded Size": "16.5*6*5cm / 6.5*2.36*1.97in",
+      "Weight": "146g=10g/ 5.15oz#0.35oz",
+      "Safe Load Capacity": "500g/1.1llb"
+    }
   }
 ]
