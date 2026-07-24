@@ -1,17 +1,18 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { initializeFirestore, doc, getDocFromServer, setLogLevel } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import firebaseConfig from '../../firebase-applet-config.json';
 
+// Silence non-fatal connectivity warnings in iframe/sandboxed environments
+setLogLevel('error');
+
 const app = initializeApp(firebaseConfig);
 
-// Use initializeFirestore with experimentalForceLongPolling and experimentalAutoDetectLongPolling
-// to prevent connection timeout warnings in sandboxed preview environments
+// Use initializeFirestore with experimentalAutoDetectLongPolling
 export const db = initializeFirestore(
   app,
   {
-    experimentalForceLongPolling: true,
     experimentalAutoDetectLongPolling: true,
   },
   firebaseConfig.firestoreDatabaseId

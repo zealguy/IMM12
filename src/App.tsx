@@ -2013,32 +2013,6 @@ export default function App() {
               </div>
             </div>
 
-              {/* Wholesale & B2B Bulk Purchase Promo Banner */}
-              <div className="p-5 rounded-2xl bg-gradient-to-r from-blue-600/10 via-amber-500/5 to-blue-600/10 border border-blue-500/10 dark:border-blue-500/5 flex flex-col md:flex-row md:items-center md:justify-between gap-5 shadow-sm">
-                <div className="flex items-start space-x-4">
-                  <div className="p-3 rounded-xl bg-blue-500/10 text-[#0066FF] shrink-0">
-                    <Building2 className="w-6 h-6 animate-pulse" />
-                  </div>
-                  <div className="space-y-1">
-                    <h4 className="text-sm font-black tracking-tight text-gray-950 dark:text-white uppercase font-mono flex items-center gap-1.5">
-                      <span>Wholesale & Corporate Procurement Desk</span>
-                      <span className="bg-amber-400 text-gray-950 text-[9px] font-bold px-1.5 py-0.5 rounded font-sans">10+ Devices</span>
-                    </h4>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed max-w-2xl">
-                      Equip your team or organization with high-quality certified smartphones, laptops, and accessories. Submit our bulk purchase inquiry form to unlock wholesale volume discounts, tax compliance invoicing, flexible payment terms, and direct regional dispatch across Ghana.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setIsBulkModalOpen(true)}
-                  className="px-5 py-2.5 bg-[#0066FF] hover:bg-[#0052CC] text-white text-xs font-black rounded-xl transition-all shrink-0 shadow-lg shadow-[#0066FF]/20 flex items-center justify-center space-x-2"
-                  id="shop-bulk-inquiry-trigger"
-                >
-                  <Building2 className="w-4 h-4" />
-                  <span>Submit Bulk Inquiry</span>
-                </button>
-              </div>
-
               {/* Products Grid */}
               {isLoading && products.length === 0 ? (
                 <div className="space-y-8" id="product-skeletons-container">
@@ -2226,7 +2200,6 @@ export default function App() {
               <li><button onClick={() => setCurrentTab('repair')} className="hover:text-[#0066FF] text-left cursor-pointer transition">Book Certified Diagnostics</button></li>
               <li><button onClick={() => setCurrentTab('tradein')} className="hover:text-[#0066FF] text-left cursor-pointer transition">Request Instant Swap Appraisals</button></li>
               <li><button onClick={() => setCurrentTab('blog')} className="hover:text-[#0066FF] text-left cursor-pointer transition">TechLongevity Blog</button></li>
-              <li><button onClick={() => setIsBulkModalOpen(true)} className="hover:text-[#0066FF] text-left cursor-pointer transition text-amber-500 font-bold flex items-center gap-1">Wholesale Bulk Orders <span className="text-[8px] bg-amber-500/10 px-1 py-0.2 rounded">B2B</span></button></li>
             </ul>
           </div>
 

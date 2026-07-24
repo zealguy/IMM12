@@ -44,18 +44,28 @@ export default function ProductCard({
 
   return (
     <motion.div 
-      className={`group relative rounded-xl border bg-white dark:bg-[#121212] overflow-hidden hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 flex flex-col justify-between ${
+      className={`group relative rounded-xl border bg-white dark:bg-[#121212] overflow-hidden transition-colors duration-300 flex flex-col justify-between ${
         product.isFeatured 
           ? 'border-indigo-500/40 dark:border-indigo-500/40 shadow-sm ring-1 ring-indigo-500/20' 
           : 'border-gray-100 dark:border-gray-800'
       }`}
       id={`product-card-${product.id}`}
-      whileHover={{ 
-        scale: 1.04, 
-        y: -6,
-        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)"
+      initial="rest"
+      animate="rest"
+      whileHover="hover"
+      variants={{
+        rest: { 
+          scale: 1, 
+          y: 0,
+          boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)" 
+        },
+        hover: { 
+          scale: 1.02, 
+          y: -6,
+          boxShadow: "0 20px 35px -10px rgba(0, 0, 0, 0.12), 0 10px 20px -5px rgba(0, 0, 0, 0.08)" 
+        }
       }}
-      transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+      transition={{ type: 'spring', stiffness: 350, damping: 25 }}
     >
       {/* Badges & Actions Trigger */}
       <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between">
@@ -194,12 +204,23 @@ export default function ProductCard({
         onClick={() => onViewDetails(product)}
         className="relative pt-[100%] cursor-pointer overflow-hidden bg-gray-50 dark:bg-black/40"
       >
-        <img
+        <motion.img
           src={product.image}
           alt={product.name}
-          className="absolute inset-0 w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500 filter brightness-95 dark:brightness-90"
+          className="absolute inset-0 w-full h-full object-contain p-4"
           loading="lazy"
           onError={handleImageError}
+          variants={{
+            rest: { 
+              scale: 1, 
+              filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.06)) brightness(0.96)" 
+            },
+            hover: { 
+              scale: 1.08, 
+              filter: "drop-shadow(0 12px 20px rgba(0, 0, 0, 0.18)) brightness(1.02)" 
+            }
+          }}
+          transition={{ type: 'spring', stiffness: 300, damping: 22 }}
         />
       </div>
 

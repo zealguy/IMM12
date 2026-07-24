@@ -8,6 +8,7 @@ import {
   Coupon, 
   BulkInquiry 
 } from '../types';
+import { INITIAL_PRODUCTS, INITIAL_BLOGS, INITIAL_COUPONS } from '../data/initialProducts';
 
 // Helper to safely fetch JSON from endpoints with exponential backoff retries for robust initialization
 const safeFetchJson = async (url: string, fallback: any, retries = 5, delayMs = 300) => {
@@ -81,19 +82,27 @@ export function useDataStore() {
         resProd = resProdRaw.data;
       }
 
-      console.log('[DEBUG Frontend] Number of products received:', resProd.length);
-      console.log('[DEBUG Frontend] Product data before rendering:', JSON.stringify(resProd.slice(0, 3)));
+      // Fallback to high-fidelity seed catalog if API is offline or returns empty array
+      const finalProducts = (Array.isArray(resProd) && resProd.length > 0) ? resProd : INITIAL_PRODUCTS;
+      const finalBlogs = (Array.isArray(resBlogs) && resBlogs.length > 0) ? resBlogs : INITIAL_BLOGS;
+      const finalCoupons = (Array.isArray(resCoupons) && resCoupons.length > 0) ? resCoupons : INITIAL_COUPONS;
 
-      setProducts(Array.isArray(resProd) ? resProd : []);
-      setBlogs(Array.isArray(resBlogs) ? resBlogs : []);
-      setCoupons(Array.isArray(resCoupons) ? resCoupons : []);
+      console.log('[DEBUG Frontend] Number of products received/hydrated:', finalProducts.length);
+      console.log('[DEBUG Frontend] Product data before rendering:', JSON.stringify(finalProducts.slice(0, 3)));
+
+      setProducts(finalProducts);
+      setBlogs(finalBlogs);
+      setCoupons(finalCoupons);
       setOrders(Array.isArray(resOrders) ? resOrders : []);
       setRepairs(Array.isArray(resRepairs) ? resRepairs : []);
       setTradeInRequests(Array.isArray(resTrade) ? resTrade : []);
       setBulkInquiries(Array.isArray(resInq) ? resInq : []);
       setIsLoading(false);
     } catch (err) {
-      console.warn('[useDataStore] Error hydrating data in useDataStore:', err);
+      console.warn('[useDataStore] Error hydrating data in useDataStore, utilizing static seed fallbacks:', err);
+      setProducts(INITIAL_PRODUCTS);
+      setBlogs(INITIAL_BLOGS);
+      setCoupons(INITIAL_COUPONS);
       setError(err instanceof Error ? err : new Error(String(err)));
       setIsLoading(false);
     }
