@@ -1077,8 +1077,9 @@ export default function App() {
   const filteredProducts = productsArray.filter(p => {
     if (!p) return false;
     // Only show published products on storefront (status defaults to Published if not specified)
-    const status = p.status || 'Published';
-    const isPublished = status === 'Published';
+    const statusVal = String(p.status || 'Published').trim().toLowerCase();
+    const isUnpublished = statusVal === 'draft' || statusVal === 'scheduled' || statusVal === 'archived' || statusVal === 'offline' || statusVal === 'unpublished';
+    const isPublished = !isUnpublished;
     if (!isPublished) return false;
 
     const category = p.category || '';
