@@ -1088,7 +1088,7 @@ export default function App() {
     const description = p.description || '';
     const stock = typeof p.stock === 'number' ? p.stock : 0;
 
-    const matchesCategory = isCategoryMatch(category, selectedCategory);
+    const matchesCategory = isCategoryMatch(category, selectedCategory, name, description);
     const matchesBrand = selectedBrand === 'All' || brand.toLowerCase() === selectedBrand.toLowerCase();
     const matchesStock = !inStockOnly || stock > 0;
     const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -1279,7 +1279,7 @@ export default function App() {
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-2.5">
                 {STORE_CATEGORIES.map((cat) => {
                   const isSelected = selectedCategory === cat.id;
-                  const matchingCount = productsArray.filter(p => isCategoryMatch(p.category, cat.id)).length;
+                  const matchingCount = productsArray.filter(p => isCategoryMatch(p.category, cat.id, p.name, p.description)).length;
                   return (
                     <button
                       key={cat.id}
@@ -1369,7 +1369,7 @@ export default function App() {
                   {/* Category Buttons */}
                   <div className="flex gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 max-w-full">
                     {CATEGORY_NAMES.map(cat => {
-                      const count = cat === 'All' ? productsArray.length : productsArray.filter(p => isCategoryMatch(p.category, cat)).length;
+                      const count = cat === 'All' ? productsArray.length : productsArray.filter(p => isCategoryMatch(p.category, cat, p.name, p.description)).length;
                       return (
                         <button
                           key={cat}
@@ -1477,7 +1477,7 @@ export default function App() {
                             setIsSearchAssistOpen(true);
                             // Adjust category to All if no match in current category
                             const matchesInCurrent = products.some(p => 
-                              (p.category === selectedCategory || selectedCategory === 'All') &&
+                              (isCategoryMatch(p.category, selectedCategory, p.name, p.description)) &&
                               (p.name.toLowerCase().includes(item.value.toLowerCase()) || 
                                p.brand.toLowerCase().includes(item.value.toLowerCase()))
                             );
@@ -1887,7 +1887,7 @@ export default function App() {
                                       saveRecentSearch(term);
                                       if (selectedCategory !== 'All') {
                                         const matchesInCurrent = products.some(p => 
-                                          (p.category === selectedCategory || selectedCategory === 'All') &&
+                                          isCategoryMatch(p.category, selectedCategory, p.name, p.description) &&
                                           (p.name.toLowerCase().includes(term.toLowerCase()) || 
                                            p.brand.toLowerCase().includes(term.toLowerCase()))
                                         );
@@ -1927,7 +1927,7 @@ export default function App() {
                                     saveRecentSearch(item.term);
                                     if (selectedCategory !== 'All') {
                                       const matchesInCurrent = products.some(p => 
-                                        (p.category === selectedCategory || selectedCategory === 'All') &&
+                                        isCategoryMatch(p.category, selectedCategory, p.name, p.description) &&
                                         (p.name.toLowerCase().includes(item.term.toLowerCase()) || 
                                          p.brand.toLowerCase().includes(item.term.toLowerCase()))
                                       );
@@ -3144,7 +3144,7 @@ export default function App() {
               setSearchQuery(scannedQuery);
               // Adjust category to All if no match in current category
               const matchesInCurrent = products.some(p => 
-                (p.category === selectedCategory || selectedCategory === 'All') &&
+                (isCategoryMatch(p.category, selectedCategory, p.name, p.description)) &&
                 (p.name.toLowerCase().includes(scannedQuery.toLowerCase()) || 
                  p.brand.toLowerCase().includes(scannedQuery.toLowerCase()))
               );

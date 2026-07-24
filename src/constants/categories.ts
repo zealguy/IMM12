@@ -89,21 +89,32 @@ export const STORE_CATEGORIES: CategoryConfig[] = [
 
 export const CATEGORY_NAMES = ['All', ...STORE_CATEGORIES.map(c => c.id)];
 
-export function isCategoryMatch(pCategory: string | undefined | null, targetCategory: string): boolean {
+export function isCategoryMatch(
+  pCategory: string | undefined | null,
+  targetCategory: string,
+  pName?: string,
+  pDesc?: string
+): boolean {
   if (!targetCategory || targetCategory === 'All') return true;
-  if (!pCategory) return false;
 
-  const pLower = pCategory.toLowerCase().trim();
   const targetLower = targetCategory.toLowerCase().trim();
+  const pCatLower = (pCategory || '').toLowerCase().trim();
+  const nameLower = (pName || '').toLowerCase().trim();
+  const descLower = (pDesc || '').toLowerCase().trim();
 
-  // Direct string equality
-  if (pLower === targetLower) return true;
+  // Direct category equality check
+  if (pCatLower === targetLower) return true;
+
+  // Substring match in category string (e.g. 'smartwatches' in 'smartwatches & wearables')
+  if (pCatLower && (pCatLower.includes(targetLower) || targetLower.includes(pCatLower))) return true;
 
   // Find category config by target ID
   const config = STORE_CATEGORIES.find(c => c.id.toLowerCase() === targetLower);
   if (config) {
-    return config.keywords.some(kw => pLower.includes(kw));
+    if (pCatLower && config.keywords.some(kw => pCatLower.includes(kw))) return true;
+    if (nameLower && config.keywords.some(kw => nameLower.includes(kw))) return true;
+    if (descLower && config.keywords.some(kw => descLower.includes(kw))) return true;
   }
 
-  return pLower.includes(targetLower);
+  return false;
 }

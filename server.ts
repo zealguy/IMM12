@@ -551,7 +551,7 @@ const initialProducts: Product[] = [
     description: 'NORTH EDGE APACHE-46 Men Digital Watch Outdoor Sports Running Swimming Outdoor Sport Watches Altimeter Barometer Compass WR50M',
     priceGHS: 1450,
     priceUSD: 98,
-    category: 'Accessories',
+    category: 'Smartwatches & Wearables',
     brand: 'NORTH EDGE',
     image: '/src/assets/images/apache_textile_strap_1784298342941.jpg',
     images: [
@@ -597,7 +597,7 @@ const initialProducts: Product[] = [
     description: "NORTH EDGE Men's Digital Watch Military Waterproof 50M Running Sports Pedometer Stopwatch Watch Heart Rate Wristband Android IOS",
     priceGHS: 1100,
     priceUSD: 75,
-    category: 'Accessories',
+    category: 'Smartwatches & Wearables',
     brand: 'NORTH EDGE',
     image: 'https://images.unsplash.com/photo-1547996160-81dfa63595aa?q=80&w=600&auto=format&fit=crop',
     images: [
@@ -643,7 +643,7 @@ const initialProducts: Product[] = [
     description: 'NORTH EDGE Mens Digital Watch Women Sportswatch Dual Time Running Pedometer Countdown Waterproof 50m Alarm Military Clock',
     priceGHS: 850,
     priceUSD: 58,
-    category: 'Accessories',
+    category: 'Smartwatches & Wearables',
     brand: 'NORTH EDGE',
     image: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?q=80&w=600&auto=format&fit=crop',
     images: [
@@ -1206,7 +1206,7 @@ const initialProducts: Product[] = [
     description: "Mark Fairwhale 5031 New Top Brand Men's Quartz Watch Rotating Digital Dial Entertainment Cool Waterproof Night Light Watch reloj",
     priceGHS: 490,
     priceUSD: 35,
-    category: 'Accessories',
+    category: 'Smartwatches & Wearables',
     brand: 'MARK FAIRWHALE',
     image: '/src/assets/images/mark_fw_silver_front_1784293768698.jpg',
     images: [
@@ -1719,10 +1719,10 @@ async function _initializeAndLoadFromFirestoreInternal() {
     // Force-update the APACHE-46 smartwatch fields in Firestore if they are outdated
     const apacheProduct = products.find(p => p.id === 'prod-aura-active-smartwatch');
     const apacheSeed = initialProducts.find(p => p.id === 'prod-aura-active-smartwatch');
-    if (apacheProduct && apacheSeed && (apacheProduct.image !== apacheSeed.image || apacheProduct.name !== apacheSeed.name)) {
-      console.log('[Firestore] Force-updating APACHE-46 with newly updated specs...');
+    if (apacheProduct && apacheSeed) {
       apacheProduct.name = apacheSeed.name;
       apacheProduct.description = apacheSeed.description;
+      apacheProduct.category = apacheSeed.category;
       apacheProduct.image = apacheSeed.image;
       apacheProduct.images = apacheSeed.images;
       apacheProduct.specs = apacheSeed.specs;
@@ -1733,10 +1733,10 @@ async function _initializeAndLoadFromFirestoreInternal() {
     // Force-update the Laker smartwatch fields in Firestore if they are outdated
     const lakerProduct = products.find(p => p.id === 'prod-north-edge-laker');
     const lakerSeed = initialProducts.find(p => p.id === 'prod-north-edge-laker');
-    if (lakerProduct && lakerSeed && (lakerProduct.image !== lakerSeed.image || lakerProduct.name !== lakerSeed.name)) {
-      console.log('[Firestore] Force-updating Laker Men Digital Watch with newly updated specs...');
+    if (lakerProduct && lakerSeed) {
       lakerProduct.name = lakerSeed.name;
       lakerProduct.description = lakerSeed.description;
+      lakerProduct.category = lakerSeed.category;
       lakerProduct.image = lakerSeed.image;
       lakerProduct.images = lakerSeed.images;
       lakerProduct.specs = lakerSeed.specs;
@@ -1747,10 +1747,10 @@ async function _initializeAndLoadFromFirestoreInternal() {
     // Force-update the Mars smartwatch fields in Firestore if they are outdated
     const marsProduct = products.find(p => p.id === 'prod-north-edge-mars');
     const marsSeed = initialProducts.find(p => p.id === 'prod-north-edge-mars');
-    if (marsProduct && marsSeed && (marsProduct.image !== marsSeed.image || marsProduct.name !== marsSeed.name)) {
-      console.log('[Firestore] Force-updating Mars Digital Watch with newly updated specs...');
+    if (marsProduct && marsSeed) {
       marsProduct.name = marsSeed.name;
       marsProduct.description = marsSeed.description;
+      marsProduct.category = marsSeed.category;
       marsProduct.image = marsSeed.image;
       marsProduct.images = marsSeed.images;
       marsProduct.specs = marsSeed.specs;
@@ -1775,10 +1775,10 @@ async function _initializeAndLoadFromFirestoreInternal() {
     // Force-update Mark Fairwhale Watch in Firestore
     const watchProduct = products.find(p => p.id === 'prod-mark-fairwhale-5031');
     const watchSeed = initialProducts.find(p => p.id === 'prod-mark-fairwhale-5031');
-    if (watchProduct && watchSeed && (watchProduct.image !== watchSeed.image || watchProduct.name !== watchSeed.name)) {
-      console.log('[Firestore] Force-updating Mark Fairwhale Watch with newly updated specs...');
+    if (watchProduct && watchSeed) {
       watchProduct.name = watchSeed.name;
       watchProduct.description = watchSeed.description;
+      watchProduct.category = watchSeed.category;
       watchProduct.image = watchSeed.image;
       watchProduct.images = watchSeed.images;
       watchProduct.specs = watchSeed.specs;

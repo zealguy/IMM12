@@ -103,7 +103,7 @@ export default function ProductDetailModal({
   // Frequently Bought Together states and computations
   const complementaryItems = React.useMemo(() => {
     const productsArray = Array.isArray(allProducts) ? allProducts : [];
-    let matches = productsArray.filter(p => p.id !== product.id && isCategoryMatch(p.category, product.category));
+    let matches = productsArray.filter(p => p.id !== product.id && isCategoryMatch(p.category, product.category, p.name, p.description));
     if (matches.length < 2) {
       const extraMatches = productsArray.filter(
         p => p.id !== product.id && !matches.some(m => m.id === p.id) && (p.brand || '').toLowerCase() === (product.brand || '').toLowerCase()
@@ -120,7 +120,7 @@ export default function ProductDetailModal({
   const recommendedProducts = React.useMemo(() => {
     const productsArray = Array.isArray(allProducts) ? allProducts : [];
     let matches = productsArray.filter(
-      p => p.id !== product.id && isCategoryMatch(p.category, product.category)
+      p => p.id !== product.id && isCategoryMatch(p.category, product.category, p.name, p.description)
     );
     if (matches.length < 3) {
       const brandMatches = productsArray.filter(

@@ -6,12 +6,13 @@ import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 
-// Use initializeFirestore with experimentalForceLongPolling
-// to prevent 10s connection timeout warnings in sandboxed preview environments
+// Use initializeFirestore with experimentalForceLongPolling and experimentalAutoDetectLongPolling
+// to prevent connection timeout warnings in sandboxed preview environments
 export const db = initializeFirestore(
   app,
   {
     experimentalForceLongPolling: true,
+    experimentalAutoDetectLongPolling: true,
   },
   firebaseConfig.firestoreDatabaseId
 );
@@ -73,8 +74,12 @@ export async function testConnection(): Promise<boolean> {
     await Promise.race([getDocFromServer(doc(db, 'test', 'connection')), timeout]);
     return true;
   } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.warn("Firestore client running in offline mode.");
+    if (error instanceof Error) {
+      if (error.message.includes('the client is offline') || error.message.includes('unavailable')) {
+        console.warn("Firestore client running in offline mode or backend unavailable; utilizing local fallback.");
+      } else {
+        console.warn("Firestore connection check info:", error.message);
+      }
     }
     return false;
   }
