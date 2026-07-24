@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import { CATEGORY_NAMES } from '../../constants/categories';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   TrendingUp, Download, Eye, Calendar, Filter, FileText, 
@@ -28,7 +29,7 @@ export default function AnalyticsDesk({ currency }: AnalyticsDeskProps) {
   const [exportFileName, setExportFileName] = useState('immortal_electronics_q2_report');
   const [exportSuccess, setExportSuccess] = useState(false);
 
-  const categories = ['All', 'Smartphones', 'Computing', 'Accessories', 'Gaming', 'Smart Home'];
+  const categories = CATEGORY_NAMES;
   const brands = ['All', 'Apple', 'Samsung', 'Google Pixel', 'Sony', 'Anker', 'TP-Link'];
   const locations = ['All', 'Accra Central', 'East Legon Branch', 'Kumasi Airport', 'Tema Harbour', 'Tamale City'];
 

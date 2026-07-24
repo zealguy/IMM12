@@ -31,6 +31,7 @@ import Confetti from './components/Confetti';
 import SystemCheck from './components/SystemCheck';
 import { Product, BlogPost, Coupon, Order, RepairRequest, TradeInRequest, CartItem, BulkInquiry } from './types';
 import { useDataStore } from './hooks/useDataStore';
+import { STORE_CATEGORIES, CATEGORY_NAMES, isCategoryMatch } from './constants/categories';
 
 // --- Form Validation Helpers ---
 function getNameError(name: string): string | null {
@@ -652,9 +653,13 @@ export default function App() {
       try {
         const { getDocs, collection } = await import('firebase/firestore');
         const { db } = await import('./lib/firebase');
-        const colSnap = await getDocs(collection(db, 'collections'));
+        const fetchPromise = getDocs(collection(db, 'collections'));
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Firestore fetch timeout')), 3500)
+        );
+        const colSnap: any = await Promise.race([fetchPromise, timeoutPromise]);
         const cols: any[] = [];
-        colSnap.forEach((doc) => {
+        colSnap.forEach((doc: any) => {
           cols.push({ id: doc.id, ...doc.data() });
         });
         if (cols.length > 0) {
@@ -672,6 +677,13 @@ export default function App() {
         const localCols = localStorage.getItem('immortal_custom_collections');
         if (localCols) {
           setCustomCollections(JSON.parse(localCols));
+        } else {
+          const defaults = [
+            { id: 'col-new-arrivals', name: 'New Arrivals', description: 'Fresh premium stock newly arrived in Accra', productIds: [], isFeaturedHome: true },
+            { id: 'col-best-sellers', name: 'Best Sellers', description: 'Most popular customer devices and computers', productIds: [], isFeaturedHome: true },
+            { id: 'col-flagship-deals', name: 'Flagship Deals', description: 'Premium discounted offers', productIds: [], isFeaturedHome: true }
+          ];
+          setCustomCollections(defaults);
         }
       }
     };
@@ -1075,7 +1087,7 @@ export default function App() {
     const description = p.description || '';
     const stock = typeof p.stock === 'number' ? p.stock : 0;
 
-    const matchesCategory = selectedCategory === 'All' || category === selectedCategory;
+    const matchesCategory = isCategoryMatch(category, selectedCategory);
     const matchesBrand = selectedBrand === 'All' || brand.toLowerCase() === selectedBrand.toLowerCase();
     const matchesStock = !inStockOnly || stock > 0;
     const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -1242,7 +1254,71 @@ export default function App() {
               currency={currency}
             />
             
-            <div id="shop-section-anchor" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+            {/* INTERACTIVE EXPANDED STORE CATEGORY SHOWCASE GRID */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-base sm:text-lg font-black font-sans tracking-tight text-gray-900 dark:text-white uppercase flex items-center space-x-2">
+                    <span className="text-amber-500">⚡</span>
+                    <span>Expanded Store Category Explorer</span>
+                  </h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Explore grade-A flagship electronics across 10 specialized categories</p>
+                </div>
+                {selectedCategory !== 'All' && (
+                  <button
+                    onClick={() => setSelectedCategory('All')}
+                    className="px-3 py-1 rounded-lg bg-blue-500/10 text-[#0066FF] hover:bg-blue-500/20 text-xs font-mono font-bold transition flex items-center space-x-1"
+                  >
+                    <span>Reset Category (All)</span>
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-2.5">
+                {STORE_CATEGORIES.map((cat) => {
+                  const isSelected = selectedCategory === cat.id;
+                  const matchingCount = productsArray.filter(p => isCategoryMatch(p.category, cat.id)).length;
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => {
+                        setSelectedCategory(cat.id);
+                        document.getElementById('shop-section-anchor')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className={`p-3 rounded-2xl border text-center transition-all duration-200 flex flex-col items-center justify-between group cursor-pointer ${
+                        isSelected
+                          ? 'bg-[#0066FF] border-[#0066FF] text-white shadow-lg shadow-[#0066FF]/25 scale-105 ring-2 ring-[#0066FF]/30'
+                          : 'bg-white dark:bg-[#101012] border-gray-150 dark:border-gray-800 hover:border-[#0066FF] dark:hover:border-[#0066FF] text-gray-800 dark:text-gray-200 hover:shadow-md'
+                      }`}
+                      title={cat.desc}
+                    >
+                      <div className="relative">
+                        <span className="text-2xl block mb-1 group-hover:scale-110 transition-transform duration-200">
+                          {cat.icon}
+                        </span>
+                        {cat.badge && !isSelected && (
+                          <span className="absolute -top-1 -right-2 text-[7px] font-mono font-black bg-amber-500 text-black px-1 rounded uppercase">
+                            {cat.badge}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="w-full">
+                        <span className={`block text-[10px] font-black tracking-tight line-clamp-1 leading-tight ${isSelected ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
+                          {cat.label}
+                        </span>
+                        <span className={`block text-[8px] font-mono mt-0.5 ${isSelected ? 'text-blue-100 font-bold' : 'text-gray-400'}`}>
+                          {matchingCount} {matchingCount === 1 ? 'item' : 'items'}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div id="shop-section-anchor" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 pt-4">
               {/* Curated Collections Filter Row */}
               {customCollections.length > 0 && (
                 <div className="flex flex-col md:flex-row md:items-center gap-3 bg-gray-50 dark:bg-gray-900/40 p-3.5 rounded-xl border border-gray-100 dark:border-gray-850 shadow-sm">
@@ -1290,20 +1366,26 @@ export default function App() {
 
                 <div className="flex flex-wrap items-center gap-3">
                   {/* Category Buttons */}
-                  <div className="flex gap-1 overflow-x-auto pb-1 md:pb-0">
-                    {['All', 'Smartphones', 'Accessories', 'Computing', 'Gaming'].map(cat => (
-                      <button
-                        key={cat}
-                        onClick={() => setSelectedCategory(cat)}
-                        className={`px-3 py-1.5 text-xs rounded-lg font-bold transition-all shrink-0 ${
-                          selectedCategory === cat 
-                            ? 'bg-[#0066FF] text-white' 
-                            : 'bg-gray-100 dark:bg-gray-850 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
-                        }`}
-                      >
-                        {cat}
-                      </button>
-                    ))}
+                  <div className="flex gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 max-w-full">
+                    {CATEGORY_NAMES.map(cat => {
+                      const count = cat === 'All' ? productsArray.length : productsArray.filter(p => isCategoryMatch(p.category, cat)).length;
+                      return (
+                        <button
+                          key={cat}
+                          onClick={() => setSelectedCategory(cat)}
+                          className={`px-3 py-1.5 text-xs rounded-lg font-bold transition-all shrink-0 flex items-center space-x-1 ${
+                            selectedCategory === cat 
+                              ? 'bg-[#0066FF] text-white shadow-md shadow-[#0066FF]/20' 
+                              : 'bg-gray-100 dark:bg-gray-850 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
+                          }`}
+                        >
+                          <span>{cat}</span>
+                          <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded-full ${selectedCategory === cat ? 'bg-white/20 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-500'}`}>
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
 
                   {/* Sorting Selector dropdown */}

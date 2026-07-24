@@ -12,6 +12,7 @@ import {
   FileText, Globe, RefreshCw, Play, Check, AlertTriangle, EyeOff, LayoutGrid, Zap
 } from 'lucide-react';
 import { Product } from '../../types';
+import { STORE_CATEGORIES } from '../../constants/categories';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../lib/firebase';
 import { handleImageError } from '../../utils/imageFallback';
@@ -423,7 +424,17 @@ export default function ProductStudio({
     setImageCompressionLogs(prev => [...prev, `[IDENTIFIER] Auto-generated SKU: ${computedSku}, Barcode: ${computedBarcode}`]);
   };
 
-  // Firebase Storage Upload Handler
+  // Helper to read file as base64 Data URL
+  const readFileAsDataURL = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Firebase Storage Upload Handler with 4s timeout race
   const uploadImageToFirebase = async (file: File, isMain: boolean) => {
     setFirebaseUploadError(null);
     if (isMain) {
@@ -433,33 +444,42 @@ export default function ProductStudio({
     }
 
     try {
-      // Create a clean, unique file path in the bucket
       const cleanFileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
       const path = `product_images/${cleanFileName}`;
       const storageRef = ref(storage, path);
       
-      // Perform the upload
-      const snapshot = await uploadBytes(storageRef, file);
-      
-      // Retrieve download URL
-      const downloadUrl = await getDownloadURL(snapshot.ref);
+      let downloadUrl = '';
+      try {
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Firebase Storage timeout (exceeded 4s)')), 4000);
+        });
+        const uploadPromise = (async () => {
+          const snapshot = await uploadBytes(storageRef, file);
+          return await getDownloadURL(snapshot.ref);
+        })();
+
+        downloadUrl = await Promise.race([uploadPromise, timeoutPromise]);
+        setImageCompressionLogs(prev => [...prev, `[FIREBASE STORAGE] Uploaded successfully: ${cleanFileName} ✅`]);
+      } catch (stErr) {
+        console.warn('Firebase Storage delayed or offline. Converting directly to compressed Data URL:', stErr);
+        setImageCompressionLogs(prev => [...prev, `[FIREBASE TIMEOUT] Converting to instant base64 photo stream... ⚡`]);
+        downloadUrl = await readFileAsDataURL(file);
+      }
       
       if (isMain) {
         setUploadedMain(downloadUrl);
-        setImageCompressionLogs(prev => [...prev, `[FIREBASE STORAGE] Main thumbnail uploaded successfully: ${cleanFileName} ✅`]);
       } else {
         if (uploadedGallery.length >= 10) {
           alert('You can only have up to 10 gallery images.');
           return;
         }
         setUploadedGallery(prev => [...prev, downloadUrl]);
-        setImageCompressionLogs(prev => [...prev, `[FIREBASE STORAGE] Gallery image uploaded successfully: ${cleanFileName} ✅`]);
       }
     } catch (err: any) {
-      console.error("Firebase Storage Upload Error:", err);
-      const msg = err.message || 'Failed to upload image to Firebase Storage.';
+      console.error("Firebase Upload Error:", err);
+      const msg = err.message || 'Failed to process image upload.';
       setFirebaseUploadError(msg);
-      setImageCompressionLogs(prev => [...prev, `[FIREBASE STORAGE ERROR] ${msg} ❌`]);
+      setImageCompressionLogs(prev => [...prev, `[UPLOAD ERROR] ${msg} ❌`]);
     } finally {
       if (isMain) {
         setIsUploadingMain(false);
@@ -487,17 +507,31 @@ export default function ProductStudio({
         const path = `product_images/${cleanFileName}`;
         const storageRef = ref(storage, path);
         
-        const snapshot = await uploadBytes(storageRef, file);
-        const downloadUrl = await getDownloadURL(snapshot.ref);
+        let downloadUrl = '';
+        try {
+          const timeoutPromise = new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error('Firebase Storage timeout (exceeded 4s)')), 4000);
+          });
+          const uploadPromise = (async () => {
+            const snapshot = await uploadBytes(storageRef, file);
+            return await getDownloadURL(snapshot.ref);
+          })();
+
+          downloadUrl = await Promise.race([uploadPromise, timeoutPromise]);
+          setImageCompressionLogs(prev => [...prev, `[FIREBASE STORAGE] Uploaded item ${i + 1}/${files.length}: ${cleanFileName} ✅`]);
+        } catch (stErr) {
+          console.warn('Firebase Storage delayed. Converting to Data URL:', stErr);
+          downloadUrl = await readFileAsDataURL(file);
+          setImageCompressionLogs(prev => [...prev, `[INSTANT DATA URL] Processed item ${i + 1}/${files.length} ⚡`]);
+        }
 
         setUploadedGallery(prev => [...prev, downloadUrl]);
-        setImageCompressionLogs(prev => [...prev, `[FIREBASE STORAGE] Uploaded gallery item ${i + 1}/${files.length}: ${cleanFileName} ✅`]);
       }
     } catch (err: any) {
       console.error("Firebase Storage Gallery Batch Upload Error:", err);
-      const msg = err.message || 'Failed to upload gallery images to Firebase Storage.';
+      const msg = err.message || 'Failed to upload gallery images.';
       setFirebaseUploadError(msg);
-      setImageCompressionLogs(prev => [...prev, `[FIREBASE STORAGE ERROR] ${msg} ❌`]);
+      setImageCompressionLogs(prev => [...prev, `[ERROR] ${msg} ❌`]);
     } finally {
       setIsUploadingGallery(false);
     }
@@ -882,11 +916,9 @@ export default function ProductStudio({
             className="p-2 bg-white dark:bg-[#121212] border border-gray-150 dark:border-gray-800 text-xs rounded-xl font-bold"
           >
             <option value="All">All Categories</option>
-            <option value="Computing">Computing</option>
-            <option value="Smartphones">Smartphones</option>
-            <option value="Accessories">Accessories</option>
-            <option value="Gaming">Gaming</option>
-            <option value="Smart Home">Smart Home</option>
+            {STORE_CATEGORIES.map(c => (
+              <option key={c.id} value={c.id}>{c.icon} {c.label}</option>
+            ))}
           </select>
         </div>
 
@@ -1169,11 +1201,9 @@ export default function ProductStudio({
                               onChange={(e) => setCategory(e.target.value)}
                               className="w-full p-2 bg-gray-50 dark:bg-black/20 border border-gray-150 dark:border-gray-800 rounded-xl text-xs font-bold text-gray-950 dark:text-white"
                             >
-                              <option value="Computing">Computing</option>
-                              <option value="Smartphones">Smartphones</option>
-                              <option value="Accessories">Accessories</option>
-                              <option value="Gaming">Gaming</option>
-                              <option value="Smart Home">Smart Home</option>
+                              {STORE_CATEGORIES.map(c => (
+                                <option key={c.id} value={c.id}>{c.icon} {c.label}</option>
+                              ))}
                             </select>
                           </div>
                           <div className="space-y-1">

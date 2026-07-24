@@ -15,6 +15,7 @@ import {
   FileDown, BookOpen, Navigation, PanelLeft, Layout, Columns, CheckSquare2
 } from 'lucide-react';
 import { Product } from '../../types';
+import { STORE_CATEGORIES } from '../../constants/categories';
 import { extractAliExpressProductId, sanitizeAliExpressUrl, analyzeAliExpressUrl } from '../../utils/urlParser';
 import { handleImageError } from '../../utils/imageFallback';
 
@@ -1435,9 +1436,9 @@ export default function AIProductHub({
                               onChange={(e) => setGenCategory(e.target.value)}
                               className="w-full p-2 bg-black border border-gray-800 rounded-xl text-xs font-mono text-gray-200"
                             >
-                              <option value="Computing">Computing</option>
-                              <option value="Smartphones">Smartphones</option>
-                              <option value="Accessories">Accessories</option>
+                              {STORE_CATEGORIES.map(c => (
+                                <option key={c.id} value={c.id}>{c.icon} {c.label}</option>
+                              ))}
                             </select>
                           </div>
                         </div>

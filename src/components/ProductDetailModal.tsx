@@ -10,6 +10,7 @@ import { Product, Review } from '../types';
 import ProductCard from './ProductCard';
 import { handleImageError } from '../utils/imageFallback';
 import ProductReviews from './ProductReviews';
+import { isCategoryMatch } from '../constants/categories';
 
 const TECHNICAL_DEFINITIONS: Record<string, string> = {
   'hardlex': 'A proprietary hardened mineral crystal glass developed by Seiko, offering superior scratch and impact resistance compared to standard glass.',
@@ -102,9 +103,11 @@ export default function ProductDetailModal({
   // Frequently Bought Together states and computations
   const complementaryItems = React.useMemo(() => {
     const productsArray = Array.isArray(allProducts) ? allProducts : [];
-    let matches = productsArray.filter(p => p.id !== product.id && p.category === product.category);
+    let matches = productsArray.filter(p => p.id !== product.id && isCategoryMatch(p.category, product.category));
     if (matches.length < 2) {
-      const extraMatches = productsArray.filter(p => p.id !== product.id && p.category !== product.category && p.brand === product.brand);
+      const extraMatches = productsArray.filter(
+        p => p.id !== product.id && !matches.some(m => m.id === p.id) && (p.brand || '').toLowerCase() === (product.brand || '').toLowerCase()
+      );
       matches = [...matches, ...extraMatches];
     }
     if (matches.length < 2) {
@@ -112,14 +115,27 @@ export default function ProductDetailModal({
       matches = [...matches, ...remaining];
     }
     return matches.slice(0, 2);
-  }, [product.id, allProducts]);
+  }, [product.id, product.category, product.brand, allProducts]);
 
   const recommendedProducts = React.useMemo(() => {
     const productsArray = Array.isArray(allProducts) ? allProducts : [];
-    return productsArray.filter(
-      p => p.category === product.category && p.id !== product.id
+    let matches = productsArray.filter(
+      p => p.id !== product.id && isCategoryMatch(p.category, product.category)
     );
-  }, [product.id, product.category, allProducts]);
+    if (matches.length < 3) {
+      const brandMatches = productsArray.filter(
+        p => p.id !== product.id && !matches.some(m => m.id === p.id) && (p.brand || '').toLowerCase() === (product.brand || '').toLowerCase()
+      );
+      matches = [...matches, ...brandMatches];
+    }
+    if (matches.length < 3) {
+      const fallback = productsArray.filter(
+        p => p.id !== product.id && !matches.some(m => m.id === p.id)
+      );
+      matches = [...matches, ...fallback];
+    }
+    return matches.slice(0, 6);
+  }, [product.id, product.category, product.brand, allProducts]);
 
   const structuredSpecs = React.useMemo(() => {
     const rawSpecs = product.specs || {};
@@ -1581,21 +1597,32 @@ export default function ProductDetailModal({
         </div>
         {/* End of Main Columns Wrapper */}
 
-        {/* Recommended for You Section */}
+        {/* Similar Products & Category Recommendations Section */}
         {recommendedProducts.length > 0 && (
           <div 
             id="recommended-products-section" 
             className="w-full p-6 md:p-8 bg-gray-50/50 dark:bg-[#0d0d0d] border-t border-gray-150 dark:border-gray-800/80 mt-2"
           >
-            <div className="flex items-center space-x-2.5 mb-6">
-              <Sparkles className="w-5 h-5 text-[#0066FF] animate-pulse" />
-              <div>
-                <h3 className="text-sm md:text-base font-black uppercase tracking-wider font-mono text-gray-900 dark:text-white">
-                  Recommended for You
-                </h3>
-                <p className="text-[11px] text-gray-400 mt-0.5 font-mono">
-                  Explore other high-performance products in {product.category}
-                </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+              <div className="flex items-center space-x-2.5">
+                <Sparkles className="w-5 h-5 text-[#0066FF] animate-pulse" />
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <h3 className="text-sm md:text-base font-black uppercase tracking-wider font-mono text-gray-900 dark:text-white">
+                      Similar Products & Category Recommendations
+                    </h3>
+                    <span className="text-[10px] font-mono font-bold bg-[#0066FF]/10 text-[#0066FF] px-2 py-0.5 rounded-full uppercase">
+                      {product.category}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-gray-400 mt-0.5 font-mono">
+                    Hand-picked items matching {product.name} to complete your setup
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-xs font-mono font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-xl self-start sm:self-auto flex items-center space-x-1">
+                <span>⚡ Add multiple items for automatic bundle savings</span>
               </div>
             </div>
 

@@ -72,5 +72,11 @@ service cloud.firestore {
       allow read: if true;
       allow create, update, delete: if true;
     }
+
+    // 11. Custom Collections: Read/write for collection groups
+    match /collections/{collectionId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
   }
 }
