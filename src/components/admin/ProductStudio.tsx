@@ -486,7 +486,7 @@ export default function ProductStudio({
       let downloadUrl = '';
       try {
         const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('Firebase Storage timeout (exceeded 3s)')), 3000);
+          setTimeout(() => reject(new Error('Firebase Storage timeout (exceeded 2s)')), 2000);
         });
         const uploadPromise = (async () => {
           const snapshot = await uploadBytes(storageRef, file);

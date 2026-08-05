@@ -2068,18 +2068,21 @@ async function _initializeAndLoadFromFirestoreInternal() {
       products = products.filter(p => p.id !== 'prod-omniview-desktop-stand');
 
       // Auto-upsert any newly added seed products that do not exist in Firestore yet AND were not explicitly deleted
-      const existingIds = new Set(products.map(p => p.id));
-      const missingProducts = initialProducts.filter(p => !existingIds.has(p.id) && !deletedSet.has(p.id));
-      if (missingProducts.length > 0 && !isFirestoreQuotaExceeded && firestoreDb) {
-        console.log(`[Firestore] Syncing ${missingProducts.length} new or missing seed products to Firestore...`);
-        for (const p of missingProducts) {
-          if (isFirestoreQuotaExceeded) break;
-          try {
-            await setDoc(doc(firestoreDb, 'products', p.id), sanitizeForFirestore(p));
-            products.push(p);
-          } catch (err) {
-            handleFirestoreQuotaError(err, `syncing missing product ${p.id}`);
+      // Note: Only auto-upsert if products collection was completely empty or never seeded, to prevent bringing back deleted seed items
+      if (remoteProducts.length === 0) {
+        const existingIds = new Set(products.map(p => p.id));
+        const missingProducts = initialProducts.filter(p => !existingIds.has(p.id) && !deletedSet.has(p.id));
+        if (missingProducts.length > 0 && !isFirestoreQuotaExceeded && firestoreDb) {
+          console.log(`[Firestore] Syncing ${missingProducts.length} new or missing seed products to Firestore...`);
+          for (const p of missingProducts) {
             if (isFirestoreQuotaExceeded) break;
+            try {
+              await setDoc(doc(firestoreDb, 'products', p.id), sanitizeForFirestore(p));
+              products.push(p);
+            } catch (err) {
+              handleFirestoreQuotaError(err, `syncing missing product ${p.id}`);
+              if (isFirestoreQuotaExceeded) break;
+            }
           }
         }
       }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Wifi, WifiOff, RefreshCw, HardDrive, Database, CheckCircle2, AlertTriangle, Trash2 } from 'lucide-react';
+import { Wifi, WifiOff, RefreshCw, HardDrive, Database, CheckCircle2, AlertTriangle, Trash2, Image as ImageIcon, Zap } from 'lucide-react';
 import { offlineStore, StorageStats } from '../lib/offlineStore';
+import { isLowBandwidthConnection } from '../utils/imageCache';
 
 export const OfflineIndicator: React.FC = () => {
   const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
@@ -148,12 +149,17 @@ export const OfflineIndicator: React.FC = () => {
               </div>
             </div>
             <div>
-              <div className="text-[10px] text-slate-400">Cached Collections</div>
-              <div className="font-semibold text-white mt-0.5">{stats?.collectionsCount || 0} Stores</div>
+              <div className="text-[10px] text-slate-400">Image Cache</div>
+              <div className="font-semibold text-emerald-400 flex items-center space-x-1 mt-0.5">
+                <Zap className="w-3 h-3 text-amber-400" />
+                <span>Blur & IDB Active</span>
+              </div>
             </div>
             <div>
-              <div className="text-[10px] text-slate-400">Pending Actions</div>
-              <div className="font-semibold text-amber-400 mt-0.5">{pendingCount} Items</div>
+              <div className="text-[10px] text-slate-400">Mobile Network</div>
+              <div className="font-semibold text-blue-400 mt-0.5">
+                {isLowBandwidthConnection() ? '2G/3G Data Saver' : 'High Speed'}
+              </div>
             </div>
             <div>
               <div className="text-[10px] text-slate-400">Storage Usage</div>

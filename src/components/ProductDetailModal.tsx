@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Product, Review } from '../types';
 import ProductCard from './ProductCard';
 import { handleImageError } from '../utils/imageFallback';
+import ProgressiveImage from './ProgressiveImage';
 import ProductReviews from './ProductReviews';
 import { isCategoryMatch } from '../constants/categories';
 
@@ -875,7 +876,7 @@ export default function ProductDetailModal({
                         : 'border-gray-200 dark:border-gray-800 hover:border-[#0066FF]/55'
                     }`}
                   >
-                    <img src={img} alt={`Thumbnail ${idx}`} className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-115" onError={handleImageError} />
+                    <ProgressiveImage src={img} alt={`Thumbnail ${idx}`} aspectRatio="square" objectFit="contain" className="h-full w-full transition-transform duration-300 group-hover:scale-115" onError={handleImageError} />
                   </button>
                 ))}
               </div>
@@ -1460,7 +1461,7 @@ export default function ProductDetailModal({
                   {/* Main item */}
                   <div className="flex flex-col items-center text-center space-y-1.5 shrink-0 w-24">
                     <div className="group relative w-14 h-14 bg-white dark:bg-black/40 rounded-lg p-1 border border-gray-200 dark:border-gray-850 flex items-center justify-center overflow-hidden">
-                      <img src={product.image} alt={product.name} className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-110" onError={handleImageError} />
+                      <ProgressiveImage src={product.image} alt={product.name} aspectRatio="square" objectFit="contain" className="w-full h-full transition-transform duration-300 group-hover:scale-110" onError={handleImageError} />
                       <div className="absolute -top-1.5 -right-1.5 bg-[#0066FF] text-white rounded-full p-0.5 z-10">
                         <Check className="w-2.5 h-2.5" />
                       </div>
@@ -1489,7 +1490,7 @@ export default function ProductDetailModal({
                           }`}
                         >
                           <div className="group relative w-14 h-14 bg-white dark:bg-black/40 rounded-lg p-1 border border-gray-200 dark:border-gray-850 flex items-center justify-center overflow-hidden">
-                            <img src={item.image} alt={item.name} className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-110" onError={handleImageError} />
+                            <ProgressiveImage src={item.image} alt={item.name} aspectRatio="square" objectFit="contain" className="w-full h-full transition-transform duration-300 group-hover:scale-110" onError={handleImageError} />
                             <div className={`absolute -top-1.5 -right-1.5 rounded-full p-0.5 transition-all z-10 ${
                               isSelected ? 'bg-[#0066FF] text-white' : 'bg-gray-250 dark:bg-gray-800 text-transparent border border-gray-300 dark:border-gray-700'
                             }`}>

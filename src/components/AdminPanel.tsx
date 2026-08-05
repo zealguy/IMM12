@@ -292,17 +292,26 @@ export default function AdminPanel({
       const fileRef = ref(storage, `products/${Date.now()}_${file.name.replace(/\s+/g, '_')}`);
       let finalUrl = '';
 
+      const compressedDataUrl = await new Promise<string>((resolve) => {
+        const r = new FileReader();
+        r.onloadend = () => resolve((r.result as string) || '');
+        r.onerror = () => resolve('');
+        r.readAsDataURL(blob);
+      });
+
       try {
-        const snapshot = await uploadBytes(fileRef, blob);
-        finalUrl = await getDownloadURL(snapshot.ref);
-      } catch (storageErr) {
-        console.warn('Firebase Storage upload timeout, using optimized Data URL:', storageErr);
-        finalUrl = await new Promise<string>((resolve, reject) => {
-          const r = new FileReader();
-          r.onloadend = () => resolve(r.result as string);
-          r.onerror = reject;
-          r.readAsDataURL(blob);
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Firebase Storage upload timeout (2s exceeded)')), 2000);
         });
+        const uploadPromise = (async () => {
+          const snapshot = await uploadBytes(fileRef, blob);
+          return await getDownloadURL(snapshot.ref);
+        })();
+
+        finalUrl = await Promise.race([uploadPromise, timeoutPromise]);
+      } catch (storageErr) {
+        console.warn('Firebase Storage delayed or offline, using optimized compressed Data URL:', storageErr);
+        finalUrl = compressedDataUrl;
       }
 
       if (finalUrl) {

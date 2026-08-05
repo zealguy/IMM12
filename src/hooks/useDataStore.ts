@@ -453,6 +453,9 @@ export async function fetchFirestoreWithRetry<T>(
   return fallbackData;
 }
 
+// Global set to keep track of deleted product IDs across re-fetches
+const locallyDeletedProductIds = new Set<string>();
+
 export function useDataStore() {
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [productDiagnosticLogs, setProductDiagnosticLogs] = useState<ProductDiagnosticLog[]>([]);
@@ -472,9 +475,10 @@ export function useDataStore() {
       if (resProd && resProd.length > 0) {
         const { products: sanitizedList, logs } = validateAndSanitizeProductsWithLogs(resProd);
         setProductDiagnosticLogs(logs);
-        if (sanitizedList.length > 0) {
-          setProducts(sanitizedList);
-          offlineStore.saveCollection('products', sanitizedList);
+        const activeProducts = sanitizedList.filter(p => p && p.id && !locallyDeletedProductIds.has(p.id));
+        if (activeProducts.length > 0) {
+          setProducts(activeProducts);
+          offlineStore.saveCollection('products', activeProducts);
         }
       }
 
@@ -724,6 +728,9 @@ export function useDataStore() {
     const { product: sanitizedProduct } = validateAndDiagnoseProduct(productData);
     sanitizedProduct.status = sanitizedProduct.status || 'Published';
     
+    // Ensure ID is not marked as deleted if re-created
+    locallyDeletedProductIds.delete(sanitizedProduct.id);
+
     // Update local React state and IndexedDB immediately
     setProducts(prev => {
       const updated = [sanitizedProduct, ...prev.filter(p => p.id !== sanitizedProduct.id)];
@@ -803,6 +810,11 @@ export function useDataStore() {
   }, []);
 
   const handleDeleteProduct = useCallback(async (productId: string) => {
+    // Add to locallyDeletedProductIds set immediately
+    if (productId) {
+      locallyDeletedProductIds.add(productId);
+    }
+
     setProducts(prev => {
       const updated = prev.filter(p => p.id !== productId);
       offlineStore.saveCollection('products', updated).catch(() => {});

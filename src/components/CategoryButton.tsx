@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CategoryConfig } from '../constants/categories';
+import ProgressiveImage from './ProgressiveImage';
 
 export interface CategoryButtonProps {
   category: CategoryConfig;
@@ -48,12 +49,12 @@ export const CategoryButton: React.FC<CategoryButtonProps> = ({
       >
         <div className="w-4 h-4 rounded shrink-0 overflow-hidden flex items-center justify-center bg-gray-200/50 dark:bg-black/30">
           {hasValidImage ? (
-            <img
+            <ProgressiveImage
               src={activeImageUrl}
               alt={category.label}
               onError={() => setImageError(true)}
-              className="w-full h-full object-cover rounded"
-              referrerPolicy="no-referrer"
+              className="w-full h-full rounded"
+              objectFit="cover"
             />
           ) : (
             <span className="text-xs leading-none">{fallbackEmoji}</span>
@@ -87,14 +88,14 @@ export const CategoryButton: React.FC<CategoryButtonProps> = ({
       } ${className}`}
       title={category.desc || category.label}
     >
-      <div className="relative mb-2 w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 dark:bg-black/30 p-1 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/30 transition-colors">
+      <div className="relative mb-2 w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 dark:bg-black/30 p-1 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/30 transition-colors overflow-hidden">
         {hasValidImage ? (
-          <img
+          <ProgressiveImage
             src={activeImageUrl}
             alt={category.label}
             onError={() => setImageError(true)}
-            className="w-full h-full object-cover rounded-lg group-hover:scale-110 transition-transform duration-200"
-            referrerPolicy="no-referrer"
+            className="w-full h-full rounded-lg group-hover:scale-110 transition-transform duration-200"
+            objectFit="cover"
           />
         ) : (
           <span className="text-2xl block group-hover:scale-110 transition-transform duration-200 leading-none">

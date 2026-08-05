@@ -8,6 +8,7 @@ import { Star, Heart, ShoppingCart, Sparkles, GitCompare, Zap } from 'lucide-rea
 import { motion, AnimatePresence } from 'motion/react';
 import { Product } from '../types';
 import { handleImageError } from '../utils/imageFallback';
+import ProgressiveImage from './ProgressiveImage';
 
 interface ProductCardProps {
   key?: React.Key;
@@ -207,26 +208,16 @@ export default function ProductCard({
       {/* Image Gallery Trigger */}
       <div 
         onClick={() => onViewDetails(product)}
-        className="relative pt-[100%] cursor-pointer overflow-hidden bg-gray-50 dark:bg-black/40"
+        className="relative pt-[100%] cursor-pointer overflow-hidden bg-gray-50 dark:bg-black/40 group"
       >
-        <motion.img
+        <ProgressiveImage
           src={product.image}
           alt={product.name}
-          className="absolute inset-0 w-full h-full object-contain p-4"
-          loading="lazy"
+          aspectRatio="square"
+          objectFit="contain"
+          className="absolute inset-0 w-full h-full p-4 transition-transform duration-300 group-hover:scale-108"
+          showCacheBadge={false}
           onError={handleImageError}
-          referrerPolicy="no-referrer"
-          variants={{
-            rest: { 
-              scale: 1, 
-              filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.06)) brightness(0.96)" 
-            },
-            hover: { 
-              scale: 1.08, 
-              filter: "drop-shadow(0 12px 20px rgba(0, 0, 0, 0.18)) brightness(1.02)" 
-            }
-          }}
-          transition={{ type: 'spring', stiffness: 300, damping: 22 }}
         />
       </div>
 
