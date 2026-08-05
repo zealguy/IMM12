@@ -1885,6 +1885,25 @@ function isQuotaError(err: any): boolean {
   return code.includes('resource-exhausted') || msg.includes('quota limit exceeded') || msg.includes('quota exceeded') || msg.includes('resource_exhausted');
 }
 
+/**
+ * Strips undefined properties and converts nested undefined values to null or cleans them
+ * to prevent Firestore setDoc/updateDoc from failing with "Unsupported field value: undefined" errors.
+ */
+function sanitizeForFirestore(obj: any): any {
+  if (obj === null || obj === undefined) return null;
+  if (typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeForFirestore(item));
+  }
+  const clean: Record<string, any> = {};
+  for (const [key, val] of Object.entries(obj)) {
+    if (val !== undefined) {
+      clean[key] = sanitizeForFirestore(val);
+    }
+  }
+  return clean;
+}
+
 function handleFirestoreQuotaError(err: any, context: string) {
   if (isQuotaError(err)) {
     if (!isFirestoreQuotaExceeded) {
@@ -1907,7 +1926,7 @@ async function syncCollectionToFirestore(colName: string, items: any[], idField:
       const id = item[idField];
       if (id) {
         try {
-          await setDoc(doc(firestoreDb, colName, id), item);
+          await setDoc(doc(firestoreDb, colName, id), sanitizeForFirestore(item));
         } catch (err: any) {
           handleFirestoreQuotaError(err, `syncing collection ${colName} item ${id}`);
           if (isFirestoreQuotaExceeded) break;
@@ -2307,7 +2326,7 @@ const updateStockHandler = async (req: express.Request, res: express.Response) =
 
     if (firestoreDb && !isFirestoreQuotaExceeded) {
       try {
-        await setDoc(doc(firestoreDb, 'products', req.params.id), updatedProduct);
+        await setDoc(doc(firestoreDb, 'products', req.params.id), sanitizeForFirestore(updatedProduct));
         console.log(`[Firestore] Directly updated product stock ${req.params.id} in cloud database`);
       } catch (err) {
         handleFirestoreQuotaError(err, `updating product stock ${req.params.id}`);
@@ -2326,10 +2345,19 @@ app.patch('/api/products/:id/stock', updateStockHandler);
 app.post('/api/products', async (req, res) => {
   const newProduct: Product = req.body;
   console.log('[DEBUG Backend] POST /api/products - Creation request payload received:', JSON.stringify(newProduct));
-  if (!newProduct.name || !newProduct.priceGHS || !newProduct.category) {
-    console.error('[DEBUG Backend] POST /api/products - Validation failed. Missing required product parameters.');
-    return res.status(400).json({ error: 'Missing required product parameters' });
+  if (!newProduct.name || newProduct.priceGHS === undefined || newProduct.priceGHS === null || isNaN(Number(newProduct.priceGHS)) || !newProduct.category) {
+    console.error('[DEBUG Backend] POST /api/products - Validation failed. Missing or invalid required product parameters.');
+    return res.status(400).json({ error: 'Missing or invalid required product parameters' });
   }
+
+  // Coerce types & ensure defaults
+  newProduct.priceGHS = Number(newProduct.priceGHS);
+  newProduct.priceUSD = newProduct.priceUSD ? Number(newProduct.priceUSD) : Math.round((newProduct.priceGHS / 15) * 100) / 100;
+  newProduct.stock = typeof newProduct.stock === 'number' ? newProduct.stock : parseInt(String(newProduct.stock || 0), 10) || 0;
+  newProduct.status = newProduct.status || 'Published';
+  newProduct.image = newProduct.image || 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?q=80&w=600&auto=format&fit=crop';
+  newProduct.images = Array.isArray(newProduct.images) && newProduct.images.length > 0 ? newProduct.images : [newProduct.image];
+
   const db = getDatabase();
   // Ensure unique ID
   newProduct.id = newProduct.id || `prod-${Date.now()}`;
@@ -2338,7 +2366,7 @@ app.post('/api/products', async (req, res) => {
   
   if (firestoreDb && !isFirestoreQuotaExceeded) {
     try {
-      await setDoc(doc(firestoreDb, 'products', newProduct.id), newProduct);
+      await setDoc(doc(firestoreDb, 'products', newProduct.id), sanitizeForFirestore(newProduct));
       console.log(`[Firestore] Directly added new product ${newProduct.id} to cloud database`);
     } catch (err) {
       handleFirestoreQuotaError(err, `adding product ${newProduct.id}`);
@@ -2364,7 +2392,7 @@ app.patch('/api/products/:id', async (req, res) => {
   
   if (firestoreDb && !isFirestoreQuotaExceeded) {
     try {
-      await setDoc(doc(firestoreDb, 'products', id), updatedProduct);
+      await setDoc(doc(firestoreDb, 'products', id), sanitizeForFirestore(updatedProduct));
       console.log(`[Firestore] Directly updated product ${id} in cloud database`);
     } catch (err) {
       handleFirestoreQuotaError(err, `updating product ${id}`);

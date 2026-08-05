@@ -719,7 +719,12 @@ export function useDataStore() {
   // Product Admin CRUD Actions
   const handleCreateProduct = useCallback(async (productData: Product) => {
     const { product: sanitizedProduct } = validateAndDiagnoseProduct(productData);
-    setProducts(prev => [sanitizedProduct, ...prev.filter(p => p.id !== sanitizedProduct.id)]);
+    sanitizedProduct.status = sanitizedProduct.status || 'Published';
+    setProducts(prev => {
+      const updated = [sanitizedProduct, ...prev.filter(p => p.id !== sanitizedProduct.id)];
+      offlineStore.saveCollection('products', updated).catch(() => {});
+      return updated;
+    });
     try {
       const res = await fetch('/api/products', {
         method: 'POST',
@@ -727,12 +732,13 @@ export function useDataStore() {
         body: JSON.stringify(sanitizedProduct)
       });
       const result = res.ok ? await res.json().catch(() => ({})) : {};
+      await fetchInitialData();
       return result;
     } catch (err) {
       console.error('Error creating product:', err);
       return {};
     }
-  }, []);
+  }, [fetchInitialData]);
 
   const handleEditProduct = useCallback(async (productId: string, productData: Partial<Product>) => {
     const sanitizedPatch: Partial<Product> = { ...productData };
@@ -755,7 +761,11 @@ export function useDataStore() {
       sanitizedPatch.images = cleanGallery.length > 0 ? cleanGallery : [sanitizedPatch.image || DEFAULT_SAFE_PRODUCT.image];
     }
 
-    setProducts(prev => prev.map(p => p.id === productId ? { ...p, ...sanitizedPatch } : p));
+    setProducts(prev => {
+      const updated = prev.map(p => p.id === productId ? { ...p, ...sanitizedPatch } : p);
+      offlineStore.saveCollection('products', updated).catch(() => {});
+      return updated;
+    });
     try {
       const res = await fetch(`/api/products/${productId}`, {
         method: 'PATCH',
@@ -763,29 +773,39 @@ export function useDataStore() {
         body: JSON.stringify(sanitizedPatch)
       });
       const result = res.ok ? await res.json().catch(() => ({})) : {};
+      await fetchInitialData();
       return result;
     } catch (err) {
       console.error('Error editing product:', err);
       return {};
     }
-  }, []);
+  }, [fetchInitialData]);
 
   const handleDeleteProduct = useCallback(async (productId: string) => {
-    setProducts(prev => prev.filter(p => p.id !== productId));
+    setProducts(prev => {
+      const updated = prev.filter(p => p.id !== productId);
+      offlineStore.saveCollection('products', updated).catch(() => {});
+      return updated;
+    });
     try {
       const res = await fetch(`/api/products/${productId}`, {
         method: 'DELETE'
       });
       const result = res.ok ? await res.json().catch(() => ({})) : {};
+      await fetchInitialData();
       return result;
     } catch (err) {
       console.error('Error deleting product:', err);
       return {};
     }
-  }, []);
+  }, [fetchInitialData]);
 
   const handleUpdateStock = useCallback(async (productId: string, newStock: number) => {
-    setProducts(prev => prev.map(p => p.id === productId ? { ...p, stock: newStock } : p));
+    setProducts(prev => {
+      const updated = prev.map(p => p.id === productId ? { ...p, stock: newStock } : p);
+      offlineStore.saveCollection('products', updated).catch(() => {});
+      return updated;
+    });
     try {
       const res = await fetch(`/api/products/${productId}/stock`, {
         method: 'PATCH',
@@ -793,12 +813,13 @@ export function useDataStore() {
         body: JSON.stringify({ stock: newStock })
       });
       const result = res.ok ? await res.json().catch(() => ({})) : {};
+      await fetchInitialData();
       return result;
     } catch (err) {
       console.error('Error updating stock:', err);
       return {};
     }
-  }, []);
+  }, [fetchInitialData]);
 
   const handleUpdateRepair = useCallback(async (repairId: string, status: any, notes: string, quoteGHS: number) => {
     try {

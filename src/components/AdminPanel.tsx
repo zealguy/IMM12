@@ -453,6 +453,7 @@ export default function AdminPanel({
       image: firstImage,
       images: prodImages.length > 0 ? prodImages : [firstImage],
       isFeatured: prodIsFeatured,
+      status: 'Published',
       rating: editingProduct ? editingProduct.rating : 4.8,
       reviewsCount: editingProduct ? editingProduct.reviewsCount : 1,
       isNew: editingProduct ? editingProduct.isNew : true,
