@@ -25,13 +25,20 @@ export interface FirestoreErrorInfo {
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null): never {
+  const rawMsg = error instanceof Error ? error.message : String(error);
+  const isQuota = rawMsg.toLowerCase().includes('quota') || rawMsg.toLowerCase().includes('resource-exhausted') || rawMsg.toLowerCase().includes('resource_exhausted');
+  
+  const displayMsg = isQuota
+    ? `Quota exceeded for Firestore database. Free daily quota will reset tomorrow. For details on usage limits and pricing, see https://firebase.google.com/pricing#cloud-firestore (Original error: ${rawMsg})`
+    : rawMsg;
+
   const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: displayMsg,
     authInfo: {},
     operationType,
     path
   };
   
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  console.warn('Firestore Operation Notice: ', JSON.stringify(errInfo));
   throw new Error(JSON.stringify(errInfo));
 }

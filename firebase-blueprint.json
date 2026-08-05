@@ -166,12 +166,26 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "productId", "reviewerName", "rating", "reviewText", "createdAt"]
+    },
+    "DeletedProduct": {
+      "title": "DeletedProduct",
+      "description": "Deleted product IDs tracking.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "deletedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id"]
     }
   },
   "firestore": {
     "products": {
       "schema": "Product",
       "description": "Shop catalog products."
+    },
+    "deleted_products": {
+      "schema": "DeletedProduct",
+      "description": "Deleted product tracking."
     },
     "repairs": {
       "schema": "RepairRequest",

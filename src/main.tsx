@@ -1,7 +1,12 @@
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
-import App from './App.tsx';
+import App from './App';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { registerServiceWorker } from './lib/registerServiceWorker';
 import './index.css';
+
+// Register Service Worker for offline asset caching
+registerServiceWorker();
 
 // Monkey-patch window.fetch to robustly handle relative API calls in all browser contexts,
 // including sandbox iframes, headless testing, and file:// origins.
@@ -78,6 +83,8 @@ try {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary fallbackTitle="Application Error Encountered">
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 );

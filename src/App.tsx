@@ -8,7 +8,7 @@ import {
   ShoppingBag, Trash2, X, Percent, Check, AlertCircle, Phone, MapPin, CreditCard, 
   Sparkles, ShieldCheck, Heart, ArrowRight, HelpCircle, Building2, GitCompare,
   Copy, Search, Info, QrCode, Mic, MicOff, Share2, ArrowUpDown, Sliders, Filter,
-  Loader2
+  Loader2, ChevronLeft, ChevronRight, ArrowUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Navbar from './components/Navbar';
@@ -29,9 +29,11 @@ import QRScannerModal from './components/QRScannerModal';
 import LegalHubModal from './components/LegalHubModal';
 import Confetti from './components/Confetti';
 import SystemCheck from './components/SystemCheck';
+import { OfflineIndicator } from './components/OfflineIndicator';
 import { Product, BlogPost, Coupon, Order, RepairRequest, TradeInRequest, CartItem, BulkInquiry } from './types';
 import { useDataStore } from './hooks/useDataStore';
-import { STORE_CATEGORIES, CATEGORY_NAMES, isCategoryMatch } from './constants/categories';
+import { STORE_CATEGORIES, CATEGORY_NAMES, isCategoryMatch, getCategoryConfig } from './constants/categories';
+import CategoryButton from './components/CategoryButton';
 
 // --- Form Validation Helpers ---
 function getNameError(name: string): string | null {
@@ -184,7 +186,7 @@ const productCardVariants = {
     opacity: 1,
     y: 0,
     transition: {
-      type: 'spring',
+      type: 'spring' as const,
       stiffness: 120,
       damping: 14
     }
@@ -216,6 +218,7 @@ export default function App() {
     isLoading,
     error,
     fetchInitialData,
+    forceRefreshCatalog,
     handleBookBulkInquiry,
     handleUpdateBulkInquiry,
     handleBookRepair,
@@ -249,6 +252,15 @@ export default function App() {
   // Curated Collections States
   const [customCollections, setCustomCollections] = useState<any[]>([]);
   const [selectedCollectionId, setSelectedCollectionId] = useState<string>('All');
+  const collectionsCarouselRef = React.useRef<HTMLDivElement>(null);
+
+  const scrollCollections = (direction: 'left' | 'right') => {
+    if (collectionsCarouselRef.current) {
+      const cardWidth = window.innerWidth < 640 ? 232 : 266;
+      const scrollAmount = direction === 'left' ? -cardWidth : cardWidth;
+      collectionsCarouselRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
 
   // Cart Drawer & Coupon State
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -968,23 +980,6 @@ export default function App() {
       } catch (err) {
         console.warn("Backend charge logging API warning:", err);
       }
-
-      // Realistic gateway latency (1.5 seconds)
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Force-fail the very first attempt to demonstrate the payment retry UI
-      const shouldFail = paymentAttempts === 0;
-      if (shouldFail) {
-        setPaymentAttempts(prev => prev + 1);
-        if (!failedGateways.includes(paymentGateway)) {
-          setFailedGateways(prev => [...prev, paymentGateway]);
-        }
-        setPaymentError(
-          `Transaction Declined via ${paymentGateway}: The secure handshake timed out or the Mobile Network Operator returned code 402 (Insufficient Funds/PIN Authorization Timeout).`
-        );
-        setIsCheckoutLoading(false);
-        return; // HALT HERE: keep the modal open and let the user retry with a different provider/gateway!
-      }
     }
 
     try {
@@ -1096,8 +1091,20 @@ export default function App() {
                           description.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesCollection = selectedCollectionId === 'All' || (() => {
+      if (selectedCollectionId === 'col-new-arrivals') {
+        return p.isNewArrival || p.isNew;
+      }
+      if (selectedCollectionId === 'col-best-sellers') {
+        return p.isBestSeller;
+      }
+      if (selectedCollectionId === 'col-flagship-deals') {
+        return Boolean(p.isFeatured || p.isBestSeller);
+      }
       const activeCol = customCollections.find(c => c.id === selectedCollectionId);
-      return activeCol ? activeCol.productIds?.includes(p.id) : false;
+      if (activeCol && activeCol.productIds && activeCol.productIds.length > 0) {
+        return activeCol.productIds.includes(p.id);
+      }
+      return true;
     })();
 
     return matchesCategory && matchesBrand && matchesStock && matchesSearch && matchesCollection;
@@ -1255,136 +1262,32 @@ export default function App() {
               currency={currency}
             />
             
-            {/* INTERACTIVE EXPANDED STORE CATEGORY SHOWCASE GRID */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-base sm:text-lg font-black font-sans tracking-tight text-gray-900 dark:text-white uppercase flex items-center space-x-2">
-                    <span className="text-amber-500">⚡</span>
-                    <span>Expanded Store Category Explorer</span>
-                  </h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Explore grade-A flagship electronics across 10 specialized categories</p>
-                </div>
-                {selectedCategory !== 'All' && (
-                  <button
-                    onClick={() => setSelectedCategory('All')}
-                    className="px-3 py-1 rounded-lg bg-blue-500/10 text-[#0066FF] hover:bg-blue-500/20 text-xs font-mono font-bold transition flex items-center space-x-1"
-                  >
-                    <span>Reset Category (All)</span>
-                    <X size={12} />
-                  </button>
-                )}
-              </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-2.5">
-                {STORE_CATEGORIES.map((cat) => {
-                  const isSelected = selectedCategory === cat.id;
-                  const matchingCount = productsArray.filter(p => isCategoryMatch(p.category, cat.id, p.name, p.description)).length;
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => {
-                        setSelectedCategory(cat.id);
-                        document.getElementById('shop-section-anchor')?.scrollIntoView({ behavior: 'smooth' });
-                      }}
-                      className={`p-3 rounded-2xl border text-center transition-all duration-200 flex flex-col items-center justify-between group cursor-pointer ${
-                        isSelected
-                          ? 'bg-[#0066FF] border-[#0066FF] text-white shadow-lg shadow-[#0066FF]/25 scale-105 ring-2 ring-[#0066FF]/30'
-                          : 'bg-white dark:bg-[#101012] border-gray-150 dark:border-gray-800 hover:border-[#0066FF] dark:hover:border-[#0066FF] text-gray-800 dark:text-gray-200 hover:shadow-md'
-                      }`}
-                      title={cat.desc}
-                    >
-                      <div className="relative">
-                        <span className="text-2xl block mb-1 group-hover:scale-110 transition-transform duration-200">
-                          {cat.icon}
-                        </span>
-                        {cat.badge && !isSelected && (
-                          <span className="absolute -top-1 -right-2 text-[7px] font-mono font-black bg-amber-500 text-black px-1 rounded uppercase">
-                            {cat.badge}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="w-full">
-                        <span className={`block text-[10px] font-black tracking-tight line-clamp-1 leading-tight ${isSelected ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
-                          {cat.label}
-                        </span>
-                        <span className={`block text-[8px] font-mono mt-0.5 ${isSelected ? 'text-blue-100 font-bold' : 'text-gray-400'}`}>
-                          {matchingCount} {matchingCount === 1 ? 'item' : 'items'}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
 
             <div id="shop-section-anchor" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 pt-4">
-              {/* Curated Collections Filter Row */}
-              {customCollections.length > 0 && (
-                <div className="flex flex-col md:flex-row md:items-center gap-3 bg-gray-50 dark:bg-gray-900/40 p-3.5 rounded-xl border border-gray-100 dark:border-gray-850 shadow-sm">
-                  <div className="flex items-center space-x-2">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-                    </span>
-                    <span className="text-[10px] font-black text-amber-500 font-mono uppercase tracking-widest whitespace-nowrap">CURATED COLLECTIONS:</span>
-                  </div>
-                  <div className="flex items-center space-x-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none max-w-full">
-                    <button
-                      onClick={() => setSelectedCollectionId('All')}
-                      className={`px-3 py-1.5 text-xs rounded-lg font-bold font-mono uppercase tracking-wider transition-all shrink-0 ${
-                        selectedCollectionId === 'All'
-                          ? 'bg-amber-500 text-black shadow-sm font-black scale-105'
-                          : 'bg-white dark:bg-gray-850 text-gray-600 dark:text-gray-450 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200/50 dark:border-gray-800/40'
-                      }`}
-                    >
-                      All Products
-                    </button>
-                    {customCollections.map(col => (
-                      <button
-                        key={col.id}
-                        onClick={() => setSelectedCollectionId(col.id)}
-                        className={`px-3 py-1.5 text-xs rounded-lg font-bold font-mono uppercase tracking-wider transition-all shrink-0 ${
-                          selectedCollectionId === col.id
-                            ? 'bg-amber-500 text-black shadow-sm font-black scale-105'
-                            : 'bg-white dark:bg-gray-850 text-gray-600 dark:text-gray-450 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200/50 dark:border-gray-800/40'
-                        }`}
-                      >
-                        {col.name} ({col.productIds?.length || 0})
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               {/* Filter controls */}
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-gray-200 dark:border-gray-800 pb-6">
-                <div>
-                  <h3 className="text-xl font-black tracking-tight text-gray-900 dark:text-white">Premium Electronics Grid</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Grade-A quality flagship items with up to 1-year store warranties.</p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-end gap-4 border-b border-gray-200 dark:border-gray-800 pb-6">
+                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-between md:justify-end">
                   {/* Category Buttons */}
                   <div className="flex gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 max-w-full">
-                    {CATEGORY_NAMES.map(cat => {
-                      const count = cat === 'All' ? productsArray.length : productsArray.filter(p => isCategoryMatch(p.category, cat, p.name, p.description)).length;
+                    {CATEGORY_NAMES.map(catName => {
+                      const count = catName === 'All' ? productsArray.length : productsArray.filter(p => isCategoryMatch(p.category, catName, p.name, p.description)).length;
+                      const catConfig = getCategoryConfig(catName) || {
+                        id: catName,
+                        label: catName,
+                        icon: '⚡',
+                        desc: catName,
+                        keywords: []
+                      };
                       return (
-                        <button
-                          key={cat}
-                          onClick={() => setSelectedCategory(cat)}
-                          className={`px-3 py-1.5 text-xs rounded-lg font-bold transition-all shrink-0 flex items-center space-x-1 ${
-                            selectedCategory === cat 
-                              ? 'bg-[#0066FF] text-white shadow-md shadow-[#0066FF]/20' 
-                              : 'bg-gray-100 dark:bg-gray-850 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
-                          }`}
-                        >
-                          <span>{cat}</span>
-                          <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded-full ${selectedCategory === cat ? 'bg-white/20 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-500'}`}>
-                            {count}
-                          </span>
-                        </button>
+                        <CategoryButton
+                          key={catName}
+                          category={catConfig}
+                          isSelected={selectedCategory === catName}
+                          itemCount={count}
+                          variant="pill"
+                          onClick={() => setSelectedCategory(catName)}
+                        />
                       );
                     })}
                   </div>
@@ -2196,47 +2099,90 @@ export default function App() {
           <div>
             <span className="font-bold uppercase tracking-wider block mb-3 text-gray-850 dark:text-gray-200 font-mono text-[10px]">Operations</span>
             <ul className="space-y-2 text-[11px]">
-              <li><button onClick={() => setCurrentTab('shop')} className="hover:text-[#0066FF] text-left cursor-pointer transition">Buy Flagship Smartphones</button></li>
-              <li><button onClick={() => setCurrentTab('repair')} className="hover:text-[#0066FF] text-left cursor-pointer transition">Book Certified Diagnostics</button></li>
-              <li><button onClick={() => setCurrentTab('tradein')} className="hover:text-[#0066FF] text-left cursor-pointer transition">Request Instant Swap Appraisals</button></li>
-              <li><button onClick={() => setCurrentTab('blog')} className="hover:text-[#0066FF] text-left cursor-pointer transition">TechLongevity Blog</button></li>
+              <li>
+                <button 
+                  onClick={() => {
+                    setCurrentTab('shop');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    setTimeout(() => {
+                      document.getElementById('shop-section-anchor')?.scrollIntoView({ behavior: 'smooth' });
+                    }, 50);
+                  }} 
+                  className="hover:text-[#0066FF] text-left cursor-pointer transition"
+                >
+                  Buy Flagship Smartphones
+                </button>
+              </li>
+              <li>
+                <button 
+                  onClick={() => {
+                    setCurrentTab('repair');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }} 
+                  className="hover:text-[#0066FF] text-left cursor-pointer transition"
+                >
+                  Book Certified Diagnostics
+                </button>
+              </li>
+              <li>
+                <button 
+                  onClick={() => {
+                    setCurrentTab('tradein');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }} 
+                  className="hover:text-[#0066FF] text-left cursor-pointer transition"
+                >
+                  Request Instant Swap Appraisals
+                </button>
+              </li>
+              <li>
+                <button 
+                  onClick={() => {
+                    setCurrentTab('blog');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }} 
+                  className="hover:text-[#0066FF] text-left cursor-pointer transition"
+                >
+                  TechLongevity Blog
+                </button>
+              </li>
             </ul>
           </div>
 
           <div>
             <span className="font-bold uppercase tracking-wider block mb-3 text-gray-850 dark:text-gray-200 font-mono text-[10px]">Legal & Policies</span>
             <ul className="space-y-2 text-[11px]">
-              <li><button onClick={() => { setSelectedLegalTab('terms'); setIsLegalHubOpen(true); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Terms & Conditions</button></li>
-              <li><button onClick={() => { setSelectedLegalTab('privacy'); setIsLegalHubOpen(true); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Privacy Policy</button></li>
-              <li><button onClick={() => { setSelectedLegalTab('acceptable-use'); setIsLegalHubOpen(true); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Acceptable Use Policy</button></li>
-              <li><button onClick={() => { setSelectedLegalTab('disclaimer'); setIsLegalHubOpen(true); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">General Disclaimer</button></li>
-              <li><button onClick={() => { setSelectedLegalTab('cookies'); setIsLegalHubOpen(true); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Cookie Policy</button></li>
-              <li><button onClick={() => { setSelectedLegalTab('security'); setIsLegalHubOpen(true); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Security Policy</button></li>
+              <li><button onClick={() => { setSelectedLegalTab('terms'); setIsLegalHubOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Terms & Conditions</button></li>
+              <li><button onClick={() => { setSelectedLegalTab('privacy'); setIsLegalHubOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Privacy Policy</button></li>
+              <li><button onClick={() => { setSelectedLegalTab('acceptable-use'); setIsLegalHubOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Acceptable Use Policy</button></li>
+              <li><button onClick={() => { setSelectedLegalTab('disclaimer'); setIsLegalHubOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">General Disclaimer</button></li>
+              <li><button onClick={() => { setSelectedLegalTab('cookies'); setIsLegalHubOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Cookie Policy</button></li>
+              <li><button onClick={() => { setSelectedLegalTab('security'); setIsLegalHubOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Security Policy</button></li>
             </ul>
           </div>
 
           <div>
             <span className="font-bold uppercase tracking-wider block mb-3 text-gray-850 dark:text-gray-200 font-mono text-[10px]">Customer Care</span>
             <ul className="space-y-2 text-[11px]">
-              <li><button onClick={() => { setSelectedLegalTab('refunds'); setIsLegalHubOpen(true); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Refund & Return Policy</button></li>
-              <li><button onClick={() => { setSelectedLegalTab('shipping'); setIsLegalHubOpen(true); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Shipping & Delivery Policy</button></li>
-              <li><button onClick={() => { setSelectedLegalTab('repairs'); setIsLegalHubOpen(true); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Repair Service Policy</button></li>
-              <li><button onClick={() => { setSelectedLegalTab('warranty'); setIsLegalHubOpen(true); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Warranty Policy</button></li>
-              <li><button onClick={() => { setSelectedLegalTab('payment'); setIsLegalHubOpen(true); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Payment Policy</button></li>
-              <li><button onClick={() => { setSelectedLegalTab('returns-exchanges'); setIsLegalHubOpen(true); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Returns & Exchanges Guide</button></li>
-              <li><button onClick={() => { setSelectedLegalTab('faq'); setIsLegalHubOpen(true); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">F.A.Q.</button></li>
+              <li><button onClick={() => { setSelectedLegalTab('refunds'); setIsLegalHubOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Refund & Return Policy</button></li>
+              <li><button onClick={() => { setSelectedLegalTab('shipping'); setIsLegalHubOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Shipping & Delivery Policy</button></li>
+              <li><button onClick={() => { setSelectedLegalTab('repairs'); setIsLegalHubOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Repair Service Policy</button></li>
+              <li><button onClick={() => { setSelectedLegalTab('warranty'); setIsLegalHubOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Warranty Policy</button></li>
+              <li><button onClick={() => { setSelectedLegalTab('payment'); setIsLegalHubOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Payment Policy</button></li>
+              <li><button onClick={() => { setSelectedLegalTab('returns-exchanges'); setIsLegalHubOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Returns & Exchanges Guide</button></li>
+              <li><button onClick={() => { setSelectedLegalTab('faq'); setIsLegalHubOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">F.A.Q.</button></li>
             </ul>
           </div>
 
           <div>
             <span className="font-bold uppercase tracking-wider block mb-3 text-gray-850 dark:text-gray-200 font-mono text-[10px]">Corporate & Trust</span>
             <ul className="space-y-2 text-[11px]">
-              <li><button onClick={() => { setSelectedLegalTab('about'); setIsLegalHubOpen(true); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">About Immortal Electronics</button></li>
-              <li><button onClick={() => { setSelectedLegalTab('contact'); setIsLegalHubOpen(true); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Contact Us & Store Map</button></li>
-              <li><button onClick={() => { setSelectedLegalTab('accessibility'); setIsLegalHubOpen(true); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Accessibility Statement</button></li>
-              <li><button onClick={() => { setSelectedLegalTab('vendor-policy'); setIsLegalHubOpen(true); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Vendor & Supplier Policy</button></li>
-              <li><button onClick={() => { setSelectedLegalTab('careers'); setIsLegalHubOpen(true); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Careers & Vacancies</button></li>
-              <li><button onClick={() => { setSelectedLegalTab('sustainability'); setIsLegalHubOpen(true); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Sustainability & E-Waste</button></li>
+              <li><button onClick={() => { setSelectedLegalTab('about'); setIsLegalHubOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">About Immortal Electronics</button></li>
+              <li><button onClick={() => { setSelectedLegalTab('contact'); setIsLegalHubOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Contact Us & Store Map</button></li>
+              <li><button onClick={() => { setSelectedLegalTab('accessibility'); setIsLegalHubOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Accessibility Statement</button></li>
+              <li><button onClick={() => { setSelectedLegalTab('vendor-policy'); setIsLegalHubOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Vendor & Supplier Policy</button></li>
+              <li><button onClick={() => { setSelectedLegalTab('careers'); setIsLegalHubOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Careers & Vacancies</button></li>
+              <li><button onClick={() => { setSelectedLegalTab('sustainability'); setIsLegalHubOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-[#0066FF] text-left cursor-pointer transition">Sustainability & E-Waste</button></li>
             </ul>
           </div>
         </div>
@@ -2247,15 +2193,23 @@ export default function App() {
             © {new Date().getFullYear()} Immortal Electronics Ltd. All rights reserved. Circle Ebony, Accra, Republic of Ghana, Tailored & Developed by Zealguy Venture
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[10px]">
-            <button onClick={() => { setSelectedLegalTab('terms'); setIsLegalHubOpen(true); }} className="hover:underline transition">Terms of Service</button>
+            <button onClick={() => { setSelectedLegalTab('terms'); setIsLegalHubOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:underline transition">Terms of Service</button>
             <span>•</span>
-            <button onClick={() => { setSelectedLegalTab('privacy'); setIsLegalHubOpen(true); }} className="hover:underline transition">Privacy Policy</button>
+            <button onClick={() => { setSelectedLegalTab('privacy'); setIsLegalHubOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:underline transition">Privacy Policy</button>
             <span>•</span>
-            <button onClick={() => { setSelectedLegalTab('cookies'); setIsLegalHubOpen(true); }} className="hover:underline transition">Cookie Settings</button>
+            <button onClick={() => { setSelectedLegalTab('cookies'); setIsLegalHubOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:underline transition">Cookie Settings</button>
             <span>•</span>
-            <button onClick={() => { setSelectedLegalTab('about'); setIsLegalHubOpen(true); }} className="hover:underline transition">About Us</button>
+            <button onClick={() => { setSelectedLegalTab('about'); setIsLegalHubOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:underline transition">About Us</button>
             <span>•</span>
-            <button onClick={() => { setSelectedLegalTab('contact'); setIsLegalHubOpen(true); }} className="hover:underline transition">Contact Support</button>
+            <button onClick={() => { setSelectedLegalTab('contact'); setIsLegalHubOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:underline transition">Contact Support</button>
+            <span>•</span>
+            <button 
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
+              className="flex items-center space-x-1 px-2.5 py-1 rounded bg-gray-100 dark:bg-gray-800 hover:bg-[#0066FF]/10 text-gray-700 dark:text-gray-300 hover:text-[#0066FF] font-mono font-bold transition cursor-pointer"
+            >
+              <span>Back to Top</span>
+              <ArrowUp size={11} />
+            </button>
           </div>
         </div>
       </footer>
@@ -2396,9 +2350,9 @@ export default function App() {
 
       {/* CHECKOUT FLOW MODAL WITH MOMO EMULATION */}
       {isCheckoutOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto text-gray-900 dark:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/80 backdrop-blur-md overflow-y-auto text-gray-900 dark:text-white">
           <div 
-            className="w-full max-w-2xl bg-white dark:bg-[#0B0B0B] border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-2xl relative"
+            className="w-full max-w-2xl max-h-[92vh] sm:max-h-[90vh] overflow-y-auto bg-white dark:bg-[#0B0B0B] border border-gray-100 dark:border-gray-800 rounded-2xl p-4 sm:p-6 shadow-2xl relative scrollbar-thin"
             onClick={(e) => e.stopPropagation()}
             id="checkout-modal"
           >
@@ -2407,55 +2361,93 @@ export default function App() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4, ease: "easeOut" }}
-                className="text-center space-y-5 py-8" 
+                className="text-center space-y-5 py-6 sm:py-8 relative" 
                 id="checkout-success-view"
               >
                 <Confetti />
-                <div className="relative inline-block">
-                  <div className="absolute inset-0 bg-[#0066FF]/25 blur-2xl rounded-full scale-150 animate-pulse" />
+
+                {/* Animated Visual Check Pulse Badge */}
+                <div className="relative inline-flex items-center justify-center">
+                  <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping scale-125 opacity-75" />
+                  <div className="absolute -inset-4 bg-gradient-to-r from-emerald-500/30 via-teal-500/25 to-blue-500/30 blur-xl rounded-full animate-pulse" />
+                  
                   <motion.div 
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: [0, -8, 0], opacity: 1 }}
-                    transition={{ 
-                      y: { repeat: Infinity, duration: 2.2, ease: "easeInOut" },
-                      opacity: { duration: 0.5 }
-                    }}
-                    className="text-5xl relative z-10"
+                    initial={{ scale: 0, rotate: -45 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ type: "spring", stiffness: 280, damping: 18 }}
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 relative z-10"
                   >
-                    🚀
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: [0, 1.25, 1] }}
+                      transition={{ delay: 0.2, duration: 0.3 }}
+                    >
+                      <Check className="w-9 h-9 sm:w-11 sm:h-11 stroke-[3]" />
+                    </motion.div>
                   </motion.div>
                 </div>
                 
-                <h3 className="text-xl font-extrabold text-green-500 tracking-tight">
-                  Secure Checkout Order Received!
-                </h3>
+                <motion.h3 
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.15, duration: 0.3 }}
+                  className="text-xl sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight flex items-center justify-center gap-2"
+                >
+                  <span>Order Verified & Confirmed!</span>
+                </motion.h3>
                 
-                <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed">
-                  Your order is registered with our dispatch warehouse. We will send updates to your phone. Use this code to track delivery:
-                </p>
+                <motion.p 
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.2, duration: 0.3 }}
+                  className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed"
+                >
+                  Your order has been registered in our database and dispatched. We will send status updates to your phone.
+                </motion.p>
                 
-                <div className="bg-gray-50 dark:bg-gray-950 border border-gray-150 dark:border-gray-850 p-5 rounded-2xl inline-block font-mono shadow-md relative overflow-hidden group">
-                  <div className="absolute -inset-y-0 -inset-x-12 bg-gradient-to-r from-transparent via-[#0066FF]/5 to-transparent skew-x-12 group-hover:translate-x-full transition-transform duration-1000" />
-                  <span className="text-[10px] text-gray-400 block uppercase tracking-wider font-bold">ORDER DISPATCH CODE</span>
-                  <span className="text-2xl font-black text-[#0066FF] tracking-wider block mt-1 select-all">{checkoutSuccessCode}</span>
-                </div>
+                {/* Entrance Animation for Order & Products Update Code */}
+                <motion.div 
+                  initial={{ y: 15, opacity: 0, scale: 0.95 }}
+                  animate={{ y: 0, opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.28, duration: 0.4, ease: "easeOut" }}
+                  className="bg-gray-50 dark:bg-gray-950 border border-emerald-500/30 dark:border-emerald-500/20 p-4 sm:p-5 rounded-2xl inline-block font-mono shadow-md relative overflow-hidden group"
+                  id="order-dispatch-code-card"
+                >
+                  <div className="absolute -inset-y-0 -inset-x-12 bg-gradient-to-r from-transparent via-[#0066FF]/10 to-transparent skew-x-12 group-hover:translate-x-full transition-transform duration-1000" />
+                  <div className="flex items-center justify-center gap-1.5 mb-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 block uppercase tracking-wider font-bold">ORDER DISPATCH CODE</span>
+                  </div>
+                  <span className="text-xl sm:text-2xl font-black text-[#0066FF] dark:text-blue-400 tracking-wider block mt-1 select-all">{checkoutSuccessCode}</span>
+                </motion.div>
 
-                {/* Estimated Delivery Confirmation Card */}
+                {/* Estimated Delivery Confirmation Card with Entrance Animation */}
                 {(() => {
                   const est = getEstimatedDeliveryText(deliveryOption);
                   return (
-                    <div className="max-w-md mx-auto p-4 rounded-2xl border border-gray-150 dark:border-gray-850 bg-gray-50/50 dark:bg-black/20 text-left flex items-start gap-3 mt-4" id="success-delivery-est">
+                    <motion.div 
+                      initial={{ y: 15, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.35, duration: 0.4 }}
+                      className="max-w-md mx-auto p-3.5 sm:p-4 rounded-2xl border border-gray-150 dark:border-gray-850 bg-gray-50/50 dark:bg-black/20 text-left flex items-start gap-3 mt-4" 
+                      id="success-delivery-est"
+                    >
                       <span className="text-xl">📦</span>
                       <div>
                         <span className="text-[10px] text-gray-400 font-mono font-bold uppercase tracking-wider">Estimated Handover / Arrival</span>
                         <p className="text-xs font-black text-gray-900 dark:text-white mt-0.5">{est.dateString}</p>
                         <p className="text-[10px] text-gray-500 mt-1 leading-relaxed">{est.label}</p>
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })()}
                 
-                <div className="pt-4">
+                <motion.div 
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.42, duration: 0.3 }}
+                  className="pt-4"
+                >
                   <button
                     onClick={() => {
                       setCheckoutSuccessCode(null);
@@ -2465,25 +2457,25 @@ export default function App() {
                   >
                     Done
                   </button>
-                </div>
+                </motion.div>
               </motion.div>
             ) : (
               <form onSubmit={handleCheckoutSubmit} className="space-y-4">
                 <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3">
-                  <h3 className="text-md font-extrabold flex items-center space-x-1.5">
-                    <CreditCard className="w-5 h-5 text-[#0066FF]" />
+                  <h3 className="text-sm sm:text-md font-extrabold flex items-center space-x-1.5">
+                    <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-[#0066FF]" />
                     <span>{quickBuyItem ? 'Direct Quick Buy Checkout' : 'Secure Accra Dispatch Checkout'}</span>
                   </h3>
                   <button
                     type="button"
                     onClick={() => setIsCheckoutOpen(false)}
-                    className="p-1 rounded-full hover:bg-gray-100"
+                    className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 items-start">
                   {/* Shipping Form */}
                   <div className="space-y-3">
                     <span className="text-[10px] text-gray-400 font-mono uppercase tracking-wider block border-b border-gray-100 dark:border-gray-900 pb-1">1. Billing & Shipping Details</span>
@@ -2636,7 +2628,7 @@ export default function App() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-[10px] font-semibold text-gray-500 uppercase font-mono">City / Location</label>
                         <input
@@ -2652,7 +2644,7 @@ export default function App() {
                         <select
                           value={deliveryOption}
                           onChange={(e) => setDeliveryOption(e.target.value as any)}
-                          className="mt-1 w-full p-1.5 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-gray-800 text-xs text-gray-700 dark:text-white rounded-lg"
+                          className="mt-1 w-full p-2 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-gray-800 text-xs text-gray-700 dark:text-white rounded-lg"
                         >
                           <option value="Standard Accra Dispatch">Standard Dispatch (GHS 35)</option>
                           <option value="Expedited Motorcycle Courier">Expedited Cycle (GHS 55)</option>
@@ -2677,7 +2669,7 @@ export default function App() {
                     })()}
 
                     {/* Save details checkbox */}
-                    <div className="flex items-center space-x-2 pt-2" id="checkout-save-details-container">
+                    <div className="flex items-center space-x-2 pt-1" id="checkout-save-details-container">
                       <input
                         type="checkbox"
                         id="save-checkout-details-checkbox"
@@ -2694,7 +2686,7 @@ export default function App() {
                             localStorage.removeItem('immortal_checkout_city');
                           }
                         }}
-                        className="w-4 h-4 rounded border-gray-300 dark:border-gray-750 text-[#0066FF] focus:ring-[#0066FF] focus:ring-offset-0 cursor-pointer"
+                        className="w-4 h-4 rounded border-gray-300 dark:border-gray-750 text-[#0066FF] focus:ring-[#0066FF] focus:ring-offset-0 cursor-pointer shrink-0"
                       />
                       <label 
                         htmlFor="save-checkout-details-checkbox" 
@@ -2731,7 +2723,7 @@ export default function App() {
                     )}
 
                     {/* Paystack / Flutterwave style provider choice */}
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {[
                         { name: 'MTN MoMo', label: 'MTN Mobile Money' },
                         { name: 'Telecel Cash', label: 'Telecel Cash' },
@@ -2745,7 +2737,7 @@ export default function App() {
                             setPaymentProvider(prov.name as any);
                             setPaymentError(null); // Clear payment error upon switching provider
                           }}
-                          className={`p-3 border rounded-xl text-left text-xs transition-all ${
+                          className={`p-2.5 sm:p-3 border rounded-xl text-left text-xs transition-all ${
                             paymentProvider === prov.name 
                               ? 'border-[#0066FF] bg-[#0066FF]/10 font-bold text-[#0066FF]' 
                               : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 text-gray-700 dark:text-gray-300'
@@ -2760,7 +2752,7 @@ export default function App() {
                     {paymentProvider !== 'Cash on Delivery' && (
                       <div className="space-y-2 pt-1">
                         <label className="block text-[10px] font-semibold text-gray-500 uppercase font-mono">Secure Payment Processor *</label>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {[
                             { id: 'Paystack', name: 'Paystack Gateway', description: 'Accept MTN, Telecel & Cards', logo: '💳' },
                             { id: 'Flutterwave', name: 'Flutterwave Gateway', description: 'Grow business across Africa', logo: '🌊' }
@@ -2783,15 +2775,15 @@ export default function App() {
                                     : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 text-gray-700 dark:text-gray-300'
                                 }`}
                               >
-                                <div className="flex items-center gap-2">
-                                  <span className="text-base">{gate.logo}</span>
-                                  <div>
-                                    <span className="font-extrabold block">{gate.id}</span>
-                                    <span className="text-[9px] text-gray-400 block">{gate.description}</span>
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className="text-base shrink-0">{gate.logo}</span>
+                                  <div className="min-w-0">
+                                    <span className="font-extrabold block truncate">{gate.id}</span>
+                                    <span className="text-[9px] text-gray-400 block truncate">{gate.description}</span>
                                   </div>
                                 </div>
                                 {isFailed && (
-                                  <span className="text-[8px] bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 font-extrabold px-1.5 py-0.5 rounded uppercase font-mono shrink-0">Failed</span>
+                                  <span className="text-[8px] bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 font-extrabold px-1.5 py-0.5 rounded uppercase font-mono shrink-0 ml-1">Failed</span>
                                 )}
                               </button>
                             );
@@ -2830,19 +2822,19 @@ export default function App() {
                     )}
 
                     {/* Items Breakdown */}
-                    <div className="border border-gray-200 dark:border-gray-800 p-3.5 rounded-xl bg-gray-50/30 dark:bg-black/5 space-y-2">
+                    <div className="border border-gray-200 dark:border-gray-800 p-3 sm:p-3.5 rounded-xl bg-gray-50/30 dark:bg-black/5 space-y-2">
                       <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider block">Items in Purchase</span>
                       {quickBuyItem ? (
                         <div className="flex items-center gap-2.5">
                           <img
                             src={quickBuyItem.product.image}
                             alt={quickBuyItem.product.name}
-                            className="w-10 h-10 object-contain p-1 border border-gray-150 dark:border-gray-800 rounded-lg bg-white dark:bg-[#121212]"
+                            className="w-10 h-10 object-contain p-1 border border-gray-150 dark:border-gray-800 rounded-lg bg-white dark:bg-[#121212] shrink-0"
                             onError={handleImageError}
                           />
                           <div className="flex-1 min-w-0">
                             <span className="text-xs font-bold block truncate text-gray-900 dark:text-white">{quickBuyItem.product.name}</span>
-                            <span className="text-[10px] text-gray-400 font-mono">Color: {quickBuyItem.selectedColor} • Qty: {quickBuyItem.quantity}</span>
+                            <span className="text-[10px] text-gray-400 font-mono block truncate">Color: {quickBuyItem.selectedColor} • Qty: {quickBuyItem.quantity}</span>
                           </div>
                           <span className="text-xs font-bold text-gray-950 dark:text-white shrink-0">
                             {currency === 'GHS' ? `₵${quickBuyItem.product.priceGHS.toLocaleString()}` : `$${quickBuyItem.product.priceUSD.toLocaleString()}`}
@@ -2855,12 +2847,12 @@ export default function App() {
                               <img
                                 src={item.product.image}
                                 alt={item.product.name}
-                                className="w-8 h-8 object-contain p-1 border border-gray-150 dark:border-gray-800 rounded-lg bg-white dark:bg-[#121212]"
+                                className="w-8 h-8 object-contain p-1 border border-gray-150 dark:border-gray-800 rounded-lg bg-white dark:bg-[#121212] shrink-0"
                                 onError={handleImageError}
                               />
                               <div className="flex-1 min-w-0">
                                 <span className="text-[11px] font-bold block truncate text-gray-800 dark:text-gray-200">{item.product.name}</span>
-                                <span className="text-[9px] text-gray-400 font-mono font-medium">Color: {item.selectedColor} • Qty: {item.quantity}</span>
+                                <span className="text-[9px] text-gray-400 font-mono font-medium block truncate">Color: {item.selectedColor} • Qty: {item.quantity}</span>
                               </div>
                               <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 shrink-0">
                                 {currency === 'GHS' ? `₵${(item.product.priceGHS * item.quantity).toLocaleString()}` : `$${(item.product.priceUSD * item.quantity).toLocaleString()}`}
@@ -2872,7 +2864,7 @@ export default function App() {
                     </div>
 
                     {/* Final Tally */}
-                    <div className="border border-gray-200 dark:border-gray-800 p-4 rounded-xl space-y-2 bg-gray-50/50 dark:bg-black/10">
+                    <div className="border border-gray-200 dark:border-gray-800 p-3.5 sm:p-4 rounded-xl space-y-2 bg-gray-50/50 dark:bg-black/10">
                       <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider block">Receipt Tally</span>
                       <div className="flex justify-between text-xs">
                         <span>Items Subtotal:</span>
@@ -2991,6 +2983,7 @@ export default function App() {
           onDeleteProduct={handleDeleteProduct}
           onCreateBlog={handleCreateBlog}
           onDeleteBlog={handleDeleteBlog}
+          onForceRefresh={forceRefreshCatalog}
           onClose={() => setIsAdminOpen(false)}
         />
       )}
@@ -3140,6 +3133,9 @@ export default function App() {
           />
         )}
       </AnimatePresence>
+
+      {/* OFFLINE ENTERPRISE PERSISTENCE & SYNC INDICATOR */}
+      <OfflineIndicator />
 
     </div>
   );

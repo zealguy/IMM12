@@ -11,8 +11,9 @@ import {
   Package, AlertTriangle, ArrowUpRight, Search, Plus, Edit2, Trash2, 
   Upload, X, Check, ArrowRight, Eye, EyeOff, Phone, Mail, MapPin, Globe, CreditCard,
   FileText, Calendar, Filter, ChevronRight, ChevronDown, CheckCircle2,
-  Zap, CheckSquare, Terminal, Play
+  Zap, CheckSquare, Terminal, Play, Activity, RefreshCw
 } from 'lucide-react';
+import SystemStatusDashboard from './admin/SystemStatusDashboard';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, BarChart, Bar, Legend
@@ -71,6 +72,7 @@ interface AdminPanelProps {
   onDeleteProduct: (productId: string) => Promise<any>;
   onCreateBlog?: (blogData: any) => Promise<any>;
   onDeleteBlog?: (blogId: string) => Promise<any>;
+  onForceRefresh?: () => Promise<void>;
   onClose: () => void;
 }
 
@@ -78,11 +80,26 @@ export default function AdminPanel({
   products = [], repairs = [], tradeins = [], orders = [], coupons = [], currency, bulkInquiries = [], blogs = [],
   onUpdateStock, onUpdateRepair, onUpdateTradeIn, onUpdateOrder, onCreateCoupon, onUpdateBulkInquiry,
   onCreateProduct, onEditProduct, onDeleteProduct, onCreateBlog, onDeleteBlog,
+  onForceRefresh,
   onClose
 }: AdminPanelProps) {
   
   // Tab states
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'collections' | 'orders' | 'customers' | 'settings' | 'blogs'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'collections' | 'orders' | 'customers' | 'settings' | 'blogs' | 'system_status'>('overview');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleForceRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      if (onForceRefresh) {
+        await onForceRefresh();
+      }
+    } catch (err) {
+      console.error('Force refresh catalog error:', err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
   
   // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -519,9 +536,9 @@ export default function AdminPanel({
           productIds: col.productIds.filter(id => id !== productId)
         }));
         setCustomCollections(colUpdates);
-        // Persist collection edits
+        // Persist collection edits in background
         for (const col of colUpdates) {
-          await setDoc(doc(db, 'collections', col.id), col);
+          setDoc(doc(db, 'collections', col.id), col).catch(e => console.warn('Background collection update warning:', e));
         }
 
         alert('Product safely removed from inventory.');
@@ -1147,6 +1164,7 @@ export default function AdminPanel({
                 { id: 'orders', label: 'Sales & Orders', icon: ShoppingCart },
                 { id: 'customers', label: 'Customer Matrix', icon: Users },
                 { id: 'blogs', label: 'CMS Editorial', icon: FileText },
+                { id: 'system_status', label: 'System Status', icon: Activity },
                 { id: 'settings', label: 'Store Settings', icon: Settings }
               ].map((item) => {
                 const Icon = item.icon;
@@ -1183,13 +1201,25 @@ export default function AdminPanel({
           {/* ACTIVE CONTENT WORKSPACE */}
           <div className="flex-1 p-4 md:p-8 overflow-y-auto bg-gray-50/50 dark:bg-[#050505] relative">
             
-            {/* CLOSE DASHBOARD CROSS */}
-            <button 
-              onClick={onClose}
-              className="absolute top-6 right-6 p-2 rounded-xl bg-white dark:bg-black/40 border border-gray-150 dark:border-gray-800 text-gray-500 hover:text-gray-800 dark:hover:text-white transition shadow-sm z-10"
-            >
-              <X size={15} />
-            </button>
+            {/* TOP ACTIONS & CLOSE DASHBOARD CROSS */}
+            <div className="absolute top-6 right-6 flex items-center space-x-2 z-10">
+              <button
+                onClick={handleForceRefresh}
+                disabled={isRefreshing}
+                className="px-3 py-1.5 rounded-xl bg-zinc-900/80 hover:bg-zinc-800 text-amber-400 text-xs font-bold font-mono uppercase tracking-wider flex items-center space-x-1.5 transition border border-amber-500/30 shadow-sm disabled:opacity-50"
+                title="Clear local state cache and force re-fetch product catalog from Firestore"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">{isRefreshing ? 'Refreshing...' : 'Force Refresh Catalog'}</span>
+              </button>
+
+              <button 
+                onClick={onClose}
+                className="p-2 rounded-xl bg-white dark:bg-black/40 border border-gray-150 dark:border-gray-800 text-gray-500 hover:text-gray-800 dark:hover:text-white transition shadow-sm"
+              >
+                <X size={15} />
+              </button>
+            </div>
 
             {/* TAB CONTENT 1: OVERVIEW METRICS */}
             {activeTab === 'overview' && (
@@ -1376,13 +1406,25 @@ export default function AdminPanel({
                     <h1 className="text-xl md:text-2xl font-black font-sans tracking-tight">Product Inventory</h1>
                     <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5">Manage, Update & Deploy Electronics Catalog</p>
                   </div>
-                  <button
-                    onClick={triggerAddProduct}
-                    className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-black text-xs font-bold font-mono uppercase tracking-wider flex items-center justify-center space-x-2 transition self-start"
-                  >
-                    <Plus size={15} />
-                    <span>Deploy Product</span>
-                  </button>
+                  <div className="flex items-center space-x-2 self-start">
+                    <button
+                      onClick={handleForceRefresh}
+                      disabled={isRefreshing}
+                      className="px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-amber-400 text-xs font-bold font-mono uppercase tracking-wider flex items-center space-x-2 transition border border-amber-500/30 shadow-sm disabled:opacity-50"
+                      title="Bypass local cache and perform a full secondary fetch from Firestore"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                      <span>{isRefreshing ? 'Refreshing...' : 'Force Refresh Catalog'}</span>
+                    </button>
+
+                    <button
+                      onClick={triggerAddProduct}
+                      className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-black text-xs font-bold font-mono uppercase tracking-wider flex items-center justify-center space-x-2 transition"
+                    >
+                      <Plus size={15} />
+                      <span>Deploy Product</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* FILTERS & SEARCH ROW */}
@@ -1767,7 +1809,11 @@ export default function AdminPanel({
                                 <div className="flex items-center space-x-3">
                                   <img 
                                     src={prod.image || 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?q=80&w=100&auto=format&fit=crop'} 
-                                    alt="" 
+                                    alt={prod.name} 
+                                    referrerPolicy="no-referrer"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?q=80&w=100&auto=format&fit=crop';
+                                    }}
                                     className="w-10 h-10 object-cover rounded-lg border border-gray-200 dark:border-gray-800 bg-white"
                                   />
                                   <div>
@@ -2542,6 +2588,10 @@ export default function AdminPanel({
                   </div>
                 </form>
               </div>
+            )}
+
+            {activeTab === 'system_status' && (
+              <SystemStatusDashboard />
             )}
 
           </div>

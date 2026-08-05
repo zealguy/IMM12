@@ -7,17 +7,47 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import { GoogleGenAI, GenerateVideosOperation } from '@google/genai';
-import { createServer as createViteServer } from 'vite';
 import { Product, RepairRequest, TradeInRequest, Order, BlogPost, Coupon, BulkInquiry, Review } from './src/types.js';
 
 // Setup environment loading
 import dotenv from 'dotenv';
 dotenv.config();
 
+// Global process exception resilience & stream error handling
+if (process.stdout && process.stdout.on) {
+  process.stdout.on('error', (err: any) => {
+    if (err?.code === 'EPIPE') return;
+  });
+}
+if (process.stderr && process.stderr.on) {
+  process.stderr.on('error', (err: any) => {
+    if (err?.code === 'EPIPE') return;
+  });
+}
+
+process.on('unhandledRejection', (reason: any, promise) => {
+  if (reason?.code === 'EPIPE' || (reason instanceof Error && reason.message.includes('EPIPE'))) {
+    return;
+  }
+  try {
+    console.warn('[Process] Caught unhandled promise rejection:', reason);
+  } catch {}
+});
+process.on('uncaughtException', (err: any) => {
+  if (err?.code === 'EPIPE' || (err instanceof Error && err.message.includes('EPIPE'))) {
+    return;
+  }
+  try {
+    console.error('[Process] Caught uncaught exception:', err);
+  } catch {}
+});
+
 // Firebase initialization
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { getFirestore, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc, setLogLevel } from 'firebase/firestore';
 import { OperationType, handleFirestoreError } from './src/lib/firestore-error.js';
+
+setLogLevel('error');
 
 let firebaseConfig: any = {};
 try {
@@ -34,7 +64,7 @@ const firestoreDb = firebaseApp ? getFirestore(firebaseApp, firebaseConfig.fires
 
 
 export const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 app.use(express.json({ limit: '10mb' }));
 
@@ -51,8 +81,15 @@ app.use((req, res, next) => {
 
 // Request Logger and Path Diagnostics Middleware
 app.use((req, res, next) => {
-  console.log(`[Express API Server] ${req.method} ${req.url} (originalUrl: ${req.originalUrl})`);
+  if (req.url.startsWith('/api')) {
+    console.log(`[Express API] ${req.method} ${req.url}`);
+  }
   next();
+});
+
+// Health check endpoint for Cloud Run container health checks
+app.get(['/api/health', '/health', '/healthz'], (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // Path to durable file-based database
@@ -68,6 +105,7 @@ interface DatabaseSchema {
   coupons: Coupon[];
   bulkInquiries: BulkInquiry[];
   reviews: Review[];
+  deletedProductIds?: string[];
 }
 
 // Initial high-fidelity Ghanaian Seed Data
@@ -1358,6 +1396,311 @@ const initialProducts: Product[] = [
       "Weight": "146g=10g/ 5.15oz#0.35oz",
       "Safe Load Capacity": "500g/1.1llb"
     }
+  },
+  {
+    id: 'prod-iphone16promax',
+    name: 'iPhone 16 Pro Max',
+    description: 'Apple flagship with Grade 5 Titanium design, A18 Pro chip, 48MP Fusion camera with 4K 120 fps Dolby Vision, and dedicated Camera Control button.',
+    priceGHS: 25500,
+    priceUSD: 1650,
+    category: 'Smartphones',
+    brand: 'Apple',
+    image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?q=80&w=600&auto=format&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1695048133142-1a20484d2569?q=80&w=600&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1695048132959-efd5bf9273c5?q=80&w=600&auto=format&fit=crop'
+    ],
+    rating: 5.0,
+    reviewsCount: 18,
+    specs: {
+      'Display': '6.9-inch Super Retina XDR OLED, 120Hz ProMotion',
+      'Processor': 'Apple A18 Pro (3nm)',
+      'Storage': '256GB / 512GB / 1TB',
+      'Main Camera': '48MP Fusion + 48MP Ultra-wide + 12MP Telephoto (5x zoom)',
+      'Battery': '4685 mAh, 25W MagSafe Wireless Charging',
+      'OS': 'iOS 18 (Apple Intelligence Ready)'
+    },
+    colors: ['Desert Titanium', 'Natural Titanium', 'White Titanium', 'Black Titanium'],
+    isNew: true,
+    stock: 10,
+    isNewArrival: true,
+    isFeatured: true,
+    isBestSeller: true,
+    status: 'Published'
+  },
+  {
+    id: 'prod-oneplus12',
+    name: 'OnePlus 12 5G',
+    description: 'Powered by Snapdragon 8 Gen 3 with 4th Gen Hasselblad Camera System for Mobile, 100W SUPERVOOC fast charging, and 2K 120Hz ProXDR display.',
+    priceGHS: 12800,
+    priceUSD: 850,
+    category: 'Smartphones',
+    brand: 'OnePlus',
+    image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=600&auto=format&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=600&auto=format&fit=crop'
+    ],
+    rating: 4.8,
+    reviewsCount: 31,
+    specs: {
+      'Display': '6.82-inch ProXDR AMOLED QHD+, 120Hz, 4500 nits peak',
+      'Processor': 'Snapdragon 8 Gen 3',
+      'RAM / Storage': '12GB + 256GB / 16GB + 512GB',
+      'Main Camera': '50MP Sony LYT-808 + 64MP Periscope (3x) + 48MP Ultra-wide',
+      'Battery': '5400 mAh with 100W Wired & 50W AIRVOOC Wireless',
+      'OS': 'OxygenOS 14 (Android 14)'
+    },
+    colors: ['Flowy Emerald', 'Silky Black'],
+    isNew: true,
+    stock: 14,
+    isNewArrival: true,
+    status: 'Published'
+  },
+  {
+    id: 'prod-dellxps16',
+    name: 'Dell XPS 16 Laptop (2026 Edition)',
+    description: 'Crafted with CNC machined aluminum and Gorilla Glass 3, powered by Intel Core Ultra 9 with AI Boost and NVIDIA GeForce RTX 4070 graphic engine.',
+    priceGHS: 38500,
+    priceUSD: 2550,
+    category: 'Computing',
+    brand: 'Dell',
+    image: 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?q=80&w=600&auto=format&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?q=80&w=600&auto=format&fit=crop'
+    ],
+    rating: 4.9,
+    reviewsCount: 22,
+    specs: {
+      'Display': '16.3-inch 4K+ (3840 x 2400) OLED Touch, 120Hz',
+      'Processor': 'Intel Core Ultra 9 185H (16 Cores, 22 Threads, NPU AI Engine)',
+      'RAM': '32GB LPDDR5X Dual Channel',
+      'GPU': 'NVIDIA GeForce RTX 4070 (8GB GDDR6)',
+      'Storage': '1TB PCIe 4.0 NVMe M.2 SSD',
+      'Weight': '2.13 kg'
+    },
+    colors: ['Platinum Aluminum', 'Graphite'],
+    isNew: true,
+    stock: 6,
+    isFeatured: true,
+    status: 'Published'
+  },
+  {
+    id: 'prod-ipadpro13m4',
+    name: 'iPad Pro 13" M4 OLED',
+    description: 'Incredibly thin design featuring the groundbreaking Ultra Retina XDR Tandem OLED display, outrageous Apple M4 chip performance, and Apple Pencil Pro support.',
+    priceGHS: 22000,
+    priceUSD: 1450,
+    category: 'Computing',
+    brand: 'Apple',
+    image: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?q=80&w=600&auto=format&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?q=80&w=600&auto=format&fit=crop'
+    ],
+    rating: 5.0,
+    reviewsCount: 29,
+    specs: {
+      'Display': '13-inch Ultra Retina XDR Tandem OLED (2752 x 2064), 120Hz ProMotion',
+      'Processor': 'Apple M4 Chip (9-core CPU, 10-core GPU, 16-core Neural Engine)',
+      'Storage': '256GB / 512GB / 1TB',
+      'Camera': '12MP Wide back camera with LiDAR Scanner + 12MP Ultra-wide front',
+      'Thickness': '5.1mm Ultra-thin',
+      'Connectivity': 'Wi-Fi 6E + Thunderbolt 4 / USB 4'
+    },
+    colors: ['Space Black', 'Silver'],
+    isNew: true,
+    stock: 8,
+    isBestSeller: true,
+    status: 'Published'
+  },
+  {
+    id: 'prod-applewatchultra2',
+    name: 'Apple Watch Ultra 2',
+    description: 'The ultimate sports and adventure watch. Lightweight titanium case, bright 3000-nit Always-On Retina display, S9 SiP with double tap gesture, and up to 36 hours battery.',
+    priceGHS: 12500,
+    priceUSD: 820,
+    category: 'Smartwatches & Wearables',
+    brand: 'Apple',
+    image: 'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?q=80&w=600&auto=format&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?q=80&w=600&auto=format&fit=crop'
+    ],
+    rating: 4.9,
+    reviewsCount: 47,
+    specs: {
+      'Case': '49mm Aerospace-grade Titanium',
+      'Display': 'Always-On Retina OLED, up to 3000 nits peak',
+      'Processor': 'Apple S9 SiP with 4-core Neural Engine',
+      'Sensors': 'ECG, Blood Oxygen, Temperature sensing, Depth gauge, Water temp sensor',
+      'Water Resistance': '100m (EN13319 scuba dive certified)',
+      'Battery Life': 'Up to 36 hours normal use (Up to 72 hours in Low Power Mode)'
+    },
+    colors: ['Natural Titanium with Ocean Band', 'Black Titanium with Trail Loop'],
+    isNew: true,
+    stock: 12,
+    isBestSeller: true,
+    status: 'Published'
+  },
+  {
+    id: 'prod-galaxywatchultra',
+    name: 'Samsung Galaxy Watch Ultra',
+    description: 'Engineered to push limits with Titanium cushion design, 3nm processor, dual-frequency GPS, BioActive Sensor, and multi-sport tracking for peak outdoor endurance.',
+    priceGHS: 9800,
+    priceUSD: 650,
+    category: 'Smartwatches & Wearables',
+    brand: 'Samsung',
+    image: 'https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?q=80&w=600&auto=format&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?q=80&w=600&auto=format&fit=crop'
+    ],
+    rating: 4.8,
+    reviewsCount: 35,
+    specs: {
+      'Case': '47mm Grade 4 Titanium Cushion Design',
+      'Processor': 'Exynos W1000 (3nm 5-Core)',
+      'Display': '1.5-inch Super AMOLED, 3000 nits brightness',
+      'Battery': '590 mAh (Up to 100 hours runtime in Power Saving)',
+      'Durability': '10ATM + IP68 Waterproof + MIL-STD-810H Certified'
+    },
+    colors: ['Titanium Gray', 'Titanium White', 'Titanium Silver'],
+    isNew: true,
+    stock: 15,
+    isNewArrival: true,
+    status: 'Published'
+  },
+  {
+    id: 'prod-ps5slimdigital',
+    name: 'PlayStation 5 Slim Console (Digital Edition)',
+    description: 'Unleash new gaming possibilities with custom 1TB SSD storage, ray tracing graphics, 4K 120Hz output, and Tempest 3D AudioTech in a sleek slim form factor.',
+    priceGHS: 8200,
+    priceUSD: 540,
+    category: 'Gaming',
+    brand: 'Sony',
+    image: 'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?q=80&w=600&auto=format&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?q=80&w=600&auto=format&fit=crop'
+    ],
+    rating: 4.9,
+    reviewsCount: 68,
+    specs: {
+      'Storage': '1TB Custom High-Speed NVMe SSD (5.5GB/s Read)',
+      'Processor': 'x86-64 AMD Ryzen Zen 2 (8 Cores / 16 Threads)',
+      'Graphics': 'AMD Radeon RDNA 2-based graphics engine with Ray Tracing',
+      'Output': '4K 120Hz TV support, 8K output, HDR technology',
+      'Audio': 'Tempest 3D AudioTech'
+    },
+    colors: ['Ultra White'],
+    isNew: true,
+    stock: 10,
+    isBestSeller: true,
+    status: 'Published'
+  },
+  {
+    id: 'prod-steamdeckoled',
+    name: 'Steam Deck OLED 1TB Handheld PC',
+    description: 'The ultimate handheld PC gaming machine. Stunning 7.4-inch HDR OLED display, faster Wi-Fi 6E download speeds, longer battery life, and premium anti-glare etched glass.',
+    priceGHS: 10500,
+    priceUSD: 690,
+    category: 'Gaming',
+    brand: 'Valve',
+    image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=600&auto=format&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=600&auto=format&fit=crop'
+    ],
+    rating: 5.0,
+    reviewsCount: 52,
+    specs: {
+      'Display': '7.4-inch HDR OLED (1280 x 800), 90Hz, 1000 nits peak',
+      'APU': '6nm AMD APU (Zen 2 4c/8t + RDNA 2 8 CUs)',
+      'RAM / Storage': '16GB LPDDR5 + 1TB NVMe High-Speed SSD',
+      'Battery': '50Whr (3-12 hours gameplay)',
+      'Connectivity': 'Wi-Fi 6E (2.4GHz, 5GHz, 6GHz) + Bluetooth 5.3'
+    },
+    colors: ['Matte Black with Premium Etched Glass'],
+    isNew: true,
+    stock: 8,
+    isNewArrival: true,
+    status: 'Published'
+  },
+  {
+    id: 'prod-eufycam3-4k',
+    name: 'eufyCam 3 4K Solar Security Camera 2-Cam Kit',
+    description: '4K Ultra HD wireless solar security camera system with integrated solar panels for infinite power, BionicMind AI facial recognition, and expandable local storage without monthly fees.',
+    priceGHS: 7500,
+    priceUSD: 490,
+    category: 'Smart Home',
+    brand: 'Anker eufy',
+    image: 'https://images.unsplash.com/photo-1557324232-b8917d3c3dcb?q=80&w=600&auto=format&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1557324232-b8917d3c3dcb?q=80&w=600&auto=format&fit=crop'
+    ],
+    rating: 4.8,
+    reviewsCount: 29,
+    specs: {
+      'Resolution': '4K Ultra HD (3840 x 2160) with 8x Zoom',
+      'Solar Power': 'Integrated Solar Panel (2 hours direct sunlight = forever power)',
+      'AI Detection': 'BionicMind AI (Self-learning Facial, Human, Vehicle, Pet Recognition)',
+      'Night Vision': 'Starlight Color Night Vision with built-in spotlight',
+      'Storage': '16GB EMMC on HomeBase 3 (Expandable up to 16TB 2.5" HDD/SSD)'
+    },
+    colors: ['Clean White'],
+    isNew: true,
+    stock: 12,
+    status: 'Published'
+  },
+  {
+    id: 'prod-ankerprime20k',
+    name: 'Anker Prime 20,000mAh Power Bank (200W)',
+    description: 'Ultra-powerful 200W total output power bank capable of charging two laptops simultaneously at 100W each. Smart digital display shows battery percentage and live wattage.',
+    priceGHS: 1950,
+    priceUSD: 130,
+    category: 'Accessories',
+    brand: 'Anker',
+    image: 'https://images.unsplash.com/photo-1609592424074-884249bc8063?q=80&w=600&auto=format&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1609592424074-884249bc8063?q=80&w=600&auto=format&fit=crop'
+    ],
+    rating: 4.9,
+    reviewsCount: 84,
+    specs: {
+      'Capacity': '20,000 mAh (72Wh / Flight Approved)',
+      'Ports': '2x USB-C (100W Max each) + 1x USB-A (65W Max)',
+      'Total Output': '200W Max Simultaneous Output',
+      'Recharge Speed': '100W Fast Input Recharge (0 to 100% in 75 mins)',
+      'Display': 'Smart Color LCD Screen (Live Input/Output wattage, battery %)'
+    },
+    colors: ['Graphite Black'],
+    isNew: true,
+    stock: 25,
+    isBestSeller: true,
+    status: 'Published'
+  },
+  {
+    id: 'prod-djimini4pro',
+    name: 'DJI Mini 4 Pro Drone (Fly More Combo)',
+    description: 'Flagship mini camera drone under 249g. 4K/60fps HDR true vertical video, omnidirectional obstacle sensing, ActiveTrack 360°, and 20km O4 FHD video transmission.',
+    priceGHS: 16500,
+    priceUSD: 1080,
+    category: 'Accessories',
+    brand: 'DJI',
+    image: 'https://images.unsplash.com/photo-1527977966376-1c8408f9f108?q=80&w=600&auto=format&fit=crop',
+    images: [
+      'https://images.unsplash.com/photo-1527977966376-1c8408f9f108?q=80&w=600&auto=format&fit=crop'
+    ],
+    rating: 5.0,
+    reviewsCount: 38,
+    specs: {
+      'Takeoff Weight': '<249 g (Ultralight & Foldable)',
+      'Camera Sensor': '1/1.3-inch CMOS 48MP, Dual Native ISO Fusion',
+      'Video Resolution': '4K/60fps HDR & 4K/100fps Slow Motion (True Vertical Shooting)',
+      'Sensing System': 'Omnidirectional Binocular Vision + 3D Infrared Sensor',
+      'Video Transmission': 'DJI O4 (Up to 20km 1080p/60fps live feed)',
+      'Flight Time': 'Up to 34 minutes per battery (3x Intelligent Flight Batteries included)'
+    },
+    colors: ['Arctic White'],
+    isNew: true,
+    stock: 5,
+    isFeatured: true,
+    status: 'Published'
   }
 ];
 
@@ -1482,21 +1825,23 @@ let globalDbMemory: DatabaseSchema = {
       status: 'Pending'
     }
   ],
-  reviews: initialReviews
+  reviews: initialReviews,
+  deletedProductIds: []
 };
 
 try {
   if (fs.existsSync(DB_FILE)) {
     const localDb = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-    // Ensure all seed products are present in the local database
-    const loadedProducts = localDb.products || [];
+    const deletedIds = new Set<string>(localDb.deletedProductIds || []);
+    // Ensure deleted products are filtered out
+    const loadedProducts = (localDb.products || []).filter((p: any) => !deletedIds.has(p.id));
     const loadedIds = new Set(loadedProducts.map((p: any) => p.id));
     const mergedProducts = [...loadedProducts];
     for (const p of initialProducts) {
-      if (!loadedIds.has(p.id)) {
+      if (!loadedIds.has(p.id) && !deletedIds.has(p.id)) {
         mergedProducts.push(p);
       } else if (p.id === 'prod-tf-3120-tripod' || p.id === 'prod-3-axis-gimbal' || p.id === 'prod-anti-spy-glass' || p.id === 'prod-dust-free-glass' || p.id === 'prod-usb-hub-8in2' || p.id === 'prod-usb-hub-rj45' || p.id === 'prod-sandisk-sd-card' || p.id === 'prod-aura-active-smartwatch' || p.id === 'prod-north-edge-laker' || p.id === 'prod-north-edge-mars' || p.id === 'prod-minifocus-pocket-rgb' || p.id === 'prod-mark-fairwhale-5031' || p.id === 'prod-nubia-z80-ultra' || p.id === 'prod-magnetic-octopus-tripod') {
-        // Force-update the product fields if it already exists in the local JSON
+        // Force-update the product fields if it already exists in the local JSON and wasn't deleted
         const existing = mergedProducts.find(item => item.id === p.id);
         if (existing) {
           existing.name = p.name;
@@ -1517,7 +1862,8 @@ try {
       blogs: (localDb.blogs && localDb.blogs.length > 0) ? localDb.blogs : initialBlogs,
       coupons: (localDb.coupons && localDb.coupons.length > 0) ? localDb.coupons : initialCoupons,
       bulkInquiries: localDb.bulkInquiries || globalDbMemory.bulkInquiries,
-      reviews: localDb.reviews || initialReviews
+      reviews: localDb.reviews || initialReviews,
+      deletedProductIds: Array.from(deletedIds)
     };
   }
 } catch (err) {
@@ -1529,320 +1875,284 @@ function getDatabase(): DatabaseSchema {
   return globalDbMemory;
 }
 
+// Track Firestore quota state to avoid spamming writes when daily quota is exceeded
+let isFirestoreQuotaExceeded = false;
+
+function isQuotaError(err: any): boolean {
+  if (!err) return false;
+  const msg = (err.message || String(err)).toLowerCase();
+  const code = (err.code || '').toLowerCase();
+  return code.includes('resource-exhausted') || msg.includes('quota limit exceeded') || msg.includes('quota exceeded') || msg.includes('resource_exhausted');
+}
+
+function handleFirestoreQuotaError(err: any, context: string) {
+  if (isQuotaError(err)) {
+    if (!isFirestoreQuotaExceeded) {
+      isFirestoreQuotaExceeded = true;
+      console.warn(`[Firestore Quota] Firestore daily write quota exceeded during ${context}. Pausing background cloud writes. The app will seamlessly continue serving data from memory and local storage (db.json). Detailed quota info: https://firebase.google.com/pricing#cloud-firestore`);
+    }
+  } else {
+    console.warn(`[Firestore Notice] Notice during ${context}:`, err);
+  }
+}
+
 // Background sync function to write collections to Firestore asynchronously
 async function syncCollectionToFirestore(colName: string, items: any[], idField: string = 'id') {
-  if (!firestoreDb) {
-    console.log(`[Firestore] Sync skipped for ${colName} because Firestore is not initialized.`);
+  if (!firestoreDb || isFirestoreQuotaExceeded) {
     return;
   }
   try {
     for (const item of items) {
+      if (isFirestoreQuotaExceeded) break;
       const id = item[idField];
       if (id) {
-        await setDoc(doc(firestoreDb, colName, id), item);
+        try {
+          await setDoc(doc(firestoreDb, colName, id), item);
+        } catch (err: any) {
+          handleFirestoreQuotaError(err, `syncing collection ${colName} item ${id}`);
+          if (isFirestoreQuotaExceeded) break;
+        }
       }
     }
   } catch (error) {
-    console.error(`[Firestore] Sync error for ${colName}:`, error);
+    handleFirestoreQuotaError(error, `syncing collection ${colName}`);
   }
 }
 
-// Save database to both memory cache, Firestore, and a local backup
+// Save database to memory cache and local backup file
 function saveDatabase(db: DatabaseSchema) {
   globalDbMemory = db;
-  console.log('[DEBUG Backend] saveDatabase called. Total products in memory is:', db.products.length);
   
-  // Asynchronously save to Firebase Cloud Firestore
-  console.log('[DEBUG Backend] Syncing products to Firestore collection "products". Total count:', db.products.length);
-  syncCollectionToFirestore('products', db.products, 'id');
-  syncCollectionToFirestore('repairs', db.repairs, 'id');
-  syncCollectionToFirestore('tradeins', db.tradeins, 'id');
-  syncCollectionToFirestore('orders', db.orders, 'id');
-  syncCollectionToFirestore('blogs', db.blogs, 'id');
-  syncCollectionToFirestore('coupons', db.coupons, 'code');
-  syncCollectionToFirestore('bulkinquiries', db.bulkInquiries, 'id');
-  syncCollectionToFirestore('reviews', db.reviews, 'id');
-
-  // Also maintain local fallback file
+  // Maintain local fallback file
   try {
     fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
-    console.log('[DEBUG Backend] Successfully wrote local backup database file.');
   } catch (error) {
     console.error('[DEBUG Backend] Error saving local backup:', error);
   }
 }
 
-// Helper to enforce a timeout on promises
+// Helper to enforce a timeout on promises safely without timer leaks or unhandled rejections
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Firestore operation timed out')), timeoutMs)
-    )
-  ]);
+  let timer: NodeJS.Timeout | undefined;
+  // Ensure background promise rejections don't trigger unhandledRejection if timed out
+  promise.catch(() => {});
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new Error('Firestore operation timed out'));
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
+
+async function safeGetDocs(colName: string, timeoutMs = 8000) {
+  if (!firestoreDb || isFirestoreQuotaExceeded) return null;
+  try {
+    return await withTimeout(getDocs(collection(firestoreDb, colName)), timeoutMs);
+  } catch (err) {
+    handleFirestoreQuotaError(err, `fetching ${colName}`);
+    return null;
+  }
 }
 
 // Startup loader and Firestore cloud seeder
 async function _initializeAndLoadFromFirestoreInternal() {
-  if (!firestoreDb) return;
-  
-  // 1. Products
-  const productsSnap = await getDocs(collection(firestoreDb, 'products'));
-  let products: Product[] = [];
-  if (productsSnap.empty) {
-    console.log('[Firestore] No products found. Seeding initial catalog...');
-    for (const p of initialProducts) {
-      await setDoc(doc(firestoreDb, 'products', p.id), p);
-    }
-    products = initialProducts;
-  } else {
-    products = productsSnap.docs.map(doc => doc.data() as Product);
-    
-    // Explicitly delete 'prod-omniview-desktop-stand' from Firestore and filter it out of memory if present
-    try {
-      const omniRef = doc(firestoreDb, 'products', 'prod-omniview-desktop-stand');
-      await deleteDoc(omniRef);
-      console.log('[Firestore] Successfully deleted prod-omniview-desktop-stand from Firestore');
-    } catch (err) {
-      console.error('[Firestore] Error deleting prod-omniview-desktop-stand:', err);
-    }
-    products = products.filter(p => p.id !== 'prod-omniview-desktop-stand');
+  if (!firestoreDb || isFirestoreQuotaExceeded) return;
+  try {
+    // Fetch all collections in parallel for maximum speed & concurrency
+    const [
+      deletedSnap,
+      productsSnap,
+      blogsSnap,
+      couponsSnap,
+      inquiriesSnap,
+      repairsSnap,
+      tradeinsSnap,
+      ordersSnap,
+      reviewsSnap
+    ] = await Promise.all([
+      safeGetDocs('deleted_products'),
+      safeGetDocs('products'),
+      safeGetDocs('blogs'),
+      safeGetDocs('coupons'),
+      safeGetDocs('bulkinquiries'),
+      safeGetDocs('repairs'),
+      safeGetDocs('tradeins'),
+      safeGetDocs('orders'),
+      safeGetDocs('reviews')
+    ]);
 
-    // Auto-upsert any newly added seed products that do not exist in Firestore yet
-    const existingIds = new Set(products.map(p => p.id));
-    const missingProducts = initialProducts.filter(p => !existingIds.has(p.id));
-    if (missingProducts.length > 0) {
-      console.log(`[Firestore] Syncing ${missingProducts.length} new or missing products to Firestore...`);
-      for (const p of missingProducts) {
-        await setDoc(doc(firestoreDb, 'products', p.id), p);
-        products.push(p);
+    // Fetch deleted product IDs
+    let deletedProductIds: string[] = globalDbMemory.deletedProductIds || [];
+    if (deletedSnap && !deletedSnap.empty) {
+      const remoteDeleted = deletedSnap.docs.map(d => d.id);
+      deletedProductIds = Array.from(new Set([...deletedProductIds, ...remoteDeleted]));
+    }
+    const deletedSet = new Set(deletedProductIds);
+    globalDbMemory.deletedProductIds = Array.from(deletedSet);
+
+    if (isFirestoreQuotaExceeded) return;
+
+    // 1. Products
+    let products: Product[] = [];
+    if (!productsSnap || productsSnap.empty) {
+      console.log('[Firestore] No products found or fetch empty. Seeding/using initial catalog...');
+      products = initialProducts.filter(p => !deletedSet.has(p.id));
+      if (firestoreDb && !isFirestoreQuotaExceeded) {
+        for (const p of products) {
+          try {
+            await setDoc(doc(firestoreDb, 'products', p.id), p);
+          } catch (err) {
+            handleFirestoreQuotaError(err, `seeding product ${p.id}`);
+            if (isFirestoreQuotaExceeded) break;
+          }
+        }
+      }
+    } else {
+      products = productsSnap.docs.map(doc => doc.data() as Product).filter(p => p && !deletedSet.has(p.id));
+      
+      // Explicitly delete 'prod-omniview-desktop-stand' from Firestore and filter it out of memory if present
+      if (!isFirestoreQuotaExceeded && firestoreDb) {
+        try {
+          const omniRef = doc(firestoreDb, 'products', 'prod-omniview-desktop-stand');
+          await deleteDoc(omniRef);
+        } catch (err) {
+          handleFirestoreQuotaError(err, 'deleting omniview desktop stand');
+        }
+      }
+      products = products.filter(p => p.id !== 'prod-omniview-desktop-stand');
+
+      // Auto-upsert any newly added seed products that do not exist in Firestore yet AND were not explicitly deleted
+      const existingIds = new Set(products.map(p => p.id));
+      const missingProducts = initialProducts.filter(p => !existingIds.has(p.id) && !deletedSet.has(p.id));
+      if (missingProducts.length > 0 && !isFirestoreQuotaExceeded && firestoreDb) {
+        console.log(`[Firestore] Syncing ${missingProducts.length} new or missing products to Firestore...`);
+        for (const p of missingProducts) {
+          if (isFirestoreQuotaExceeded) break;
+          try {
+            await setDoc(doc(firestoreDb, 'products', p.id), p);
+            products.push(p);
+          } catch (err) {
+            handleFirestoreQuotaError(err, `syncing missing product ${p.id}`);
+            if (isFirestoreQuotaExceeded) break;
+          }
+        }
       }
     }
 
-    // Force-update the tripod fields in Firestore if they are outdated
-    const tripodProduct = products.find(p => p.id === 'prod-tf-3120-tripod');
-    const tripodSeed = initialProducts.find(p => p.id === 'prod-tf-3120-tripod');
-    if (tripodProduct && tripodSeed && (tripodProduct.image !== tripodSeed.image || tripodProduct.name !== tripodSeed.name)) {
-      console.log('[Firestore] Force-updating TF-3120 Tripod with newly updated specs...');
-      tripodProduct.name = tripodSeed.name;
-      tripodProduct.description = tripodSeed.description;
-      tripodProduct.image = tripodSeed.image;
-      tripodProduct.images = tripodSeed.images;
-      tripodProduct.specs = tripodSeed.specs;
-      await setDoc(doc(firestoreDb, 'products', 'prod-tf-3120-tripod'), tripodProduct);
-    }
+    // Force-update product fields in Firestore if they are outdated (safely wrapped against quota exhaustion)
+    const forceUpdateProductIfOutdated = async (id: string, updateFn: (p: Product, seed: Product) => void, label: string) => {
+      if (!firestoreDb || isFirestoreQuotaExceeded) return;
+      const prod = products.find(p => p.id === id);
+      const seed = initialProducts.find(p => p.id === id);
+      if (prod && seed) {
+        updateFn(prod, seed);
+        try {
+          await setDoc(doc(firestoreDb, 'products', id), prod);
+        } catch (err) {
+          handleFirestoreQuotaError(err, `force-updating ${label}`);
+        }
+      }
+    };
 
-    // Force-update the 3-axis gimbal fields in Firestore if they are outdated
-    const gimbalProduct = products.find(p => p.id === 'prod-3-axis-gimbal');
-    const gimbalSeed = initialProducts.find(p => p.id === 'prod-3-axis-gimbal');
-    if (gimbalProduct && gimbalSeed && (gimbalProduct.image !== gimbalSeed.image || gimbalProduct.name !== gimbalSeed.name)) {
-      console.log('[Firestore] Force-updating 3-Axis Gimbal with newly updated specs...');
-      gimbalProduct.name = gimbalSeed.name;
-      gimbalProduct.description = gimbalSeed.description;
-      gimbalProduct.image = gimbalSeed.image;
-      gimbalProduct.images = gimbalSeed.images;
-      gimbalProduct.specs = gimbalSeed.specs;
-      gimbalProduct.brand = gimbalSeed.brand;
-      await setDoc(doc(firestoreDb, 'products', 'prod-3-axis-gimbal'), gimbalProduct);
-    }
+    if (firestoreDb && !isFirestoreQuotaExceeded) {
+      await forceUpdateProductIfOutdated('prod-tf-3120-tripod', (p, s) => {
+        p.name = s.name; p.description = s.description; p.image = s.image; p.images = s.images; p.specs = s.specs;
+      }, 'TF-3120 Tripod');
 
-    // Force-update the anti-spy privacy glass fields in Firestore if they are outdated
-    const glassProduct = products.find(p => p.id === 'prod-anti-spy-glass');
-    const glassSeed = initialProducts.find(p => p.id === 'prod-anti-spy-glass');
-    if (glassProduct && glassSeed && (glassProduct.image !== glassSeed.image || glassProduct.name !== glassSeed.name)) {
-      console.log('[Firestore] Force-updating Anti-Spy Tempered Glass with newly updated specs...');
-      glassProduct.name = glassSeed.name;
-      glassProduct.description = glassSeed.description;
-      glassProduct.image = glassSeed.image;
-      glassProduct.images = glassSeed.images;
-      glassProduct.specs = glassSeed.specs;
-      glassProduct.brand = glassSeed.brand;
-      await setDoc(doc(firestoreDb, 'products', 'prod-anti-spy-glass'), glassProduct);
-    }
+      await forceUpdateProductIfOutdated('prod-3-axis-gimbal', (p, s) => {
+        p.name = s.name; p.description = s.description; p.image = s.image; p.images = s.images; p.specs = s.specs; p.brand = s.brand;
+      }, '3-Axis Gimbal');
 
-    // Force-update the 8K dust-free iPhone glass fields in Firestore if they are outdated
-    const dustFreeProduct = products.find(p => p.id === 'prod-dust-free-glass');
-    const dustFreeSeed = initialProducts.find(p => p.id === 'prod-dust-free-glass');
-    if (dustFreeProduct && dustFreeSeed && (dustFreeProduct.image !== dustFreeSeed.image || dustFreeProduct.name !== dustFreeSeed.name)) {
-      console.log('[Firestore] Force-updating 8K Dust Free Tempered Glass with newly updated specs...');
-      dustFreeProduct.name = dustFreeSeed.name;
-      dustFreeProduct.description = dustFreeSeed.description;
-      dustFreeProduct.image = dustFreeSeed.image;
-      dustFreeProduct.images = dustFreeSeed.images;
-      dustFreeProduct.specs = dustFreeSeed.specs;
-      dustFreeProduct.brand = dustFreeSeed.brand;
-      await setDoc(doc(firestoreDb, 'products', 'prod-dust-free-glass'), dustFreeProduct);
-    }
+      await forceUpdateProductIfOutdated('prod-anti-spy-glass', (p, s) => {
+        p.name = s.name; p.description = s.description; p.image = s.image; p.images = s.images; p.specs = s.specs; p.brand = s.brand;
+      }, 'Anti-Spy Tempered Glass');
 
-    // Force-update the 8-in-2 USB-C Hub fields in Firestore if they are outdated
-    const hubProduct = products.find(p => p.id === 'prod-usb-hub-8in2');
-    const hubSeed = initialProducts.find(p => p.id === 'prod-usb-hub-8in2');
-    if (hubProduct && hubSeed && (hubProduct.image !== hubSeed.image || hubProduct.name !== hubSeed.name)) {
-      console.log('[Firestore] Force-updating 8-in-2 USB + Type-C Hub Docking Station with newly updated specs...');
-      hubProduct.name = hubSeed.name;
-      hubProduct.description = hubSeed.description;
-      hubProduct.image = hubSeed.image;
-      hubProduct.images = hubSeed.images;
-      hubProduct.specs = hubSeed.specs;
-      hubProduct.brand = hubSeed.brand;
-      await setDoc(doc(firestoreDb, 'products', 'prod-usb-hub-8in2'), hubProduct);
-    }
+      await forceUpdateProductIfOutdated('prod-dust-free-glass', (p, s) => {
+        p.name = s.name; p.description = s.description; p.image = s.image; p.images = s.images; p.specs = s.specs; p.brand = s.brand;
+      }, '8K Dust Free Glass');
 
-    // Force-update the USB-C Hub with RJ45 fields in Firestore if they are outdated
-    const rj45Product = products.find(p => p.id === 'prod-usb-hub-rj45');
-    const rj45Seed = initialProducts.find(p => p.id === 'prod-usb-hub-rj45');
-    if (rj45Product && rj45Seed && (rj45Product.image !== rj45Seed.image || rj45Product.name !== rj45Seed.name)) {
-      console.log('[Firestore] Force-updating USB 3.0 Hub For Laptop Adapter PC Computer with newly updated specs...');
-      rj45Product.name = rj45Seed.name;
-      rj45Product.description = rj45Seed.description;
-      rj45Product.image = rj45Seed.image;
-      rj45Product.images = rj45Seed.images;
-      rj45Product.specs = rj45Seed.specs;
-      rj45Product.brand = rj45Seed.brand;
-      await setDoc(doc(firestoreDb, 'products', 'prod-usb-hub-rj45'), rj45Product);
-    }
+      await forceUpdateProductIfOutdated('prod-usb-hub-8in2', (p, s) => {
+        p.name = s.name; p.description = s.description; p.image = s.image; p.images = s.images; p.specs = s.specs; p.brand = s.brand;
+      }, '8-in-2 USB-C Hub');
 
-    // Force-update the SanDisk Memory Card fields in Firestore if they are outdated
-    const sandiskProduct = products.find(p => p.id === 'prod-sandisk-sd-card');
-    const sandiskSeed = initialProducts.find(p => p.id === 'prod-sandisk-sd-card');
-    if (sandiskProduct && sandiskSeed && (sandiskProduct.image !== sandiskSeed.image || sandiskProduct.name !== sandiskSeed.name)) {
-      console.log('[Firestore] Force-updating SanDisk Memory Card with newly updated specs...');
-      sandiskProduct.name = sandiskSeed.name;
-      sandiskProduct.description = sandiskSeed.description;
-      sandiskProduct.image = sandiskSeed.image;
-      sandiskProduct.images = sandiskSeed.images;
-      sandiskProduct.specs = sandiskSeed.specs;
-      sandiskProduct.brand = sandiskSeed.brand;
-      await setDoc(doc(firestoreDb, 'products', 'prod-sandisk-sd-card'), sandiskProduct);
-    }
+      await forceUpdateProductIfOutdated('prod-usb-hub-rj45', (p, s) => {
+        p.name = s.name; p.description = s.description; p.image = s.image; p.images = s.images; p.specs = s.specs; p.brand = s.brand;
+      }, 'USB 3.0 Hub RJ45');
 
-    // Force-update the APACHE-46 smartwatch fields in Firestore if they are outdated
-    const apacheProduct = products.find(p => p.id === 'prod-aura-active-smartwatch');
-    const apacheSeed = initialProducts.find(p => p.id === 'prod-aura-active-smartwatch');
-    if (apacheProduct && apacheSeed) {
-      apacheProduct.name = apacheSeed.name;
-      apacheProduct.description = apacheSeed.description;
-      apacheProduct.category = apacheSeed.category;
-      apacheProduct.image = apacheSeed.image;
-      apacheProduct.images = apacheSeed.images;
-      apacheProduct.specs = apacheSeed.specs;
-      apacheProduct.brand = apacheSeed.brand;
-      await setDoc(doc(firestoreDb, 'products', 'prod-aura-active-smartwatch'), apacheProduct);
-    }
+      await forceUpdateProductIfOutdated('prod-sandisk-sd-card', (p, s) => {
+        p.name = s.name; p.description = s.description; p.image = s.image; p.images = s.images; p.specs = s.specs; p.brand = s.brand;
+      }, 'SanDisk Memory Card');
 
-    // Force-update the Laker smartwatch fields in Firestore if they are outdated
-    const lakerProduct = products.find(p => p.id === 'prod-north-edge-laker');
-    const lakerSeed = initialProducts.find(p => p.id === 'prod-north-edge-laker');
-    if (lakerProduct && lakerSeed) {
-      lakerProduct.name = lakerSeed.name;
-      lakerProduct.description = lakerSeed.description;
-      lakerProduct.category = lakerSeed.category;
-      lakerProduct.image = lakerSeed.image;
-      lakerProduct.images = lakerSeed.images;
-      lakerProduct.specs = lakerSeed.specs;
-      lakerProduct.brand = lakerSeed.brand;
-      await setDoc(doc(firestoreDb, 'products', 'prod-north-edge-laker'), lakerProduct);
-    }
+      await forceUpdateProductIfOutdated('prod-aura-active-smartwatch', (p, s) => {
+        p.name = s.name; p.description = s.description; p.category = s.category; p.image = s.image; p.images = s.images; p.specs = s.specs; p.brand = s.brand;
+      }, 'APACHE-46 Smartwatch');
 
-    // Force-update the Mars smartwatch fields in Firestore if they are outdated
-    const marsProduct = products.find(p => p.id === 'prod-north-edge-mars');
-    const marsSeed = initialProducts.find(p => p.id === 'prod-north-edge-mars');
-    if (marsProduct && marsSeed) {
-      marsProduct.name = marsSeed.name;
-      marsProduct.description = marsSeed.description;
-      marsProduct.category = marsSeed.category;
-      marsProduct.image = marsSeed.image;
-      marsProduct.images = marsSeed.images;
-      marsProduct.specs = marsSeed.specs;
-      marsProduct.brand = marsSeed.brand;
-      await setDoc(doc(firestoreDb, 'products', 'prod-north-edge-mars'), marsProduct);
-    }
+      await forceUpdateProductIfOutdated('prod-north-edge-laker', (p, s) => {
+        p.name = s.name; p.description = s.description; p.category = s.category; p.image = s.image; p.images = s.images; p.specs = s.specs; p.brand = s.brand;
+      }, 'Laker Smartwatch');
 
-    // Force-update the MINIFOCUS Pocket RGB Light in Firestore if it is outdated or needs exact specs
-    const rgbProduct = products.find(p => p.id === 'prod-minifocus-pocket-rgb');
-    const rgbSeed = initialProducts.find(p => p.id === 'prod-minifocus-pocket-rgb');
-    if (rgbProduct && rgbSeed && (rgbProduct.image !== rgbSeed.image || rgbProduct.name !== rgbSeed.name)) {
-      console.log('[Firestore] Force-updating MINIFOCUS Pocket RGB Light with newly updated specs...');
-      rgbProduct.name = rgbSeed.name;
-      rgbProduct.description = rgbSeed.description;
-      rgbProduct.image = rgbSeed.image;
-      rgbProduct.images = rgbSeed.images;
-      rgbProduct.specs = rgbSeed.specs;
-      rgbProduct.brand = rgbSeed.brand;
-      await setDoc(doc(firestoreDb, 'products', 'prod-minifocus-pocket-rgb'), rgbProduct);
-    }
+      await forceUpdateProductIfOutdated('prod-north-edge-mars', (p, s) => {
+        p.name = s.name; p.description = s.description; p.category = s.category; p.image = s.image; p.images = s.images; p.specs = s.specs; p.brand = s.brand;
+      }, 'Mars Smartwatch');
 
-    // Force-update Mark Fairwhale Watch in Firestore
-    const watchProduct = products.find(p => p.id === 'prod-mark-fairwhale-5031');
-    const watchSeed = initialProducts.find(p => p.id === 'prod-mark-fairwhale-5031');
-    if (watchProduct && watchSeed) {
-      watchProduct.name = watchSeed.name;
-      watchProduct.description = watchSeed.description;
-      watchProduct.category = watchSeed.category;
-      watchProduct.image = watchSeed.image;
-      watchProduct.images = watchSeed.images;
-      watchProduct.specs = watchSeed.specs;
-      watchProduct.brand = watchSeed.brand;
-      await setDoc(doc(firestoreDb, 'products', 'prod-mark-fairwhale-5031'), watchProduct);
-    }
+      await forceUpdateProductIfOutdated('prod-minifocus-pocket-rgb', (p, s) => {
+        p.name = s.name; p.description = s.description; p.image = s.image; p.images = s.images; p.specs = s.specs; p.brand = s.brand;
+      }, 'MINIFOCUS Pocket RGB Light');
 
-    // Force-update nubia Z80 Ultra in Firestore
-    const nubiaProduct = products.find(p => p.id === 'prod-nubia-z80-ultra');
-    const nubiaSeed = initialProducts.find(p => p.id === 'prod-nubia-z80-ultra');
-    if (nubiaProduct && nubiaSeed && (nubiaProduct.image !== nubiaSeed.image || nubiaProduct.name !== nubiaSeed.name)) {
-      console.log('[Firestore] Force-updating nubia Z80 Ultra with newly updated specs...');
-      nubiaProduct.name = nubiaSeed.name;
-      nubiaProduct.description = nubiaSeed.description;
-      nubiaProduct.image = nubiaSeed.image;
-      nubiaProduct.images = nubiaSeed.images;
-      nubiaProduct.specs = nubiaSeed.specs;
-      nubiaProduct.brand = nubiaSeed.brand;
-      await setDoc(doc(firestoreDb, 'products', 'prod-nubia-z80-ultra'), nubiaProduct);
-    }
+      await forceUpdateProductIfOutdated('prod-mark-fairwhale-5031', (p, s) => {
+        p.name = s.name; p.description = s.description; p.category = s.category; p.image = s.image; p.images = s.images; p.specs = s.specs; p.brand = s.brand;
+      }, 'Mark Fairwhale Watch');
 
-    // Force-update Magnetic Octopus Tripod in Firestore
-    const octopusProduct = products.find(p => p.id === 'prod-magnetic-octopus-tripod');
-    const octopusSeed = initialProducts.find(p => p.id === 'prod-magnetic-octopus-tripod');
-    if (octopusProduct && octopusSeed && (octopusProduct.image !== octopusSeed.image || octopusProduct.name !== octopusSeed.name)) {
-      console.log('[Firestore] Force-updating Magnetic Octopus Tripod with newly updated specs...');
-      octopusProduct.name = octopusSeed.name;
-      octopusProduct.description = octopusSeed.description;
-      octopusProduct.image = octopusSeed.image;
-      octopusProduct.images = octopusSeed.images;
-      octopusProduct.specs = octopusSeed.specs;
-      octopusProduct.brand = octopusSeed.brand;
-      await setDoc(doc(firestoreDb, 'products', 'prod-magnetic-octopus-tripod'), octopusProduct);
+      await forceUpdateProductIfOutdated('prod-nubia-z80-ultra', (p, s) => {
+        p.name = s.name; p.description = s.description; p.image = s.image; p.images = s.images; p.specs = s.specs; p.brand = s.brand;
+      }, 'nubia Z80 Ultra');
+
+      await forceUpdateProductIfOutdated('prod-magnetic-octopus-tripod', (p, s) => {
+        p.name = s.name; p.description = s.description; p.image = s.image; p.images = s.images; p.specs = s.specs; p.brand = s.brand;
+      }, 'Magnetic Octopus Tripod');
     }
-  }
 
   // 2. Blogs
-  const blogsSnap = await getDocs(collection(firestoreDb, 'blogs'));
   let blogs: BlogPost[] = [];
-  if (blogsSnap.empty) {
-    console.log('[Firestore] No blogs found. Seeding technical blog posts...');
-    for (const b of initialBlogs) {
-      await setDoc(doc(firestoreDb, 'blogs', b.id), b);
-    }
+  if (!blogsSnap || blogsSnap.empty) {
+    console.log('[Firestore] No blogs found or fetch empty. Seeding/using technical blog posts...');
     blogs = initialBlogs;
+    if (firestoreDb && !isFirestoreQuotaExceeded) {
+      for (const b of initialBlogs) {
+        try {
+          await setDoc(doc(firestoreDb, 'blogs', b.id), b);
+        } catch (err) {
+          handleFirestoreQuotaError(err, `seeding blog ${b.id}`);
+        }
+      }
+    }
   } else {
     blogs = blogsSnap.docs.map(doc => doc.data() as BlogPost);
   }
 
   // 3. Coupons
-  const couponsSnap = await getDocs(collection(firestoreDb, 'coupons'));
   let coupons: Coupon[] = [];
-  if (couponsSnap.empty) {
-    console.log('[Firestore] No coupons found. Seeding standard promotions...');
-    for (const c of initialCoupons) {
-      await setDoc(doc(firestoreDb, 'coupons', c.code), c);
-    }
+  if (!couponsSnap || couponsSnap.empty) {
+    console.log('[Firestore] No coupons found or fetch empty. Seeding/using standard promotions...');
     coupons = initialCoupons;
+    if (firestoreDb && !isFirestoreQuotaExceeded) {
+      for (const c of initialCoupons) {
+        try {
+          await setDoc(doc(firestoreDb, 'coupons', c.code), c);
+        } catch (err) {
+          handleFirestoreQuotaError(err, `seeding coupon ${c.code}`);
+        }
+      }
+    }
   } else {
     coupons = couponsSnap.docs.map(doc => doc.data() as Coupon);
   }
 
   // 4. Bulk Inquiries
-  const inquiriesSnap = await getDocs(collection(firestoreDb, 'bulkinquiries'));
   let bulkInquiries: BulkInquiry[] = [];
   const sampleInquiry: BulkInquiry = {
     id: 'inq-sample1',
@@ -1860,35 +2170,43 @@ async function _initializeAndLoadFromFirestoreInternal() {
     createdAt: new Date().toISOString(),
     status: 'Pending'
   };
-  if (inquiriesSnap.empty) {
+  if (!inquiriesSnap || inquiriesSnap.empty) {
     console.log('[Firestore] Seeding sample bulk B2B inquiry...');
-    await setDoc(doc(firestoreDb, 'bulkinquiries', sampleInquiry.id), sampleInquiry);
     bulkInquiries = [sampleInquiry];
+    if (firestoreDb && !isFirestoreQuotaExceeded) {
+      try {
+        await setDoc(doc(firestoreDb, 'bulkinquiries', sampleInquiry.id), sampleInquiry);
+      } catch (err) {
+        handleFirestoreQuotaError(err, 'seeding sample inquiry');
+      }
+    }
   } else {
     bulkInquiries = inquiriesSnap.docs.map(doc => doc.data() as BulkInquiry);
   }
 
   // 5. Repairs
-  const repairsSnap = await getDocs(collection(firestoreDb, 'repairs'));
-  const repairs: RepairRequest[] = repairsSnap.empty ? [] : repairsSnap.docs.map(doc => doc.data() as RepairRequest);
+  const repairs: RepairRequest[] = (repairsSnap && !repairsSnap.empty) ? repairsSnap.docs.map(doc => doc.data() as RepairRequest) : [];
 
   // 6. Trade-ins
-  const tradeinsSnap = await getDocs(collection(firestoreDb, 'tradeins'));
-  const tradeins: TradeInRequest[] = tradeinsSnap.empty ? [] : tradeinsSnap.docs.map(doc => doc.data() as TradeInRequest);
+  const tradeins: TradeInRequest[] = (tradeinsSnap && !tradeinsSnap.empty) ? tradeinsSnap.docs.map(doc => doc.data() as TradeInRequest) : [];
 
   // 7. Orders
-  const ordersSnap = await getDocs(collection(firestoreDb, 'orders'));
-  const orders: Order[] = ordersSnap.empty ? [] : ordersSnap.docs.map(doc => doc.data() as Order);
+  const orders: Order[] = (ordersSnap && !ordersSnap.empty) ? ordersSnap.docs.map(doc => doc.data() as Order) : [];
 
   // 8. Reviews
-  const reviewsSnap = await getDocs(collection(firestoreDb, 'reviews'));
   let reviews: Review[] = [];
-  if (reviewsSnap.empty) {
-    console.log('[Firestore] No reviews found. Seeding initial review feed...');
-    for (const r of initialReviews) {
-      await setDoc(doc(firestoreDb, 'reviews', r.id), r);
-    }
+  if (!reviewsSnap || reviewsSnap.empty) {
+    console.log('[Firestore] No reviews found or fetch empty. Seeding/using initial review feed...');
     reviews = initialReviews;
+    if (firestoreDb && !isFirestoreQuotaExceeded) {
+      for (const r of initialReviews) {
+        try {
+          await setDoc(doc(firestoreDb, 'reviews', r.id), r);
+        } catch (err) {
+          handleFirestoreQuotaError(err, `seeding review ${r.id}`);
+        }
+      }
+    }
   } else {
     reviews = reviewsSnap.docs.map(doc => doc.data() as Review);
   }
@@ -1901,10 +2219,15 @@ async function _initializeAndLoadFromFirestoreInternal() {
     blogs,
     coupons,
     bulkInquiries,
-    reviews
+    reviews,
+    deletedProductIds: Array.from(deletedSet)
   };
+  saveDatabase(globalDbMemory);
 
   console.log('[Firestore] Successfully initialized, synchronized, and preloaded!');
+  } catch (err) {
+    console.warn('[Firestore] Notice: internal background sync caught error/timeout cleanly:', err);
+  }
 }
 
 async function initializeAndLoadFromFirestore() {
@@ -1913,15 +2236,15 @@ async function initializeAndLoadFromFirestore() {
     return;
   }
   try {
-    console.log('[Firestore] Initializing and loading database from Google Cloud Firestore with 2500ms timeout...');
-    await withTimeout(_initializeAndLoadFromFirestoreInternal(), 2500);
+    console.log('[Firestore] Initializing and loading database from Google Cloud Firestore...');
+    await withTimeout(_initializeAndLoadFromFirestoreInternal(), 15000);
   } catch (error) {
-    console.error('[Firestore] Initialization/Load error or timeout, falling back to local file:', error);
+    console.log('[Firestore] Local database cache active (sync notice):', error instanceof Error ? error.message : error);
     if (fs.existsSync(DB_FILE)) {
       try {
         globalDbMemory = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
       } catch (e) {
-        console.error('Failed to parse local fallback file:', e);
+        console.warn('Failed to parse local fallback file:', e);
       }
     }
   }
@@ -1982,12 +2305,12 @@ const updateStockHandler = async (req: express.Request, res: express.Response) =
     updatedProduct.stock = stock;
     saveDatabase(db);
 
-    if (firestoreDb) {
+    if (firestoreDb && !isFirestoreQuotaExceeded) {
       try {
         await setDoc(doc(firestoreDb, 'products', req.params.id), updatedProduct);
         console.log(`[Firestore] Directly updated product stock ${req.params.id} in cloud database`);
       } catch (err) {
-        console.error(`[Firestore] Failed to directly update product stock ${req.params.id}:`, err);
+        handleFirestoreQuotaError(err, `updating product stock ${req.params.id}`);
       }
     }
 
@@ -2013,12 +2336,12 @@ app.post('/api/products', async (req, res) => {
   db.products.unshift(newProduct);
   saveDatabase(db);
   
-  if (firestoreDb) {
+  if (firestoreDb && !isFirestoreQuotaExceeded) {
     try {
       await setDoc(doc(firestoreDb, 'products', newProduct.id), newProduct);
       console.log(`[Firestore] Directly added new product ${newProduct.id} to cloud database`);
     } catch (err) {
-      console.error(`[Firestore] Failed to directly write product ${newProduct.id}:`, err);
+      handleFirestoreQuotaError(err, `adding product ${newProduct.id}`);
     }
   }
 
@@ -2039,12 +2362,12 @@ app.patch('/api/products/:id', async (req, res) => {
   db.products[index] = updatedProduct;
   saveDatabase(db);
   
-  if (firestoreDb) {
+  if (firestoreDb && !isFirestoreQuotaExceeded) {
     try {
       await setDoc(doc(firestoreDb, 'products', id), updatedProduct);
       console.log(`[Firestore] Directly updated product ${id} in cloud database`);
     } catch (err) {
-      console.error(`[Firestore] Failed to directly update product ${id}:`, err);
+      handleFirestoreQuotaError(err, `updating product ${id}`);
     }
   }
 
@@ -2055,20 +2378,28 @@ app.patch('/api/products/:id', async (req, res) => {
 app.delete('/api/products/:id', async (req, res) => {
   const { id } = req.params;
   const db = getDatabase();
+
+  if (!db.deletedProductIds) {
+    db.deletedProductIds = [];
+  }
+  if (!db.deletedProductIds.includes(id)) {
+    db.deletedProductIds.push(id);
+  }
+
   const index = db.products.findIndex(p => p.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: 'Product not found' });
+  if (index !== -1) {
+    db.products.splice(index, 1);
   }
   
-  db.products.splice(index, 1);
   saveDatabase(db);
   
-  if (firestoreDb) {
+  if (firestoreDb && !isFirestoreQuotaExceeded) {
     try {
       await deleteDoc(doc(firestoreDb, 'products', id));
-      console.log(`[Firestore] Deleted product ${id} from cloud database`);
+      await setDoc(doc(firestoreDb, 'deleted_products', id), { deletedAt: new Date().toISOString(), id });
+      console.log(`[Firestore] Deleted product ${id} from cloud database and registered in deleted_products`);
     } catch (err) {
-      console.error(`[Firestore] Failed to delete product ${id} from cloud database:`, err);
+      handleFirestoreQuotaError(err, `deleting product ${id}`);
     }
   }
   
@@ -2119,6 +2450,16 @@ app.post('/api/products/:id/reviews', (req, res) => {
   product.rating = parseFloat((totalRating / productReviews.length).toFixed(1));
 
   saveDatabase(db);
+
+  if (firestoreDb && !isFirestoreQuotaExceeded) {
+    setDoc(doc(firestoreDb, 'reviews', newReview.id), newReview).catch(err => {
+      handleFirestoreQuotaError(err, `saving review ${newReview.id} to Firestore`);
+    });
+    setDoc(doc(firestoreDb, 'products', product.id), product).catch(err => {
+      handleFirestoreQuotaError(err, `updating product ${product.id} rating in Firestore`);
+    });
+  }
+
   res.status(201).json(newReview);
 });
 
@@ -2507,7 +2848,8 @@ app.post('/api/coupons', (req, res) => {
 });
 
 // System Diagnostic Endpoint for Production Connection Verification
-app.get('/api/diagnostics', (req, res) => {
+app.get('/api/diagnostics', async (req, res) => {
+  const startTime = Date.now();
   try {
     const db = getDatabase();
     const hasFirestore = !!firestoreDb;
@@ -2515,8 +2857,36 @@ app.get('/api/diagnostics', (req, res) => {
     const firstProduct = db.products[0] || null;
     const hasGeminiKey = !!process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY';
 
+    // Test storage bucket reachability
+    let storageReachable = false;
+    let storageLatencyMs = 0;
+    const storageBucket = firebaseConfig.storageBucket || '';
+    if (storageBucket) {
+      const storageStart = Date.now();
+      try {
+        const pingRes = await fetch(`https://firebasestorage.googleapis.com/v0/b/${storageBucket}/o`, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        });
+        // 200 or 403 or 404 indicates the storage endpoint is reachable
+        if (pingRes.status < 500) {
+          storageReachable = true;
+        }
+        storageLatencyMs = Date.now() - storageStart;
+      } catch (err) {
+        console.warn('[Diagnostics] Storage ping note:', err);
+      }
+    }
+
     res.json({
       status: 'OK',
+      timestamp: new Date().toISOString(),
+      responseTimeMs: Date.now() - startTime,
+      environment: {
+        nodeEnv: process.env.NODE_ENV || 'development',
+        uptimeSeconds: Math.floor(process.uptime()),
+        memoryUsageMb: Math.round(process.memoryUsage().heapUsed / 1024 / 1024 * 100) / 100
+      },
       database: {
         connected: hasFirestore,
         provider: hasFirestore ? 'Firebase Firestore' : 'In-Memory Default (Offline)',
@@ -2530,6 +2900,12 @@ app.get('/api/diagnostics', (req, res) => {
           category: firstProduct.category,
           price: `₵${firstProduct.priceGHS.toLocaleString()} / $${firstProduct.priceUSD.toLocaleString()}`
         } : null
+      },
+      storage: {
+        bucket: storageBucket || 'N/A',
+        reachable: storageReachable,
+        latencyMs: storageLatencyMs,
+        provider: storageBucket ? 'Firebase Cloud Storage' : 'Not Configured'
       },
       gemini: {
         configured: hasGeminiKey,
@@ -3202,18 +3578,39 @@ async function startServer() {
     return;
   }
 
-  if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa'
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
+  const distPath = path.join(process.cwd(), 'dist');
+
+  // In production mode, serve static assets and SPA fallback
+  if (process.env.NODE_ENV === 'production') {
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+      const indexPath = path.join(distPath, 'index.html');
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        res.status(404).send('Application build files not found.');
+      }
     });
+  } else {
+    try {
+      const { createServer: createViteServer } = await import('vite');
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: 'spa'
+      });
+      app.use(vite.middlewares);
+    } catch (viteErr) {
+      console.warn('[Server] Failed to initialize Vite dev server, falling back to static build directory:', viteErr);
+      app.use(express.static(distPath));
+      app.get('*', (req, res) => {
+        const indexPath = path.join(distPath, 'index.html');
+        if (fs.existsSync(indexPath)) {
+          res.sendFile(indexPath);
+        } else {
+          res.status(404).send('Application build files not found.');
+        }
+      });
+    }
   }
 
   app.listen(PORT, '0.0.0.0', () => {
@@ -3222,4 +3619,6 @@ async function startServer() {
   });
 }
 
-startServer();
+startServer().catch((err) => {
+  console.error('[Server] Unhandled error during server startup:', err);
+});

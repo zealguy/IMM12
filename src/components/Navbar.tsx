@@ -36,14 +36,12 @@ export default function Navbar({
   onOpenAdmin,
   onOpenCustomerDashboard,
 }: NavbarProps) {
-  const [isBouncing, setIsBouncing] = useState(false);
+  const [popKey, setPopKey] = useState(0);
   const prevCartCountRef = useRef(cartCount);
 
   useEffect(() => {
     if (cartCount > prevCartCountRef.current) {
-      setIsBouncing(true);
-      const timer = setTimeout(() => setIsBouncing(false), 500);
-      return () => clearTimeout(timer);
+      setPopKey((prev) => prev + 1);
     }
     prevCartCountRef.current = cartCount;
   }, [cartCount]);
@@ -140,24 +138,51 @@ export default function Navbar({
             </button>
 
             {/* Shopping Cart */}
-            <motion.button
-              onClick={openCart}
-              title="Shopping Cart"
-              id="cart-btn"
-              className="p-2 rounded-lg bg-[#0066FF] hover:bg-[#0055DD] text-white relative shadow-lg shadow-[#0066FF]/20"
-              animate={isBouncing ? {
-                scale: [1, 1.25, 0.9, 1.1, 1],
-                rotate: [0, -10, 10, -5, 5, 0],
-              } : { scale: 1, rotate: 0 }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
-            >
-              <ShoppingCart className="w-4 h-4" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-gray-900 animate-pulse">
-                  {cartCount}
-                </span>
+            <div className="relative">
+              <motion.button
+                key={popKey}
+                onClick={openCart}
+                title="Shopping Cart"
+                id="cart-btn"
+                className="p-2 rounded-lg bg-[#0066FF] hover:bg-[#0055DD] text-white relative shadow-lg shadow-[#0066FF]/20 flex items-center justify-center transition-colors"
+                initial={popKey > 0 ? { scale: 0.85 } : false}
+                animate={popKey > 0 ? {
+                  scale: [1, 1.25, 0.92, 1.08, 1],
+                  rotate: [0, -8, 8, -4, 0],
+                } : { scale: 1, rotate: 0 }}
+                transition={{ duration: 0.45, ease: [0.175, 0.885, 0.32, 1.275] }}
+              >
+                <motion.div
+                  animate={popKey > 0 ? { scale: [1, 1.3, 0.95, 1] } : { scale: 1 }}
+                  transition={{ duration: 0.35 }}
+                >
+                  <ShoppingCart className="w-4 h-4" />
+                </motion.div>
+
+                {cartCount > 0 && (
+                  <motion.span
+                    key={`badge-${cartCount}`}
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: [0.5, 1.4, 0.95, 1], opacity: 1 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 15 }}
+                    className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-gray-900 shadow-sm"
+                  >
+                    {cartCount}
+                  </motion.span>
+                )}
+              </motion.button>
+
+              {/* Subtle expanding halo ring on pop */}
+              {popKey > 0 && (
+                <motion.span
+                  key={`ping-${popKey}`}
+                  initial={{ scale: 0.8, opacity: 0.8 }}
+                  animate={{ scale: 1.6, opacity: 0 }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                  className="absolute inset-0 rounded-lg bg-[#0066FF]/40 pointer-events-none"
+                />
               )}
-            </motion.button>
+            </div>
 
             {/* Account Dashboard Toggle */}
             <button

@@ -35,9 +35,14 @@ export default function ProductCard({
   isComparing = false,
   onQuickBuy,
 }: ProductCardProps) {
+  const priceGHSVal = typeof product.priceGHS === 'number' && !isNaN(product.priceGHS) ? product.priceGHS : 0;
+  const priceUSDVal = typeof product.priceUSD === 'number' && !isNaN(product.priceUSD) ? product.priceUSD : 0;
+  const ratingVal = typeof product.rating === 'number' && !isNaN(product.rating) ? product.rating : 5.0;
+  const reviewsCountVal = typeof product.reviewsCount === 'number' && !isNaN(product.reviewsCount) ? product.reviewsCount : 0;
+
   const displayPrice = currency === 'GHS' 
-    ? `₵ ${product.priceGHS.toLocaleString()}` 
-    : `$ ${product.priceUSD.toLocaleString()}`;
+    ? `₵ ${priceGHSVal.toLocaleString()}` 
+    : `$ ${priceUSDVal.toLocaleString()}`;
 
   const isLowStock = product.stock > 0 && product.stock < 5;
   const isOutOfStock = product.stock === 0;
@@ -210,6 +215,7 @@ export default function ProductCard({
           className="absolute inset-0 w-full h-full object-contain p-4"
           loading="lazy"
           onError={handleImageError}
+          referrerPolicy="no-referrer"
           variants={{
             rest: { 
               scale: 1, 
@@ -242,11 +248,11 @@ export default function ProductCard({
             <div className="flex items-center text-amber-400">
               <Star className="w-3.5 h-3.5 fill-current" />
               <span className="text-xs font-bold text-gray-700 dark:text-gray-300 ml-1">
-                {product.rating.toFixed(1)}
+                {ratingVal.toFixed(1)}
               </span>
             </div>
             <span className="text-[10px] text-gray-400">
-              ({product.reviewsCount} reviews)
+              ({reviewsCountVal} reviews)
             </span>
           </div>
 
@@ -326,8 +332,8 @@ export default function ProductCard({
                 </span>
                 <span className="text-[10px] font-mono text-gray-400 dark:text-gray-500">
                   {currency === 'GHS' 
-                    ? `($${product.priceUSD.toLocaleString()})` 
-                    : `(₵${product.priceGHS.toLocaleString()})`}
+                    ? `($${priceUSDVal.toLocaleString()})` 
+                    : `(₵${priceGHSVal.toLocaleString()})`}
                 </span>
               </div>
             </div>

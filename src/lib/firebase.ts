@@ -5,7 +5,7 @@ import { getStorage } from 'firebase/storage';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 // Silence non-fatal connectivity warnings in iframe/sandboxed environments
-setLogLevel('error');
+setLogLevel('silent');
 
 const app = initializeApp(firebaseConfig);
 

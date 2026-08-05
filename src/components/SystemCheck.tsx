@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ShieldAlert, CheckCircle, XCircle, RefreshCw, Layers, Database, Globe, Image, Terminal } from 'lucide-react';
+import { ShieldAlert, CheckCircle, XCircle, RefreshCw, Layers, Database, Globe, Image, Terminal, Activity } from 'lucide-react';
+import DatabaseDiagnosticModal from './DatabaseDiagnosticModal';
 
 interface DiagnosticData {
   status: string;
@@ -34,6 +35,7 @@ export default function SystemCheck() {
   const [error, setError] = useState<string | null>(null);
   const [imageStatus, setImageStatus] = useState<'testing' | 'working' | 'broken'>('testing');
   const [testCount, setTestCount] = useState(0);
+  const [isHeartbeatModalOpen, setIsHeartbeatModalOpen] = useState(false);
 
   const runSystemCheck = async () => {
     setIsLoading(true);
@@ -96,14 +98,24 @@ export default function SystemCheck() {
             </div>
           </div>
 
-          <button
-            onClick={() => setTestCount(prev => prev + 1)}
-            disabled={isLoading}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-xs font-bold rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-indigo-600/15"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>Re-Run Diagnostics</span>
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setIsHeartbeatModalOpen(true)}
+              className="px-4 py-2 bg-gradient-to-r from-amber-500 to-indigo-600 hover:opacity-90 active:scale-95 text-white text-xs font-bold rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-indigo-600/15"
+            >
+              <Activity className="w-3.5 h-3.5 animate-pulse" />
+              <span>DB Heartbeat Modal</span>
+            </button>
+
+            <button
+              onClick={() => setTestCount(prev => prev + 1)}
+              disabled={isLoading}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-xs font-bold rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-indigo-600/15"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+              <span>Re-Run Diagnostics</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -296,6 +308,11 @@ export default function SystemCheck() {
       <footer className="border-t border-zinc-800/60 bg-zinc-950 py-4 px-6 text-center text-[11px] text-zinc-500 font-mono">
         Immortal Electronics • Production Validation Audit Systems • Accra, Ghana
       </footer>
+
+      <DatabaseDiagnosticModal 
+        isOpen={isHeartbeatModalOpen} 
+        onClose={() => setIsHeartbeatModalOpen(false)} 
+      />
     </div>
   );
 }

@@ -78,5 +78,28 @@ service cloud.firestore {
       allow read: if true;
       allow create, update, delete: if true;
     }
+
+    // 12. Deleted Products tracking
+    match /deleted_products/{deletedProductId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+
+    // 13. System Health & Diagnostic Heartbeat Collections
+    match /test_heartbeat/{heartbeatId} {
+      allow read, create, update, delete: if true;
+    }
+
+    match /system_health/{healthId} {
+      allow read, create, update, delete: if true;
+    }
+
+    match /settings/{settingId} {
+      allow read, create, update, delete: if true;
+    }
+
+    match /test/{testId} {
+      allow read, create, update, delete: if true;
+    }
   }
 }

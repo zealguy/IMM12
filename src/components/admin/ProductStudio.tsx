@@ -251,7 +251,7 @@ export default function ProductStudio({
   const [modelNumber, setModelNumber] = useState('');
   const [sku, setSku] = useState('');
   const [barcode, setBarcode] = useState('');
-  const [productStatus, setProductStatus] = useState<'Draft' | 'Published' | 'Scheduled'>('Published');
+  const [productStatus, setProductStatus] = useState<'Draft' | 'Published' | 'Scheduled' | 'Archived'>('Published');
   const [isBestSeller, setIsBestSeller] = useState<boolean>(false);
   const [isNewArrival, setIsNewArrival] = useState<boolean>(true);
   const [isFeatured, setIsFeatured] = useState<boolean>(false);
@@ -424,17 +424,49 @@ export default function ProductStudio({
     setImageCompressionLogs(prev => [...prev, `[IDENTIFIER] Auto-generated SKU: ${computedSku}, Barcode: ${computedBarcode}`]);
   };
 
-  // Helper to read file as base64 Data URL
-  const readFileAsDataURL = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
+  // Helper to compress and resize local image files into lightweight Data URLs
+  const compressImageFile = (file: File, maxWidth = 1200, maxHeight = 1200, quality = 0.82): Promise<string> => {
+    return new Promise((resolve) => {
       const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          if (width > maxWidth || height > maxHeight) {
+            if (width / height > maxWidth / maxHeight) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            } else {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          } else {
+            resolve(e.target?.result as string || '');
+          }
+        };
+        img.onerror = () => resolve(e.target?.result as string || '');
+        img.src = e.target?.result as string || '';
+      };
+      reader.onerror = () => resolve('');
       reader.readAsDataURL(file);
     });
   };
 
-  // Firebase Storage Upload Handler with 4s timeout race
+  // Helper to read file as base64 Data URL
+  const readFileAsDataURL = (file: File): Promise<string> => {
+    return compressImageFile(file);
+  };
+
+  // Firebase Storage Upload Handler with 4s timeout race & canvas compression fallback
   const uploadImageToFirebase = async (file: File, isMain: boolean) => {
     setFirebaseUploadError(null);
     if (isMain) {
@@ -444,6 +476,9 @@ export default function ProductStudio({
     }
 
     try {
+      // 1. Process & compress image locally first for guaranteed display
+      const compressedDataUrl = await compressImageFile(file);
+      
       const cleanFileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
       const path = `product_images/${cleanFileName}`;
       const storageRef = ref(storage, path);
@@ -451,7 +486,7 @@ export default function ProductStudio({
       let downloadUrl = '';
       try {
         const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('Firebase Storage timeout (exceeded 4s)')), 4000);
+          setTimeout(() => reject(new Error('Firebase Storage timeout (exceeded 3s)')), 3000);
         });
         const uploadPromise = (async () => {
           const snapshot = await uploadBytes(storageRef, file);
@@ -461,9 +496,9 @@ export default function ProductStudio({
         downloadUrl = await Promise.race([uploadPromise, timeoutPromise]);
         setImageCompressionLogs(prev => [...prev, `[FIREBASE STORAGE] Uploaded successfully: ${cleanFileName} ✅`]);
       } catch (stErr) {
-        console.warn('Firebase Storage delayed or offline. Converting directly to compressed Data URL:', stErr);
-        setImageCompressionLogs(prev => [...prev, `[FIREBASE TIMEOUT] Converting to instant base64 photo stream... ⚡`]);
-        downloadUrl = await readFileAsDataURL(file);
+        console.warn('Firebase Storage delayed or offline. Using compressed Data URL fallback:', stErr);
+        setImageCompressionLogs(prev => [...prev, `[CANVAS COMPRESSOR] Converted image to lightweight high-res photo stream ⚡`]);
+        downloadUrl = compressedDataUrl || await readFileAsDataURL(file);
       }
       
       if (isMain) {
@@ -489,20 +524,22 @@ export default function ProductStudio({
     }
   };
 
-  // Firebase Storage Gallery Batch Upload Handler
-  const uploadGalleryImagesToFirebase = async (files: FileList) => {
+  // Firebase Storage Gallery Batch Upload Handler (Up to 10 Photos)
+  const uploadGalleryImagesToFirebase = async (files: FileList | File[]) => {
     setFirebaseUploadError(null);
     setIsUploadingGallery(true);
-    setImageCompressionLogs(prev => [...prev, `[FIREBASE STORAGE] Starting batch upload of ${files.length} images...`]);
+    const fileArray = Array.from(files).slice(0, 10 - uploadedGallery.length);
+    setImageCompressionLogs(prev => [...prev, `[BATCH UPLOADER] Processing ${fileArray.length} images from computer...`]);
 
     try {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+      for (let i = 0; i < fileArray.length; i++) {
+        const file = fileArray[i];
         if (uploadedGallery.length >= 10) {
           alert('Maximum gallery limit (10) reached.');
           break;
         }
 
+        const compressedDataUrl = await compressImageFile(file);
         const cleanFileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
         const path = `product_images/${cleanFileName}`;
         const storageRef = ref(storage, path);
@@ -510,7 +547,7 @@ export default function ProductStudio({
         let downloadUrl = '';
         try {
           const timeoutPromise = new Promise<never>((_, reject) => {
-            setTimeout(() => reject(new Error('Firebase Storage timeout (exceeded 4s)')), 4000);
+            setTimeout(() => reject(new Error('Firebase Storage timeout (exceeded 3s)')), 3000);
           });
           const uploadPromise = (async () => {
             const snapshot = await uploadBytes(storageRef, file);
@@ -518,14 +555,19 @@ export default function ProductStudio({
           })();
 
           downloadUrl = await Promise.race([uploadPromise, timeoutPromise]);
-          setImageCompressionLogs(prev => [...prev, `[FIREBASE STORAGE] Uploaded item ${i + 1}/${files.length}: ${cleanFileName} ✅`]);
+          setImageCompressionLogs(prev => [...prev, `[STORAGE] Uploaded item ${i + 1}/${fileArray.length}: ${cleanFileName} ✅`]);
         } catch (stErr) {
-          console.warn('Firebase Storage delayed. Converting to Data URL:', stErr);
-          downloadUrl = await readFileAsDataURL(file);
-          setImageCompressionLogs(prev => [...prev, `[INSTANT DATA URL] Processed item ${i + 1}/${files.length} ⚡`]);
+          console.warn('Firebase Storage delayed. Using compressed Data URL:', stErr);
+          downloadUrl = compressedDataUrl || await readFileAsDataURL(file);
+          setImageCompressionLogs(prev => [...prev, `[COMPRESSED STREAM] Processed item ${i + 1}/${fileArray.length} ⚡`]);
         }
 
-        setUploadedGallery(prev => [...prev, downloadUrl]);
+        if (downloadUrl) {
+          setUploadedGallery(prev => {
+            if (prev.length >= 10) return prev;
+            return [...prev, downloadUrl];
+          });
+        }
       }
     } catch (err: any) {
       console.error("Firebase Storage Gallery Batch Upload Error:", err);
@@ -2141,23 +2183,43 @@ export default function ProductStudio({
                             </div>
                           </div>
 
-                          {/* Gallery Preview list */}
-                          {uploadedGallery.length > 0 && (
-                            <div className="grid grid-cols-5 gap-1.5 mt-2 bg-gray-50/50 dark:bg-black/25 p-2 rounded-xl border border-gray-100 dark:border-gray-900">
-                              {uploadedGallery.map((url, idx) => (
-                                <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200 bg-white">
-                                  <img src={url} className="w-full h-full object-cover" alt={`Gallery ${idx}`} onError={handleImageError} />
+                          {/* Gallery Preview list - up to 10 photos */}
+                          <div className="grid grid-cols-5 gap-2 mt-2 bg-gray-50/50 dark:bg-black/25 p-2.5 rounded-2xl border border-gray-150 dark:border-gray-800">
+                            {uploadedGallery.map((url, idx) => (
+                              <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-black/40">
+                                <img src={url} className="w-full h-full object-cover" alt={`Gallery ${idx + 1}`} onError={handleImageError} />
+                                <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center gap-1 p-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => setUploadedMain(url)}
+                                    className="px-2 py-0.5 bg-amber-500 text-black rounded font-mono text-[8px] font-black uppercase hover:scale-105 transition"
+                                    title="Set as main thumbnail"
+                                  >
+                                    Main
+                                  </button>
                                   <button
                                     type="button"
                                     onClick={() => setUploadedGallery(prev => prev.filter((_, i) => i !== idx))}
-                                    className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-[10px] font-bold"
+                                    className="px-2 py-0.5 bg-rose-600 text-white rounded font-mono text-[8px] font-bold uppercase hover:scale-105 transition"
                                   >
-                                    Remove
+                                    Delete
                                   </button>
                                 </div>
-                              ))}
-                            </div>
-                          )}
+                                <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[8px] font-mono px-1 rounded">#{idx + 1}</span>
+                              </div>
+                            ))}
+
+                            {uploadedGallery.length < 10 && (
+                              <label
+                                htmlFor="firebase-gallery-upload-input"
+                                className="aspect-square rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-800 hover:border-amber-500 cursor-pointer flex flex-col items-center justify-center text-gray-400 hover:text-amber-500 transition-all bg-white/50 dark:bg-black/10"
+                                title="Click to add picture"
+                              >
+                                <Plus className="w-4 h-4" />
+                                <span className="text-[8px] font-mono font-bold mt-0.5">Add Photo</span>
+                              </label>
+                            )}
+                          </div>
                         </div>
 
                         {/* Product Video Walkthrough URL */}
@@ -2483,14 +2545,31 @@ export default function ProductStudio({
                         ))}
                       </div>
 
-                      {/* Dropzone mockup */}
-                      <div 
-                        onClick={() => setAiUploadedFile(aiDocType === 'image' ? 'omen_photo_Accra.jpg' : 'HP_Omen_Datasheet_16.pdf')}
-                        className="border border-dashed border-gray-200 dark:border-gray-800 hover:border-indigo-500 dark:hover:border-indigo-500 p-6 bg-gray-50/50 dark:bg-black/10 rounded-2xl cursor-pointer text-center space-y-2 transition-colors"
-                      >
-                        <Upload className="w-8 h-8 mx-auto text-indigo-500 animate-bounce" />
-                        <span className="text-xs font-bold text-gray-900 dark:text-white block">Upload document file / photograph</span>
-                        <span className="text-[9px] text-gray-400 block">Click to select files. Large assets converted to lightweight WebP.</span>
+                      {/* Dropzone with real file input */}
+                      <div>
+                        <input
+                          type="file"
+                          id="gemini-ai-file-input"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setAiUploadedFile(file.name);
+                              // Auto upload as main image if it's an image
+                              if (file.type.startsWith('image/')) {
+                                await uploadImageToFirebase(file, true);
+                              }
+                            }
+                          }}
+                        />
+                        <label
+                          htmlFor="gemini-ai-file-input"
+                          className="border border-dashed border-gray-200 dark:border-gray-800 hover:border-indigo-500 dark:hover:border-indigo-500 p-6 bg-gray-50/50 dark:bg-black/10 rounded-2xl cursor-pointer text-center space-y-2 transition-colors block"
+                        >
+                          <Upload className="w-8 h-8 mx-auto text-indigo-500 animate-bounce" />
+                          <span className="text-xs font-bold text-gray-900 dark:text-white block">Upload document file / photograph</span>
+                          <span className="text-[9px] text-gray-400 block">Click to select files from your computer. Large assets automatically converted and optimized.</span>
+                        </label>
                       </div>
 
                       {aiUploadedFile && (
