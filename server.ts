@@ -64,7 +64,7 @@ const firestoreDb = firebaseApp ? getFirestore(firebaseApp, firebaseConfig.fires
 
 
 export const app = express();
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+const PORT = 3000;
 
 app.use(express.json({ limit: '10mb' }));
 
@@ -2018,12 +2018,18 @@ async function _initializeAndLoadFromFirestoreInternal() {
     // 1. Products
     let products: Product[] = [];
     if (!productsSnap || productsSnap.empty) {
-      console.log('[Firestore] No products found or fetch empty. Seeding/using initial catalog...');
-      products = initialProducts.filter(p => !deletedSet.has(p.id));
+      console.log('[Firestore] No products found in Firestore or fetch empty/null. Merging local cache & seed catalog...');
+      const existingMemory = (globalDbMemory.products || []).filter(p => p && p.id && !deletedSet.has(p.id));
+      if (existingMemory.length > 0) {
+        products = existingMemory;
+      } else {
+        products = initialProducts.filter(p => !deletedSet.has(p.id));
+      }
+
       if (firestoreDb && !isFirestoreQuotaExceeded) {
         for (const p of products) {
           try {
-            await setDoc(doc(firestoreDb, 'products', p.id), p);
+            await setDoc(doc(firestoreDb, 'products', p.id), sanitizeForFirestore(p));
           } catch (err) {
             handleFirestoreQuotaError(err, `seeding product ${p.id}`);
             if (isFirestoreQuotaExceeded) break;
@@ -2031,7 +2037,24 @@ async function _initializeAndLoadFromFirestoreInternal() {
         }
       }
     } else {
-      products = productsSnap.docs.map(doc => doc.data() as Product).filter(p => p && !deletedSet.has(p.id));
+      const remoteProducts = productsSnap.docs.map(doc => doc.data() as Product).filter(p => p && p.id && !deletedSet.has(p.id));
+      const remoteIds = new Set(remoteProducts.map(p => p.id));
+      
+      // Preserve local-only uploaded products that haven't reached Firestore yet
+      const localOnlyProducts = (globalDbMemory.products || []).filter(p => p && p.id && !remoteIds.has(p.id) && !deletedSet.has(p.id));
+      if (localOnlyProducts.length > 0 && firestoreDb && !isFirestoreQuotaExceeded) {
+        console.log(`[Firestore] Syncing ${localOnlyProducts.length} local-only uploaded products to Firestore...`);
+        for (const p of localOnlyProducts) {
+          if (isFirestoreQuotaExceeded) break;
+          try {
+            await setDoc(doc(firestoreDb, 'products', p.id), sanitizeForFirestore(p));
+          } catch (err) {
+            handleFirestoreQuotaError(err, `syncing local product ${p.id}`);
+          }
+        }
+      }
+
+      products = [...localOnlyProducts, ...remoteProducts];
       
       // Explicitly delete 'prod-omniview-desktop-stand' from Firestore and filter it out of memory if present
       if (!isFirestoreQuotaExceeded && firestoreDb) {
@@ -2048,11 +2071,11 @@ async function _initializeAndLoadFromFirestoreInternal() {
       const existingIds = new Set(products.map(p => p.id));
       const missingProducts = initialProducts.filter(p => !existingIds.has(p.id) && !deletedSet.has(p.id));
       if (missingProducts.length > 0 && !isFirestoreQuotaExceeded && firestoreDb) {
-        console.log(`[Firestore] Syncing ${missingProducts.length} new or missing products to Firestore...`);
+        console.log(`[Firestore] Syncing ${missingProducts.length} new or missing seed products to Firestore...`);
         for (const p of missingProducts) {
           if (isFirestoreQuotaExceeded) break;
           try {
-            await setDoc(doc(firestoreDb, 'products', p.id), p);
+            await setDoc(doc(firestoreDb, 'products', p.id), sanitizeForFirestore(p));
             products.push(p);
           } catch (err) {
             handleFirestoreQuotaError(err, `syncing missing product ${p.id}`);
@@ -2278,10 +2301,15 @@ export function getInitPromise() {
   return initPromise;
 }
 
-// Database initialization gate middleware (Non-blocking fallback model)
-app.use((req, res, next) => {
-  // Completely non-blocking! We load/sync the Firestore data in the background.
-  // The server can immediately respond to incoming requests using the fully-populated globalDbMemory cache.
+// Database initialization gate middleware (Awaits cloud Firestore hydration for API requests)
+app.use(async (req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    try {
+      await getInitPromise();
+    } catch (err) {
+      console.warn('[API Gate] Error awaiting init promise:', err);
+    }
+  }
   next();
 });
 
@@ -2361,12 +2389,19 @@ app.post('/api/products', async (req, res) => {
   const db = getDatabase();
   // Ensure unique ID
   newProduct.id = newProduct.id || `prod-${Date.now()}`;
+  if (db.deletedProductIds) {
+    db.deletedProductIds = db.deletedProductIds.filter(id => id !== newProduct.id);
+  }
+
+  // Remove duplicate if already in db.products
+  db.products = db.products.filter(p => p.id !== newProduct.id);
   db.products.unshift(newProduct);
   saveDatabase(db);
   
   if (firestoreDb && !isFirestoreQuotaExceeded) {
     try {
       await setDoc(doc(firestoreDb, 'products', newProduct.id), sanitizeForFirestore(newProduct));
+      await deleteDoc(doc(firestoreDb, 'deleted_products', newProduct.id)).catch(() => {});
       console.log(`[Firestore] Directly added new product ${newProduct.id} to cloud database`);
     } catch (err) {
       handleFirestoreQuotaError(err, `adding product ${newProduct.id}`);

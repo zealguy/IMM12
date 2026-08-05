@@ -412,13 +412,20 @@ export async function fetchFirestoreWithRetry<T>(
         setTimeout(() => reject(new Error(`Direct Firestore read timed out after ${timeoutMs}ms`)), timeoutMs)
       );
 
-      const querySnap = await Promise.race([
-        getDocs(collection(db, collectionName)),
-        timeoutPromise
+      const [querySnap, deletedSnap] = await Promise.all([
+        Promise.race([
+          getDocs(collection(db, collectionName)),
+          timeoutPromise
+        ]),
+        collectionName === 'products' ? getDocs(collection(db, 'deleted_products')).catch(() => null) : Promise.resolve(null)
       ]);
 
       if (querySnap && !querySnap.empty) {
-        const docsData = querySnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as T[];
+        let docsData = querySnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as T[];
+        if (collectionName === 'products' && deletedSnap && !deletedSnap.empty) {
+          const deletedIds = new Set(deletedSnap.docs.map(d => d.id));
+          docsData = docsData.filter((p: any) => p && p.id && !deletedIds.has(p.id));
+        }
         if (docsData.length > 0) {
           console.info(`[useDataStore Retry] Secondary direct Firestore fetch succeeded for '${collectionName}' with ${docsData.length} records.`);
           return docsData;
@@ -461,18 +468,14 @@ export function useDataStore() {
   const fetchInitialData = useCallback(async () => {
     try {
       // 1. Fetch products with retries, exponential backoff, and secondary direct Firestore read
-      const resProd = await fetchFirestoreWithRetry<Product>('/api/products', 'products', INITIAL_PRODUCTS, 3, 300, 5000);
+      const resProd = await fetchFirestoreWithRetry<Product>('/api/products', 'products', [], 3, 300, 5000);
       if (resProd && resProd.length > 0) {
         const { products: sanitizedList, logs } = validateAndSanitizeProductsWithLogs(resProd);
         setProductDiagnosticLogs(logs);
         if (sanitizedList.length > 0) {
           setProducts(sanitizedList);
           offlineStore.saveCollection('products', sanitizedList);
-        } else {
-          setProducts(prev => prev.length > 0 ? prev : INITIAL_PRODUCTS);
         }
-      } else {
-        setProducts(prev => prev.length > 0 ? prev : INITIAL_PRODUCTS);
       }
 
       // 2. Fetch other collections in parallel with exponential backoff retries & secondary direct Firestore reads
