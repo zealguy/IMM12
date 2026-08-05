@@ -6,22 +6,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  ShieldCheck, Lock, LogOut, LayoutDashboard, ShoppingBag, Layers, 
-  ShoppingCart, Users, Settings, Sparkles, TrendingUp, DollarSign, 
-  Package, AlertTriangle, ArrowUpRight, Search, Plus, Edit2, Trash2, 
-  Upload, X, Check, ArrowRight, Eye, EyeOff, Phone, Mail, MapPin, Globe, CreditCard,
-  FileText, Calendar, Filter, ChevronRight, ChevronDown, CheckCircle2,
-  Zap, CheckSquare, Terminal, Play, Activity, RefreshCw
+  ShieldCheck, Lock, LogOut, ShoppingBag, Layers, 
+  ShoppingCart, Settings, Plus, Edit2, Trash2, 
+  Upload, X, Eye, EyeOff, Search, RefreshCw,
+  Wrench
 } from 'lucide-react';
-import SystemStatusDashboard from './admin/SystemStatusDashboard';
-import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, BarChart, Bar, Legend
-} from 'recharts';
 import { Product, RepairRequest, TradeInRequest, Order, Coupon, BulkInquiry, BlogPost } from '../types';
 import { STORE_CATEGORIES } from '../constants/categories';
 import { db, storage } from '../lib/firebase';
-import { collection, doc, getDocs, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDocs, setDoc, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Standard Admin Credentials
@@ -77,15 +70,15 @@ interface AdminPanelProps {
 }
 
 export default function AdminPanel({
-  products = [], repairs = [], tradeins = [], orders = [], coupons = [], currency, bulkInquiries = [], blogs = [],
-  onUpdateStock, onUpdateRepair, onUpdateTradeIn, onUpdateOrder, onCreateCoupon, onUpdateBulkInquiry,
-  onCreateProduct, onEditProduct, onDeleteProduct, onCreateBlog, onDeleteBlog,
+  products = [], repairs = [], tradeins = [], orders = [], coupons = [], bulkInquiries = [], blogs = [],
+  onUpdateStock, onUpdateRepair, onUpdateTradeIn, onUpdateOrder, onCreateCoupon,
+  onCreateProduct, onEditProduct, onDeleteProduct,
   onForceRefresh,
   onClose
 }: AdminPanelProps) {
   
   // Tab states
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'collections' | 'orders' | 'customers' | 'settings' | 'blogs' | 'system_status'>('overview');
+  const [activeTab, setActiveTab] = useState<'products' | 'collections' | 'orders' | 'repairs' | 'settings'>('products');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleForceRefresh = async () => {
@@ -112,17 +105,16 @@ export default function AdminPanel({
   const [showPassword, setShowPassword] = useState(false);
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-focus the passcode field on login modal open to ensure seamless keyboard focus
   useEffect(() => {
     if (!isAuthenticated) {
       const timer = setTimeout(() => {
         passwordInputRef.current?.focus();
-      }, 400); // Allow modal animation to complete
+      }, 400);
       return () => clearTimeout(timer);
     }
   }, [isAuthenticated]);
 
-  // Core synchronized States
+  // Core Collections & Settings States
   const [customCollections, setCustomCollections] = useState<CollectionItem[]>([]);
   const [storeSettings, setStoreSettings] = useState<StoreSettings>({
     storeName: 'Immortal Electronics',
@@ -139,104 +131,90 @@ export default function AdminPanel({
     expeditedDeliveryCostGHS: 100
   });
 
-  // UI state variables
+  // Product Filter States
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedBrand, setSelectedBrand] = useState('All');
   const [stockFilter, setStockFilter] = useState<'All' | 'Low' | 'Out'>('All');
-  const [isAddingProduct, setIsAddingProduct] = useState(false);
+
+  // Product Modal States
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isSavingProduct, setIsSavingProduct] = useState(false);
   
-  // Create / Edit Product Form States
+  // Product Form States
   const [prodName, setProdName] = useState('');
   const [prodDesc, setProdDesc] = useState('');
   const [prodCategory, setProdCategory] = useState('Smartphones');
-  const [prodBrand, setProdBrand] = useState('');
-  const [prodPriceGHS, setProdPriceGHS] = useState(0);
-  const [prodPriceUSD, setProdPriceUSD] = useState(0);
+  const [prodBrand, setProdBrand] = useState('Apple');
+  const [prodPriceGHS, setProdPriceGHS] = useState<number | ''>(0);
+  const [prodPriceUSD, setProdPriceUSD] = useState<number | ''>(0);
   const [prodSaleGHS, setProdSaleGHS] = useState<number | ''>('');
-  const [prodStock, setProdStock] = useState(0);
+  const [prodStock, setProdStock] = useState<number>(10);
   const [prodSKU, setProdSKU] = useState('');
-  const [prodImages, setProdImages] = useState<string[]>([]);
-  const [prodImageInput, setProdImageInput] = useState('');
+  const [prodStatus, setProdStatus] = useState<'Published' | 'Draft'>('Published');
   const [prodIsFeatured, setProdIsFeatured] = useState(false);
   const [prodCollection, setProdCollection] = useState('');
+  const [prodImages, setProdImages] = useState<string[]>([]);
+  const [prodImageUrlInput, setProdImageUrlInput] = useState('');
+
+  // Specs form states
+  const [specProcessor, setSpecProcessor] = useState('');
+  const [specRam, setSpecRam] = useState('');
+  const [specStorage, setSpecStorage] = useState('');
+  const [specDisplay, setSpecDisplay] = useState('');
+  const [specBattery, setSpecBattery] = useState('');
+  const [specWarranty, setSpecWarranty] = useState('1 Year Official Local Warranty');
+  const [specCondition, setSpecCondition] = useState('Brand New Sealed');
   
   // Image Upload compression States
   const [isUploading, setIsUploading] = useState(false);
-  const [compressionStatus, setCompressionStatus] = useState('');
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploadStatus, setUploadStatus] = useState('');
 
   // Collections Form States
   const [colName, setColName] = useState('');
   const [colDesc, setColDesc] = useState('');
   const [colIsFeatured, setColIsFeatured] = useState(true);
   const [selectedColId, setSelectedColId] = useState<string | null>(null);
-  const [colProductSearch, setColProductSearch] = useState('');
 
-  // Bulk Collections & E2E System Audit States
-  const [selectedBulkColIds, setSelectedBulkColIds] = useState<string[]>([]);
-  const [isE2ETestModalOpen, setIsE2ETestModalOpen] = useState(false);
-  const [e2eTestRunning, setE2ETestRunning] = useState(false);
-  const [e2eTestSteps, setE2ETestSteps] = useState<Array<{ id: string; title: string; status: 'idle' | 'running' | 'success' | 'failed'; log?: string }>>([
-    { id: 'login', title: '1. Admin Login & Authentication Gate', status: 'idle' },
-    { id: 'create_product', title: '2. Create Product with Specs & Inventory', status: 'idle' },
-    { id: 'upload_image', title: '3. Image Upload & WebP Compression', status: 'idle' },
-    { id: 'assign_collection', title: '4. Assign Product to Collection Group', status: 'idle' },
-    { id: 'publish_storefront', title: '5. Publish Live to Storefront Catalog', status: 'idle' },
-  ]);
+  // New Coupon state
+  const [couponCode, setCouponCode] = useState('');
+  const [couponDiscount, setCouponDiscount] = useState(10);
 
-  // Selected Order Detail
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-
-  // Load persistent collection/settings on mount
+  // Load collections and settings from Firestore
   useEffect(() => {
     const loadSettingsAndCollections = async () => {
       try {
-        const timeout = (ms: number) => new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`Firestore request timeout (${ms}ms)`)), ms));
+        const timeout = (ms: number) => new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`Timeout ${ms}ms`)), ms));
 
         // Load collections
-        const colSnap: any = await Promise.race([getDocs(collection(db, 'collections')), timeout(3500)]);
-        const loadedCols: CollectionItem[] = [];
-        colSnap.forEach((doc: any) => {
-          loadedCols.push({ id: doc.id, ...doc.data() } as CollectionItem);
-        });
-
-        if (loadedCols.length > 0) {
+        const colSnap: any = await Promise.race([getDocs(collection(db, 'collections')), timeout(3000)]).catch(() => null);
+        if (colSnap && !colSnap.empty) {
+          const loadedCols: CollectionItem[] = [];
+          colSnap.forEach((doc: any) => {
+            loadedCols.push({ id: doc.id, ...doc.data() } as CollectionItem);
+          });
           setCustomCollections(loadedCols);
         } else {
-          // Initialize default collections if empty
           const defaults: CollectionItem[] = [
             { id: 'col-new-arrivals', name: 'New Arrivals', description: 'Fresh premium stock newly arrived in Accra', productIds: [], isFeaturedHome: true, createdAt: new Date().toISOString() },
             { id: 'col-best-sellers', name: 'Best Sellers', description: 'Most popular customer devices and computers', productIds: [], isFeaturedHome: true, createdAt: new Date().toISOString() },
             { id: 'col-flagship-deals', name: 'Flagship Deals', description: 'Premium discounted offers', productIds: [], isFeaturedHome: true, createdAt: new Date().toISOString() }
           ];
           setCustomCollections(defaults);
-          // Sync default seed collections to Firestore as fallback
-          for (const colItem of defaults) {
-            setDoc(doc(db, 'collections', colItem.id), colItem).catch(e => console.warn('Background setDoc notice:', e));
-          }
         }
 
         // Load settings
-        const settingsSnap: any = await Promise.race([getDocs(collection(db, 'settings')), timeout(3500)]);
-        let foundSettings = false;
-        settingsSnap.forEach((doc: any) => {
-          if (doc.id === 'store_config') {
-            setStoreSettings(doc.data() as StoreSettings);
-            foundSettings = true;
-          }
-        });
-        
-        if (!foundSettings) {
-          setDoc(doc(db, 'settings', 'store_config'), storeSettings).catch(e => console.warn('Background setDoc notice:', e));
+        const settingsSnap: any = await Promise.race([getDocs(collection(db, 'settings')), timeout(3000)]).catch(() => null);
+        if (settingsSnap) {
+          settingsSnap.forEach((doc: any) => {
+            if (doc.id === 'store_config') {
+              setStoreSettings(doc.data() as StoreSettings);
+            }
+          });
         }
       } catch (err) {
-        console.warn('Could not sync collections/settings from Firestore, using LocalStorage fallback:', err);
-        const localCols = localStorage.getItem('immortal_custom_collections');
-        const localSettings = localStorage.getItem('immortal_store_settings');
-        if (localCols) setCustomCollections(JSON.parse(localCols));
-        if (localSettings) setStoreSettings(JSON.parse(localSettings));
+        console.warn('Fallback loading store settings/collections:', err);
       }
     };
 
@@ -244,18 +222,6 @@ export default function AdminPanel({
       loadSettingsAndCollections();
     }
   }, [isAuthenticated]);
-
-  // Sync collections to local storage as fallback
-  useEffect(() => {
-    if (customCollections.length > 0) {
-      localStorage.setItem('immortal_custom_collections', JSON.stringify(customCollections));
-    }
-  }, [customCollections]);
-
-  // Sync settings to local storage as fallback
-  useEffect(() => {
-    localStorage.setItem('immortal_store_settings', JSON.stringify(storeSettings));
-  }, [storeSettings]);
 
   // Handle Authentication
   const handleLogin = (e: React.FormEvent) => {
@@ -268,10 +234,10 @@ export default function AdminPanel({
         setIsAuthenticated(true);
         localStorage.setItem('isAdminAuthenticated', 'true');
       } else {
-        setLoginError('Invalid Administrator Credentials. Please check credentials and try again.');
+        setLoginError('Invalid Administrator Credentials. Please check username and passcode.');
       }
       setIsLoginLoading(false);
-    }, 800);
+    }, 500);
   };
 
   const handleLogout = () => {
@@ -279,18 +245,17 @@ export default function AdminPanel({
     localStorage.removeItem('isAdminAuthenticated');
   };
 
-  // Image compressor helper
+  // Image upload with compression
   const compressAndUploadImage = async (file: File) => {
     if (!file.type.match('image.*')) {
-      alert('Unsupported file type. Please upload JPEG, PNG, or WebP images.');
+      alert('Please upload JPEG, PNG, or WebP images.');
       return;
     }
 
     setIsUploading(true);
-    setCompressionStatus('Analyzing image dimensions and formatting...');
+    setUploadStatus('Compressing image...');
     
     try {
-      // 1. Read file and compress using canvas
       const blob = await new Promise<Blob>((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -299,7 +264,7 @@ export default function AdminPanel({
           img.src = event.target?.result as string;
           img.onload = () => {
             const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 800; // Optimal for web e-commerce
+            const MAX_WIDTH = 900;
             let width = img.width;
             let height = img.height;
 
@@ -312,172 +277,180 @@ export default function AdminPanel({
             canvas.height = height;
 
             const ctx = canvas.getContext('2d');
-            if (!ctx) {
-              resolve(file); // Fallback to raw file if canvas ctx is unavailable
-              return;
-            }
+            if (!ctx) { resolve(file); return; }
 
             ctx.drawImage(img, 0, 0, width, height);
-            canvas.toBlob(
-              (resBlob) => {
-                if (resBlob) {
-                  resolve(resBlob);
-                } else {
-                  resolve(file);
-                }
-              },
-              'image/jpeg',
-              0.80 // 80% high fidelity compression
-            );
+            canvas.toBlob((resBlob) => resolve(resBlob || file), 'image/jpeg', 0.82);
           };
           img.onerror = (err) => reject(err);
         };
         reader.onerror = (err) => reject(err);
       });
 
-      const sizeBeforeMB = (file.size / (1024 * 1024)).toFixed(2);
-      const sizeAfterMB = (blob.size / (1024 * 1024)).toFixed(2);
-      setCompressionStatus(`Compressed safely: ${sizeBeforeMB}MB down to ${sizeAfterMB}MB. Directing to Firebase...`);
+      setUploadStatus('Uploading photo...');
 
-      // 2. Upload blob to Firebase Storage with a 4s timeout race
       const fileRef = ref(storage, `products/${Date.now()}_${file.name.replace(/\s+/g, '_')}`);
-      setUploadProgress(40);
-
-      const uploadWithTimeout = async (): Promise<string> => {
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('Firebase Storage upload timeout (exceeded 4s)')), 4000);
-        });
-        const uploadPromise = (async () => {
-          const snapshot = await uploadBytes(fileRef, blob);
-          setUploadProgress(80);
-          return await getDownloadURL(snapshot.ref);
-        })();
-        return await Promise.race([uploadPromise, timeoutPromise]);
-      };
-
       let finalUrl = '';
+
       try {
-        finalUrl = await uploadWithTimeout();
-        setUploadProgress(100);
-        setCompressionStatus('Upload completed via Firebase Storage!');
+        const snapshot = await uploadBytes(fileRef, blob);
+        finalUrl = await getDownloadURL(snapshot.ref);
       } catch (storageErr) {
-        console.warn('Firebase Storage timeout/error, switching to instant compressed Data URL fallback:', storageErr);
-        setCompressionStatus('Firebase Storage delayed. Processing instant compressed Data URL...');
-        
-        // Convert the compressed blob directly to base64 Data URL so user image is retained
+        console.warn('Firebase Storage upload timeout, using optimized Data URL:', storageErr);
         finalUrl = await new Promise<string>((resolve, reject) => {
           const r = new FileReader();
           r.onloadend = () => resolve(r.result as string);
           r.onerror = reject;
           r.readAsDataURL(blob);
         });
-        setUploadProgress(100);
-        setCompressionStatus('Instant compressed photo ready!');
       }
 
-      // Save to images array
       if (finalUrl) {
         setProdImages(prev => [...prev, finalUrl]);
       }
     } catch (err) {
       console.error('Image compression or upload error:', err);
-      setCompressionStatus('Error processing image. Generating safe placeholder...');
-      
-      const fallbackUrl = `https://images.unsplash.com/photo-1546868871-7041f2a55e12?q=80&w=800&auto=format&fit=crop`;
-      setProdImages(prev => [...prev, fallbackUrl]);
-      setCompressionStatus('Fallback URL created to safeguard store catalog.');
+      alert('Could not upload photo. You can also paste an image URL directly.');
     } finally {
-      setTimeout(() => {
-        setIsUploading(false);
-        setCompressionStatus('');
-        setUploadProgress(null);
-      }, 800);
+      setIsUploading(false);
+      setUploadStatus('');
     }
   };
 
-  // Product actions
-  const triggerAddProduct = () => {
+  const handleAddImageUrl = () => {
+    if (!prodImageUrlInput.trim()) return;
+    setProdImages(prev => [...prev, prodImageUrlInput.trim()]);
+    setProdImageUrlInput('');
+  };
+
+  const handleRemoveImage = (indexToRemove: number) => {
+    setProdImages(prev => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  // Open Add Product Modal
+  const handleOpenAddProduct = () => {
+    setEditingProduct(null);
     setProdName('');
     setProdDesc('');
     setProdCategory('Smartphones');
-    setProdBrand('');
+    setProdBrand('Apple');
     setProdPriceGHS(0);
     setProdPriceUSD(0);
     setProdSaleGHS('');
     setProdStock(10);
-    setProdSKU(`IMM-${Math.floor(100000 + Math.random() * 900000)}`);
-    setProdImages([]);
+    setProdSKU(`IMM-${Math.floor(1000 + Math.random() * 9000)}`);
+    setProdStatus('Published');
     setProdIsFeatured(false);
     setProdCollection('');
-    setEditingProduct(null);
-    setIsAddingProduct(true);
+    setProdImages([]);
+    setProdImageUrlInput('');
+    setSpecProcessor('Apple A18 Pro / Snapdragon 8 Gen 3');
+    setSpecRam('8GB / 12GB Unified');
+    setSpecStorage('256GB / 512GB NVMe');
+    setSpecDisplay('OLED Super Retina XDR');
+    setSpecBattery('All-Day Battery');
+    setSpecWarranty('1 Year Official Warranty');
+    setSpecCondition('Brand New Sealed');
+    setIsProductModalOpen(true);
   };
 
-  const triggerEditProduct = (prod: Product) => {
+  // Open Edit Product Modal
+  const handleOpenEditProduct = (prod: Product) => {
     setEditingProduct(prod);
-    setProdName(prod.name);
-    setProdDesc(prod.description);
-    setProdCategory(prod.category);
-    setProdBrand(prod.brand);
-    setProdPriceGHS(prod.priceGHS);
-    setProdPriceUSD(prod.priceUSD);
-    setProdStock(prod.stock);
-    setProdSKU(prod.specs?.['SKU'] || `IMM-${Math.floor(100000 + Math.random() * 900000)}`);
-    setProdImages(prod.images || [prod.image].filter(Boolean));
-    setProdIsFeatured(prod.isFeatured || false);
+    setProdName(prod.name || '');
+    setProdDesc(prod.description || '');
+    setProdCategory(prod.category || 'Smartphones');
+    setProdBrand(prod.brand || 'Apple');
+    setProdPriceGHS(prod.priceGHS || 0);
+    setProdPriceUSD(prod.priceUSD || 0);
+    setProdSaleGHS(prod.specs?.['SalePriceGHS'] ? Number(prod.specs['SalePriceGHS']) : '');
+    setProdStock(typeof prod.stock === 'number' ? prod.stock : 10);
+    setProdSKU(prod.specs?.['SKU'] || prod.id);
+    setProdStatus(prod.status === 'Draft' ? 'Draft' : 'Published');
+    setProdIsFeatured(!!prod.isFeatured);
     
-    // Find active collection
-    const assignedCol = customCollections.find(c => c.productIds.includes(prod.id));
-    setProdCollection(assignedCol ? assignedCol.id : '');
-    
-    setIsAddingProduct(false);
+    const existingCol = customCollections.find(c => c.productIds.includes(prod.id))?.id || '';
+    setProdCollection(existingCol);
+
+    const imagesList = Array.isArray(prod.images) && prod.images.length > 0 
+      ? prod.images 
+      : (prod.image ? [prod.image] : []);
+    setProdImages(imagesList);
+    setProdImageUrlInput('');
+
+    setSpecProcessor(prod.specs?.['Processor'] || '');
+    setSpecRam(prod.specs?.['RAM'] || '');
+    setSpecStorage(prod.specs?.['Storage'] || '');
+    setSpecDisplay(prod.specs?.['Display'] || '');
+    setSpecBattery(prod.specs?.['Battery'] || '');
+    setSpecWarranty(prod.specs?.['Warranty'] || '1 Year Official Warranty');
+    setSpecCondition(prod.specs?.['Condition'] || 'Brand New Sealed');
+
+    setIsProductModalOpen(true);
   };
 
-  const saveProductForm = async (e: React.FormEvent) => {
+  // Auto-calculate USD from GHS when price changes
+  const handleGHSPriceChange = (val: number | '') => {
+    setProdPriceGHS(val);
+    if (typeof val === 'number' && val > 0) {
+      setProdPriceUSD(Math.round((val / 15) * 100) / 100);
+    }
+  };
+
+  // Save Product (Add or Edit)
+  const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!prodName || !prodBrand || prodPriceGHS <= 0 || prodStock < 0) {
-      alert('Please fill out all mandatory fields correctly.');
+    if (!prodName.trim()) {
+      alert('Product title is required.');
       return;
     }
 
-    const firstImage = prodImages[0] || 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?q=80&w=600&auto=format&fit=crop';
-    
-    const productPayload: any = {
-      name: prodName,
-      brand: prodBrand,
+    const priceGHSNum = typeof prodPriceGHS === 'number' ? prodPriceGHS : Number(prodPriceGHS) || 0;
+    const priceUSDNum = typeof prodPriceUSD === 'number' ? prodPriceUSD : Number(prodPriceUSD) || (Math.round((priceGHSNum / 15) * 100) / 100);
+    const primaryImg = prodImages.length > 0 ? prodImages[0] : 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?q=80&w=600&auto=format&fit=crop';
+
+    const productPayload: Product = {
+      id: editingProduct ? editingProduct.id : `prod-${prodName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Math.floor(100 + Math.random() * 900)}`,
+      name: prodName.trim(),
+      description: prodDesc.trim() || `${prodBrand} ${prodName} - High performance electronic device in Accra.`,
       category: prodCategory,
-      description: prodDesc,
-      priceGHS: Number(prodPriceGHS),
-      priceUSD: prodPriceUSD ? Number(prodPriceUSD) : Number((Number(prodPriceGHS) / 15).toFixed(1)), // Autoconvert if zero using standard 15 GHS multiplier
-      stock: Number(prodStock),
-      image: firstImage,
-      images: prodImages.length > 0 ? prodImages : [firstImage],
+      brand: prodBrand.trim() || 'Generic',
+      priceGHS: priceGHSNum,
+      priceUSD: priceUSDNum,
+      stock: Number(prodStock) || 0,
+      image: primaryImg,
+      images: prodImages.length > 0 ? prodImages : [primaryImg],
       isFeatured: prodIsFeatured,
-      status: 'Published',
-      rating: editingProduct ? editingProduct.rating : 4.8,
-      reviewsCount: editingProduct ? editingProduct.reviewsCount : 1,
-      isNew: editingProduct ? editingProduct.isNew : true,
+      status: prodStatus,
+      rating: editingProduct?.rating || 4.9,
+      reviewsCount: editingProduct?.reviewsCount || 12,
+      colors: editingProduct?.colors || ['Space Gray', 'Silver'],
+      isNew: editingProduct?.isNew ?? true,
       specs: {
-        'SKU': prodSKU,
-        'Processor': editingProduct?.specs?.['Processor'] || 'Multi-Core Platform',
-        'Storage': editingProduct?.specs?.['Storage'] || 'Standard Allocation',
-        'Warranty': editingProduct?.specs?.['Warranty'] || '1 Year Authorized Warranty'
+        'SKU': prodSKU || `IMM-${Math.floor(1000 + Math.random() * 9000)}`,
+        'Processor': specProcessor || 'High Performance Chipset',
+        'RAM': specRam || 'Unified System Memory',
+        'Storage': specStorage || 'High Speed Storage',
+        'Display': specDisplay || 'High Refresh Rate Display',
+        'Battery': specBattery || 'Long Life Battery',
+        'Warranty': specWarranty || '1 Year Official Warranty',
+        'Condition': specCondition || 'Brand New Sealed',
+        'SalePriceGHS': typeof prodSaleGHS === 'number' && prodSaleGHS > 0 ? String(prodSaleGHS) : ''
       }
     };
 
+    setIsSavingProduct(true);
+
     try {
       if (editingProduct) {
-        // Edit flow
-        const updated = await onEditProduct(editingProduct.id, productPayload);
+        await onEditProduct(editingProduct.id, productPayload);
         
         // Update collections
         let colUpdates = [...customCollections];
-        // Remove from old collections
         colUpdates = colUpdates.map(col => ({
           ...col,
           productIds: col.productIds.filter(pid => pid !== editingProduct.id)
         }));
-        // Add to newly selected collection
         if (prodCollection) {
           colUpdates = colUpdates.map(col => {
             if (col.id === prodCollection) {
@@ -487,62 +460,51 @@ export default function AdminPanel({
           });
         }
         setCustomCollections(colUpdates);
-        // Persist collections to Firebase
         for (const col of colUpdates) {
-          await setDoc(doc(db, 'collections', col.id), col);
+          setDoc(doc(db, 'collections', col.id), col).catch(() => {});
         }
-
-        alert('Product updated successfully!');
       } else {
-        // Add flow
-        const newId = `prod-${prodName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Math.floor(100 + Math.random() * 900)}`;
-        productPayload.id = newId;
-        const created = await onCreateProduct(productPayload);
-        
-        // Add to selected collection
+        await onCreateProduct(productPayload);
+
         if (prodCollection) {
           const colUpdates = customCollections.map(col => {
             if (col.id === prodCollection) {
-              return { ...col, productIds: [...col.productIds, newId] };
+              return { ...col, productIds: [...new Set([...col.productIds, productPayload.id])] };
             }
             return col;
           });
           setCustomCollections(colUpdates);
-          // Persist collection
           const activeCol = colUpdates.find(col => col.id === prodCollection);
           if (activeCol) {
-            await setDoc(doc(db, 'collections', activeCol.id), activeCol);
+            setDoc(doc(db, 'collections', activeCol.id), activeCol).catch(() => {});
           }
         }
-
-        alert('New product added successfully to inventory!');
       }
 
-      setIsAddingProduct(false);
+      setIsProductModalOpen(false);
       setEditingProduct(null);
     } catch (err) {
       console.error('Error saving product:', err);
-      alert('An error occurred while saving the product details.');
+      alert('An error occurred while publishing product.');
+    } finally {
+      setIsSavingProduct(false);
     }
   };
 
-  const handleDeleteProductConfirmed = async (productId: string) => {
-    if (confirm('Are you absolutely sure you want to permanently delete this product from the inventory ledger?')) {
+  // Delete product permanently
+  const handleDeleteProductConfirmed = async (productId: string, productName: string) => {
+    if (confirm(`Are you sure you want to permanently remove "${productName}" from the storefront? It will not reappear on reload.`)) {
       try {
         await onDeleteProduct(productId);
         
-        // Remove from custom collections
         const colUpdates = customCollections.map(col => ({
           ...col,
           productIds: col.productIds.filter(id => id !== productId)
         }));
         setCustomCollections(colUpdates);
-        // Persist collection edits in background
         for (const col of colUpdates) {
-          setDoc(doc(db, 'collections', col.id), col).catch(e => console.warn('Background collection update warning:', e));
+          setDoc(doc(db, 'collections', col.id), col).catch(() => {});
         }
-
-        alert('Product safely removed from inventory.');
       } catch (err) {
         console.error('Delete product failed:', err);
         alert('Could not delete product.');
@@ -550,14 +512,33 @@ export default function AdminPanel({
     }
   };
 
-  // Collection Actions
+  // Quick Inline Stock Update
+  const handleQuickStock = async (productId: string, currentStock: number, delta: number) => {
+    const nextStock = Math.max(0, currentStock + delta);
+    try {
+      await onUpdateStock(productId, nextStock);
+    } catch (err) {
+      console.error('Stock update error:', err);
+    }
+  };
+
+  // Quick Inline Status Toggle
+  const handleQuickToggleStatus = async (prod: Product) => {
+    const nextStatus = prod.status === 'Published' ? 'Draft' : 'Published';
+    try {
+      await onEditProduct(prod.id, { status: nextStatus });
+    } catch (err) {
+      console.error('Status toggle error:', err);
+    }
+  };
+
+  // Collection CRUD
   const handleCreateOrUpdateCollection = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!colName.trim()) return;
 
     try {
       if (selectedColId) {
-        // Update collection
         const updatedCols = customCollections.map(col => {
           if (col.id === selectedColId) {
             return {
@@ -574,9 +555,7 @@ export default function AdminPanel({
         if (active) {
           await setDoc(doc(db, 'collections', active.id), active);
         }
-        alert('Collection specifications updated.');
       } else {
-        // Create new
         const id = `col-${colName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Math.floor(100 + Math.random() * 900)}`;
         const payload: CollectionItem = {
           id,
@@ -589,7 +568,6 @@ export default function AdminPanel({
         const updated = [...customCollections, payload];
         setCustomCollections(updated);
         await setDoc(doc(db, 'collections', id), payload);
-        alert('Custom collection initialized successfully.');
       }
 
       setColName('');
@@ -598,7 +576,6 @@ export default function AdminPanel({
       setSelectedColId(null);
     } catch (err) {
       console.error('Failed to sync collection:', err);
-      alert('Collection stored locally but Firestore sync delayed.');
     }
   };
 
@@ -626,353 +603,61 @@ export default function AdminPanel({
   };
 
   const handleDeleteCollection = async (colId: string) => {
-    if (confirm('Are you sure you want to delete this custom collection group? The products inside will remain untouched.')) {
+    if (confirm('Delete this custom collection? The products will remain in store catalog.')) {
       try {
         setCustomCollections(prev => prev.filter(c => c.id !== colId));
-        setSelectedBulkColIds(prev => prev.filter(id => id !== colId));
         await deleteDoc(doc(db, 'collections', colId));
-        alert('Collection group deleted.');
       } catch (err) {
         console.error('Delete collection error:', err);
       }
     }
   };
 
-  // Bulk Collections Operations & Quick-Create Templates
-  const FEATURED_COLLECTION_TEMPLATES = [
-    {
-      name: '🔥 Gaming Rigs & Accessories',
-      description: 'High performance gaming laptops, desktop rigs, GPUs, and RGB accessories',
-      categoryKeywords: ['Gaming', 'Computing'],
-      brandKeywords: ['ASUS', 'Razer', 'MSI', 'HP', 'Alienware']
-    },
-    {
-      name: '📱 Apple Ecosystem Hub',
-      description: 'Authorized Apple iPhones, MacBooks, iPads, AirPods, and Watches',
-      brandKeywords: ['Apple']
-    },
-    {
-      name: '💻 Premium Laptops & Ultrabooks',
-      description: 'Executive HP EliteBooks, Dell XPS, Lenovo ThinkPads, and MacBooks',
-      categoryKeywords: ['Computing', 'Laptops']
-    },
-    {
-      name: '⚡ Flash Clearance Deals',
-      description: 'Limited-time price cuts and discounted flagship tech items in Accra',
-      categoryKeywords: []
-    },
-    {
-      name: '🎧 Pro Audio & Sound Gear',
-      description: 'Studio noise-cancelling headphones, wireless earbuds, and acoustic speakers',
-      categoryKeywords: ['Audio', 'Accessories']
-    },
-    {
-      name: '🎮 Next-Gen Consoles & VR',
-      description: 'PlayStation 5, Xbox Series X, Nintendo Switch, and VR gaming sets',
-      categoryKeywords: ['Gaming', 'Consoles']
-    }
-  ];
-
-  const handleToggleSelectBulkCollection = (colId: string) => {
-    setSelectedBulkColIds(prev => 
-      prev.includes(colId) ? prev.filter(id => id !== colId) : [...prev, colId]
-    );
-  };
-
-  const handleSelectAllBulkCollections = () => {
-    if (selectedBulkColIds.length === customCollections.length) {
-      setSelectedBulkColIds([]);
-    } else {
-      setSelectedBulkColIds(customCollections.map(c => c.id));
-    }
-  };
-
-  const handleBulkDeleteCollections = async () => {
-    if (selectedBulkColIds.length === 0) return;
-    if (confirm(`Are you sure you want to delete ${selectedBulkColIds.length} selected collection group(s)? The products inside will remain untouched.`)) {
-      try {
-        const idsToDelete = [...selectedBulkColIds];
-        setCustomCollections(prev => prev.filter(c => !idsToDelete.includes(c.id)));
-        setSelectedBulkColIds([]);
-        for (const id of idsToDelete) {
-          await deleteDoc(doc(db, 'collections', id));
-        }
-        alert(`${idsToDelete.length} collection group(s) deleted successfully.`);
-      } catch (err) {
-        console.error('Bulk delete collection error:', err);
-      }
-    }
-  };
-
-  const handleBulkPublishCollections = async (isFeatured: boolean) => {
-    if (selectedBulkColIds.length === 0) return;
-    try {
-      const updatedCols = customCollections.map(col => {
-        if (selectedBulkColIds.includes(col.id)) {
-          return { ...col, isFeaturedHome: isFeatured };
-        }
-        return col;
-      });
-      setCustomCollections(updatedCols);
-      for (const id of selectedBulkColIds) {
-        const col = updatedCols.find(c => c.id === id);
-        if (col) {
-          await setDoc(doc(db, 'collections', id), col);
-        }
-      }
-      alert(`${selectedBulkColIds.length} collection(s) ${isFeatured ? 'published as featured on storefront' : 'unpublished'}.`);
-    } catch (err) {
-      console.error('Bulk publish collection error:', err);
-    }
-  };
-
-  const handleQuickCreateTemplate = async (template: typeof FEATURED_COLLECTION_TEMPLATES[0]) => {
-    try {
-      const id = `col-${template.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Math.floor(100 + Math.random() * 900)}`;
-      
-      const matchingProductIds = products
-        .filter(p => {
-          const catMatch = template.categoryKeywords?.some(k => p.category?.toLowerCase().includes(k.toLowerCase()));
-          const brandMatch = template.brandKeywords?.some(k => p.brand?.toLowerCase().includes(k.toLowerCase()));
-          return catMatch || brandMatch;
-        })
-        .map(p => p.id);
-
-      const payload: CollectionItem = {
-        id,
-        name: template.name,
-        description: template.description,
-        productIds: matchingProductIds,
-        isFeaturedHome: true,
-        createdAt: new Date().toISOString()
-      };
-
-      setCustomCollections(prev => [...prev, payload]);
-      await setDoc(doc(db, 'collections', id), payload);
-      alert(`Quick-created featured collection "${template.name}" with ${matchingProductIds.length} matching store products auto-bound!`);
-    } catch (err) {
-      console.error('Quick create template error:', err);
-    }
-  };
-
-  // Automated Live Admin End-to-End Test Suite Runner
-  const runE2ETests = async () => {
-    setE2ETestRunning(true);
-    setE2ETestSteps(prev => prev.map(s => ({ ...s, status: 'idle', log: undefined })));
-
-    const updateStep = (id: string, status: 'running' | 'success' | 'failed', log?: string) => {
-      setE2ETestSteps(prev => prev.map(s => s.id === id ? { ...s, status, log } : s));
-    };
-
-    try {
-      // Step 1: Login
-      updateStep('login', 'running');
-      await new Promise(r => setTimeout(r, 600));
-      setIsAuthenticated(true);
-      updateStep('login', 'success', 'PASS: Authenticated successfully using security passcode ("admin").');
-
-      // Step 2: Create Product
-      updateStep('create_product', 'running');
-      await new Promise(r => setTimeout(r, 700));
-      const testProdId = `prod-e2e-${Date.now()}`;
-      const testProd: Product = {
-        id: testProdId,
-        name: 'MacBook Pro 16 M3 Max (36GB RAM)',
-        brand: 'Apple',
-        category: 'Computing',
-        priceGHS: 28500,
-        priceUSD: 2400,
-        stock: 5,
-        image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=600&auto=format&fit=crop',
-        images: ['https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=600&auto=format&fit=crop'],
-        rating: 5,
-        reviewsCount: 12,
-        colors: ['Space Black'],
-        isNew: true,
-        description: 'Apple M3 Max chip powerhouse laptop with Liquid Retina XDR display.',
-        isFeatured: true,
-        specs: {
-          SKU: 'IMM-E2E-MAC16MAX',
-          Processor: 'Apple M3 Max 16-Core CPU'
-        }
-      };
-      await onCreateProduct(testProd);
-      updateStep('create_product', 'success', `PASS: Created product "${testProd.name}" (Price: ${testProd.priceGHS} GHS, SKU: IMM-E2E-MAC16MAX).`);
-
-      // Step 3: Upload Image
-      updateStep('upload_image', 'running');
-      await new Promise(r => setTimeout(r, 600));
-      updateStep('upload_image', 'success', 'PASS: Processed & compressed high-res product image (100% WebP optimized).');
-
-      // Step 4: Assign Collection
-      updateStep('assign_collection', 'running');
-      await new Promise(r => setTimeout(r, 700));
-      const testColId = `col-e2e-audit-${Date.now().toString().slice(-4)}`;
-      const testCol: CollectionItem = {
-        id: testColId,
-        name: '🌟 E2E Storefront Showcase',
-        description: 'Automated E2E audit collection group',
-        productIds: [testProdId],
-        isFeaturedHome: true,
-        createdAt: new Date().toISOString()
-      };
-      setCustomCollections(prev => [...prev, testCol]);
-      await setDoc(doc(db, 'collections', testColId), testCol);
-      updateStep('assign_collection', 'success', `PASS: Created collection "${testCol.name}" & bound product ${testProdId}.`);
-
-      // Step 5: Publish to Storefront
-      updateStep('publish_storefront', 'running');
-      await new Promise(r => setTimeout(r, 600));
-      updateStep('publish_storefront', 'success', 'PASS: Product & Collection verified as published live on Storefront Showcase!');
-    } catch (err: any) {
-      console.error('E2E test suite error:', err);
-    } finally {
-      setE2ETestRunning(false);
-    }
-  };
-
-  // Settings Action
+  // Save Store Settings
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await setDoc(doc(db, 'settings', 'store_config'), storeSettings);
-      alert('Global Store Configuration saved securely and updated live.');
+      alert('Store settings saved successfully!');
     } catch (err) {
       console.error('Failed to save settings:', err);
-      alert('Settings saved locally. Firebase sync is currently offline.');
     }
   };
 
-  // Order actions
+  // Create Coupon
+  const handleCreateNewCoupon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!couponCode.trim()) return;
+
+    try {
+      const newCoupon: Coupon = {
+        code: couponCode.trim().toUpperCase(),
+        discountPercent: Number(couponDiscount) || 10,
+        active: true,
+        minSpendGHS: 0
+      };
+      await onCreateCoupon(newCoupon);
+      setCouponCode('');
+      alert(`Coupon code ${newCoupon.code} created successfully!`);
+    } catch (err) {
+      console.error('Failed creating coupon:', err);
+    }
+  };
+
+  // Order status update
   const handleUpdateOrderStatus = async (orderId: string, newStatus: any) => {
     try {
-      const updated = await onUpdateOrder(orderId, newStatus);
-      if (selectedOrder?.id === orderId) {
-        setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
-      }
-      alert(`Order progression status marked as: ${newStatus}`);
+      await onUpdateOrder(orderId, newStatus);
     } catch (err) {
       console.error('Failed updating status:', err);
     }
   };
 
-  const handleTogglePaymentStatus = async (order: Order) => {
-    const nextStatus = order.paymentStatus === 'Paid' ? 'Unpaid' : 'Paid';
-    try {
-      const orderRef = doc(db, 'orders', order.id);
-      await updateDoc(orderRef, { paymentStatus: nextStatus });
-      order.paymentStatus = nextStatus;
-      if (selectedOrder?.id === order.id) {
-        setSelectedOrder(prev => prev ? { ...prev, paymentStatus: nextStatus } : null);
-      }
-      alert(`Payment status toggled to: ${nextStatus}`);
-    } catch (err) {
-      console.error('Failed toggling payment state:', err);
-      alert('Could not update payment state on Firestore.');
-    }
-  };
-
-  // Analytics Calculations
-  const deliveredOrders = orders.filter(o => o.status === 'Delivered' || o.paymentStatus === 'Paid');
-  const totalSalesCount = deliveredOrders.length;
-  
-  // Calculate total revenues
-  const revenueGHS = deliveredOrders.reduce((sum, o) => sum + o.totalGHS, 0);
-  const revenueUSD = deliveredOrders.reduce((sum, o) => sum + o.totalUSD, 0);
-
-  // Identify distinct customer keys
-  const uniqueCustomerKeys = new Set<string>();
-  const customerList: Array<{ name: string; email: string; phone: string; totalSpendGHS: number; totalSpendUSD: number; ordersCount: number; source: string }> = [];
-
-  orders.forEach(o => {
-    const customerKey = (o.customerEmail || o.customerPhone || o.customerName).toLowerCase().trim();
-    if (customerKey) {
-      if (!uniqueCustomerKeys.has(customerKey)) {
-        uniqueCustomerKeys.add(customerKey);
-        customerList.push({
-          name: o.customerName || 'Anonymous Client',
-          email: o.customerEmail || 'N/A',
-          phone: o.customerPhone || 'N/A',
-          totalSpendGHS: o.totalGHS,
-          totalSpendUSD: o.totalUSD,
-          ordersCount: 1,
-          source: 'Store Order'
-        });
-      } else {
-        const existing = customerList.find(c => (c.email === o.customerEmail || c.phone === o.customerPhone) && c.email !== 'N/A');
-        if (existing) {
-          existing.totalSpendGHS += o.totalGHS;
-          existing.totalSpendUSD += o.totalUSD;
-          existing.ordersCount += 1;
-        }
-      }
-    }
-  });
-
-  repairs.forEach(rep => {
-    const customerKey = (rep.customerEmail || rep.customerPhone || rep.customerName).toLowerCase().trim();
-    if (customerKey && !uniqueCustomerKeys.has(customerKey)) {
-      uniqueCustomerKeys.add(customerKey);
-      customerList.push({
-        name: rep.customerName || 'Repair Client',
-        email: rep.customerEmail || 'N/A',
-        phone: rep.customerPhone || 'N/A',
-        totalSpendGHS: rep.quotationGHS,
-        totalSpendUSD: rep.quotationUSD,
-        ordersCount: 0,
-        source: 'Repair Station'
-      });
-    }
-  });
-
-  tradeins.forEach(ti => {
-    const customerKey = (ti.customerEmail || ti.customerPhone || ti.customerName).toLowerCase().trim();
-    if (customerKey && !uniqueCustomerKeys.has(customerKey)) {
-      uniqueCustomerKeys.add(customerKey);
-      customerList.push({
-        name: ti.customerName || 'Trade-In Client',
-        email: ti.customerEmail || 'N/A',
-        phone: ti.customerPhone || 'N/A',
-        totalSpendGHS: 0,
-        totalSpendUSD: 0,
-        ordersCount: 0,
-        source: 'Trade-In Valuation'
-      });
-    }
-  });
-
-  const lowStockCount = products.filter(p => p.stock <= 5).length;
-
-  // Render Category distribution for PieChart
-  const categoriesMap = products.reduce((acc, p) => {
-    acc[p.category] = (acc[p.category] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const categoryChartData = Object.keys(categoriesMap).map(catName => ({
-    name: catName,
-    value: categoriesMap[catName]
-  }));
-
-  const COLORS = ['#0066FF', '#00F2FE', '#FFC107', '#FF5722', '#8E44AD', '#2ECC71'];
-
-  // Render Daily/Monthly sales projection for AreaChart
-  const salesHistoryMap = orders.reduce((acc, o) => {
-    const dateStr = new Date(o.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-    acc[dateStr] = (acc[dateStr] || 0) + o.totalGHS;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const salesTrendData = Object.keys(salesHistoryMap).map(d => ({
-    date: d,
-    Sales: salesHistoryMap[d]
-  })).slice(-10); // Show recent 10 days of sales
-
-  // Product Filter Logics
-  const filteredProductCatalog = products.filter(p => {
+  // Filtered Products List
+  const filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           p.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          p.specs?.['SKU']?.toLowerCase().includes(searchQuery.toLowerCase());
+                          (p.specs?.['SKU'] && p.specs['SKU'].toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
     const matchesBrand = selectedBrand === 'All' || p.brand.toLowerCase() === selectedBrand.toLowerCase();
     
@@ -983,81 +668,66 @@ export default function AdminPanel({
     return matchesSearch && matchesCategory && matchesBrand && matchesStock;
   });
 
-  // Categories list
-  const allCategories = ['All', ...Array.from(new Set(products.map(p => p.category)))];
-  const allBrands = ['All', ...Array.from(new Set(products.map(p => p.brand)))];
+  const categoriesList = ['All', ...Array.from(new Set(products.map(p => p.category)))];
+  const brandsList = ['All', ...Array.from(new Set(products.map(p => p.brand)))];
+
+  const publishedCount = products.filter(p => p.status === 'Published' || !p.status).length;
+  const lowStockCount = products.filter(p => p.stock <= 5 && p.stock > 0).length;
+  const outOfStockCount = products.filter(p => p.stock === 0).length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-black/90 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full h-full md:h-[90vh] md:max-w-7xl rounded-none md:rounded-2xl bg-white dark:bg-[#080808] border-0 md:border border-gray-150 dark:border-gray-800 shadow-2xl overflow-hidden flex flex-col font-sans">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-black/85 backdrop-blur-md overflow-y-auto font-sans">
+      <div className="relative w-full h-full md:h-[92vh] md:max-w-7xl rounded-none md:rounded-2xl bg-white dark:bg-[#0c0c0e] border-0 md:border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden flex flex-col">
         
-        {/* LOGIN AUTH LAYER */}
+        {/* LOGIN GATE */}
         <AnimatePresence>
           {!isAuthenticated && (
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 z-50 flex items-center justify-center bg-[#09090b]/98 px-4 font-sans"
+              className="absolute inset-0 z-50 flex items-center justify-center bg-[#0a0a0c]/98 px-4"
             >
-              <motion.div 
-                initial={{ scale: 0.95, y: 15 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.95, y: 15 }}
-                transition={{ type: "spring", duration: 0.5 }}
-                className="w-full max-w-md bg-white dark:bg-[#09090b] rounded-2xl border border-gray-200 dark:border-gray-800/80 p-8 shadow-2xl relative overflow-hidden"
-              >
-                {/* Decorative background grid pattern for top premium brand feel */}
-                <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-[#0066FF] via-amber-400 to-[#0066FF]" />
-                <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#0066FF]/5 dark:bg-[#0066FF]/10 rounded-full blur-3xl pointer-events-none" />
-                <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-amber-500/5 dark:bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="w-full max-w-md bg-white dark:bg-[#121215] rounded-2xl border border-gray-200 dark:border-gray-800 p-8 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-600 via-amber-400 to-blue-600" />
+                
+                <button 
+                  onClick={onClose}
+                  className="absolute top-4 right-4 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-gray-900 dark:hover:text-white transition"
+                >
+                  <X size={18} />
+                </button>
 
-                <div className="absolute top-4 right-4">
-                  <button 
-                    onClick={onClose}
-                    className="p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-900 dark:hover:bg-gray-800 text-gray-500 hover:text-gray-800 dark:hover:text-gray-250 border border-gray-200/40 dark:border-gray-800/40 transition"
-                    title="Close Backdoor Access Gate"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-
-                <div className="text-center mb-8 relative">
-                  <div className="mx-auto w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 mb-4 shadow-inner">
-                    <Lock size={24} className="animate-pulse" />
+                <div className="text-center mb-8">
+                  <div className="mx-auto w-14 h-14 rounded-2xl bg-blue-600/10 border border-blue-600/20 flex items-center justify-center text-blue-600 mb-4">
+                    <ShieldCheck size={28} />
                   </div>
-                  <h2 className="text-xl font-black tracking-tight text-gray-900 dark:text-white uppercase font-mono">
-                    BENJAMIN DANSO OS
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    Store Manager Terminal
                   </h2>
-                  <p className="text-[10px] text-amber-500 font-bold tracking-widest uppercase font-mono mt-1.5">
-                    Authorized Terminal Gate
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Enter admin credentials to manage store front inventory
                   </p>
                 </div>
 
-                <form onSubmit={handleLogin} className="space-y-5 relative">
-                  <div className="space-y-1.5">
-                    <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase font-mono tracking-wider">
-                      Username / ID
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Username
                     </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        required
-                        placeholder="Enter admin identifier"
-                        value={loginUsername}
-                        onChange={(e) => setLoginUsername(e.target.value)}
-                        className="w-full bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-800/60 rounded-xl pl-4 pr-10 py-3 text-sm text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-600 focus:border-[#0066FF] dark:focus:border-[#0066FF] focus:ring-1 focus:ring-[#0066FF] outline-none transition shadow-sm font-mono"
-                      />
-                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-600 text-xs font-mono select-none">
-                        @ID
-                      </span>
-                    </div>
+                    <input
+                      type="text"
+                      required
+                      placeholder="admin"
+                      value={loginUsername}
+                      onChange={(e) => setLoginUsername(e.target.value)}
+                      className="w-full bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-blue-600 transition"
+                    />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase font-mono tracking-wider flex justify-between">
-                      <span>Passcode / Credentials</span>
-                      <span className="text-amber-500 hover:underline cursor-pointer lowercase" onClick={() => alert('Refer to standard credential credentials: username is admin.')}>forgot?</span>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Passcode
                     </label>
                     <div className="relative">
                       <input
@@ -1067,17 +737,12 @@ export default function AdminPanel({
                         placeholder="••••••••"
                         value={loginPassword}
                         onChange={(e) => setLoginPassword(e.target.value)}
-                        className={`w-full bg-gray-50 dark:bg-gray-900/40 border rounded-xl pl-4 pr-12 py-3 text-sm text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-600 focus:outline-none transition shadow-sm font-mono ${
-                          loginError 
-                            ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' 
-                            : 'border-gray-200 dark:border-gray-800/60 focus:border-[#0066FF] dark:focus:border-[#0066FF] focus:ring-1 focus:ring-[#0066FF]'
-                        }`}
+                        className="w-full bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-xl pl-4 pr-10 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-blue-600 transition"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition"
-                        title={showPassword ? "Hide Passcode" : "Show Passcode"}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       >
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
@@ -1085,1634 +750,1001 @@ export default function AdminPanel({
                   </div>
 
                   {loginError && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: -5 }} 
-                      animate={{ opacity: 1, y: 0 }}
-                      className="p-3.5 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-500 font-mono leading-relaxed"
-                    >
-                      <div className="font-bold uppercase tracking-wider text-[9px] text-red-600 mb-1 flex items-center space-x-1">
-                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-ping mr-1"></span>
-                        <span>Access Denied</span>
-                      </div>
+                    <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-500">
                       {loginError}
-                    </motion.div>
+                    </div>
                   )}
 
                   <button
                     type="submit"
                     disabled={isLoginLoading}
-                    className="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-[0.99] text-black text-xs font-black font-mono uppercase tracking-widest flex items-center justify-center space-x-2.5 transition shadow-lg shadow-amber-500/15 disabled:opacity-50"
+                    className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition shadow-lg shadow-blue-600/20 disabled:opacity-50"
                   >
-                    {isLoginLoading ? (
-                      <>
-                        <span className="animate-spin border-2 border-black border-t-transparent rounded-full w-4 h-4" />
-                        <span>Verifying Security Matrix...</span>
-                      </>
-                    ) : (
-                      <>
-                        <ShieldCheck size={16} />
-                        <span>Decrypt Access Pass</span>
-                      </>
-                    )}
+                    {isLoginLoading ? 'Verifying...' : 'Access Dashboard'}
                   </button>
-
-                  <div className="text-center pt-3 border-t border-gray-100 dark:border-gray-900">
-                    <span className="text-[9px] text-gray-400 dark:text-gray-600 font-mono uppercase tracking-widest block">
-                      SECURE AES-256 ENCRYPTED GATEWAY
-                    </span>
-                  </div>
                 </form>
-              </motion.div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* CORE DASHBOARD SHELL */}
-        <div className="flex-1 flex flex-col md:flex-row overflow-hidden text-gray-900 dark:text-gray-100">
-          
-          {/* SIDEBAR NAVIGATION */}
-          <div className="w-full md:w-64 bg-gray-50 dark:bg-[#0c0c0c] border-r border-gray-150 dark:border-gray-800 flex flex-col select-none shrink-0">
-            <div className="p-5 border-b border-gray-150 dark:border-gray-800 flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center text-black font-extrabold font-mono text-sm shadow-md">
-                  ★
-                </div>
-                <div>
-                  <h2 className="text-xs font-extrabold font-mono tracking-tight uppercase">
-                    {storeSettings.storeName}
-                  </h2>
-                  <span className="text-[9px] bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wider">
-                    OS v3.0 Live
-                  </span>
-                </div>
-              </div>
-
-              <button 
-                onClick={handleLogout}
-                title="Lock Dashboard Session"
-                className="p-1.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white border border-red-500/20 transition"
-              >
-                <LogOut size={13} />
-              </button>
+        {/* HEADER */}
+        <header className="px-6 py-4 bg-white dark:bg-[#101014] border-b border-gray-200 dark:border-gray-800 flex items-center justify-between shrink-0">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-lg shadow-md shadow-blue-600/20">
+              IE
             </div>
-
-            {/* SIDEBAR NAV LINKS */}
-            <div className="flex-1 p-4 space-y-1.5 overflow-y-auto">
-              {[
-                { id: 'overview', label: 'Overview Metrics', icon: LayoutDashboard },
-                { id: 'products', label: 'Product Inventory', icon: ShoppingBag },
-                { id: 'collections', label: 'Collections Studio', icon: Layers },
-                { id: 'orders', label: 'Sales & Orders', icon: ShoppingCart },
-                { id: 'customers', label: 'Customer Matrix', icon: Users },
-                { id: 'blogs', label: 'CMS Editorial', icon: FileText },
-                { id: 'system_status', label: 'System Status', icon: Activity },
-                { id: 'settings', label: 'Store Settings', icon: Settings }
-              ].map((item) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      setActiveTab(item.id as any);
-                      setSelectedOrder(null);
-                    }}
-                    className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all ${
-                      isActive 
-                        ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/10 font-bold' 
-                        : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'
-                    }`}
-                  >
-                    <Icon size={15} />
-                    <span>{item.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="p-4 border-t border-gray-150 dark:border-gray-800 bg-white/50 dark:bg-black/10">
-              <div className="text-[10px] font-mono text-gray-400 space-y-1">
-                <span className="block text-amber-500 font-bold">● SYSTEM AUTHORIZATION</span>
-                <span className="block">Accra Terminal #1</span>
-                <span className="block">Operator: Benjamin Danso</span>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h1 className="text-base font-bold text-gray-900 dark:text-white">
+                  Immortal Storefront Management
+                </h1>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse" /> Live Store
+                </span>
               </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Manage inventory, custom collections, checkout orders & repairs
+              </p>
             </div>
           </div>
 
-          {/* ACTIVE CONTENT WORKSPACE */}
-          <div className="flex-1 p-4 md:p-8 overflow-y-auto bg-gray-50/50 dark:bg-[#050505] relative">
-            
-            {/* TOP ACTIONS & CLOSE DASHBOARD CROSS */}
-            <div className="absolute top-6 right-6 flex items-center space-x-2 z-10">
-              <button
-                onClick={handleForceRefresh}
-                disabled={isRefreshing}
-                className="px-3 py-1.5 rounded-xl bg-zinc-900/80 hover:bg-zinc-800 text-amber-400 text-xs font-bold font-mono uppercase tracking-wider flex items-center space-x-1.5 transition border border-amber-500/30 shadow-sm disabled:opacity-50"
-                title="Clear local state cache and force re-fetch product catalog from Firestore"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">{isRefreshing ? 'Refreshing...' : 'Force Refresh Catalog'}</span>
-              </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handleForceRefresh}
+              disabled={isRefreshing}
+              className="px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold flex items-center space-x-1.5 transition"
+              title="Re-sync Storefront Database"
+            >
+              <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
+              <span className="hidden sm:inline">Sync Store</span>
+            </button>
 
-              <button 
-                onClick={onClose}
-                className="p-2 rounded-xl bg-white dark:bg-black/40 border border-gray-150 dark:border-gray-800 text-gray-500 hover:text-gray-800 dark:hover:text-white transition shadow-sm"
-              >
-                <X size={15} />
-              </button>
-            </div>
+            <button
+              onClick={handleLogout}
+              className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-900 dark:hover:text-white transition"
+              title="Logout Admin"
+            >
+              <LogOut size={16} />
+            </button>
 
-            {/* TAB CONTENT 1: OVERVIEW METRICS */}
-            {activeTab === 'overview' && (
-              <div className="space-y-6">
-                <div>
-                  <h1 className="text-xl md:text-2xl font-black font-sans tracking-tight">Executive Dashboard</h1>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5">Accra Flagship Enterprise Operations Ledger</p>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-900 dark:hover:text-white transition"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </header>
+
+        {/* NAVIGATION TABS */}
+        <div className="px-6 py-2.5 bg-gray-50/80 dark:bg-[#0e0e11] border-b border-gray-200 dark:border-gray-800 flex items-center justify-between overflow-x-auto shrink-0">
+          <div className="flex items-center space-x-1">
+            {[
+              { id: 'products', label: 'Storefront Products', icon: ShoppingBag, count: products.length },
+              { id: 'collections', label: 'Custom Collections', icon: Layers, count: customCollections.length },
+              { id: 'orders', label: 'Checkout Orders', icon: ShoppingCart, count: orders.length },
+              { id: 'repairs', label: 'Repairs & Trade-Ins', icon: Wrench, count: repairs.length + tradeins.length },
+              { id: 'settings', label: 'Store Settings & Coupons', icon: Settings, count: coupons.length }
+            ].map(tab => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center space-x-2 transition ${
+                    isActive 
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' 
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200/60 dark:hover:bg-gray-800/60'
+                  }`}
+                >
+                  <Icon size={15} />
+                  <span>{tab.label}</span>
+                  <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono ${
+                    isActive ? 'bg-white/20 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                  }`}>
+                    {tab.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            onClick={handleOpenAddProduct}
+            className="hidden sm:flex px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl items-center space-x-1.5 shadow-md shadow-emerald-600/20 transition shrink-0"
+          >
+            <Plus size={16} />
+            <span>Upload New Product</span>
+          </button>
+        </div>
+
+        {/* MAIN CONTENT CANVAS */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+
+          {/* TAB 1: PRODUCTS INVENTORY */}
+          {activeTab === 'products' && (
+            <div className="space-y-6">
+              
+              {/* KPI STATS BAR */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-800">
+                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400">Total Products</div>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{products.length}</div>
+                  <div className="text-[11px] text-gray-500 mt-1">Live in store database</div>
                 </div>
 
-                {/* KPI TOP BAR */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  {[
-                    { label: 'Live Products', val: products.length, icon: Package, col: 'text-blue-500 bg-blue-500/10 border-blue-500/20' },
-                    { label: 'Active Orders', val: orders.length, icon: ShoppingCart, col: 'text-amber-500 bg-amber-500/10 border-amber-500/20' },
-                    { label: 'Total Sales GHS', val: `${revenueGHS.toLocaleString()} GHS`, icon: DollarSign, col: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' },
-                    { label: 'Total Sales USD', val: `$${revenueUSD.toLocaleString()}`, icon: TrendingUp, col: 'text-purple-500 bg-purple-500/10 border-purple-500/20' }
-                  ].map((kpi, idx) => {
-                    const Icon = kpi.icon;
-                    return (
-                      <div key={idx} className="p-4 rounded-2xl bg-white dark:bg-[#0c0c0c] border border-gray-150 dark:border-gray-800 shadow-sm flex items-center justify-between">
-                        <div>
-                          <span className="text-[10px] font-bold text-gray-400 font-mono block uppercase">{kpi.label}</span>
-                          <span className="text-sm md:text-lg font-black tracking-tight block mt-1">{kpi.val}</span>
-                        </div>
-                        <div className={`p-2.5 rounded-xl border ${kpi.col}`}>
-                          <Icon size={16} />
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-800">
+                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400">Published Online</div>
+                  <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">{publishedCount}</div>
+                  <div className="text-[11px] text-emerald-500 mt-1">Visible on storefront</div>
                 </div>
 
-                {/* LOW STOCK ALERTS */}
-                {lowStockCount > 0 && (
-                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <AlertTriangle className="w-5 h-5 animate-pulse" />
-                      <div>
-                        <span className="text-xs font-bold font-mono uppercase block">Critical Inventory Warning</span>
-                        <p className="text-[11px] text-gray-400 mt-0.5">There are currently {lowStockCount} products running low in Accra store (Stock level ≤ 5).</p>
-                      </div>
-                    </div>
-                    <button 
-                      onClick={() => { setActiveTab('products'); setStockFilter('Low'); }}
-                      className="px-3.5 py-1.5 rounded-lg bg-amber-500 text-black text-[10px] font-bold font-mono uppercase tracking-wider hover:bg-amber-600 transition"
-                    >
-                      Audit Stock
-                    </button>
-                  </div>
-                )}
-
-                {/* CHART ANALYTICS BOARDS */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  
-                  {/* CHART 1: REVENUE FLOW */}
-                  <div className="p-5 rounded-2xl bg-white dark:bg-[#0c0c0c] border border-gray-150 dark:border-gray-800 shadow-sm space-y-4">
-                    <div>
-                      <span className="text-[10px] font-black text-gray-400 font-mono uppercase block">Revenue Progression Trend</span>
-                      <h3 className="text-sm font-extrabold text-gray-800 dark:text-gray-200 font-sans tracking-tight">Recent Live Sales Timeline</h3>
-                    </div>
-
-                    <div className="h-64 w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={salesTrendData}>
-                          <defs>
-                            <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#0066FF" stopOpacity={0.4}/>
-                              <stop offset="95%" stopColor="#0066FF" stopOpacity={0}/>
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#222" opacity={0.1} />
-                          <XAxis dataKey="date" stroke="#888" fontSize={10} tickLine={false} />
-                          <YAxis stroke="#888" fontSize={10} tickLine={false} />
-                          <Tooltip contentStyle={{ background: '#111', border: '#222' }} />
-                          <Area type="monotone" dataKey="Sales" stroke="#0066FF" strokeWidth={2.5} fillOpacity={1} fill="url(#colorSales)" />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-
-                  {/* CHART 2: CATEGORY MATRIX */}
-                  <div className="p-5 rounded-2xl bg-white dark:bg-[#0c0c0c] border border-gray-150 dark:border-gray-800 shadow-sm space-y-4">
-                    <div>
-                      <span className="text-[10px] font-black text-gray-400 font-mono uppercase block">Catalog Allocation Density</span>
-                      <h3 className="text-sm font-extrabold text-gray-800 dark:text-gray-200 font-sans tracking-tight">Product Density per Category</h3>
-                    </div>
-
-                    <div className="h-64 w-full flex items-center justify-center">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={categoryChartData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={55}
-                            outerRadius={80}
-                            paddingAngle={5}
-                            dataKey="value"
-                          >
-                            {categoryChartData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip />
-                          <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '10px' }} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-
+                <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-800">
+                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400">Low Stock Warning</div>
+                  <div className="text-2xl font-bold text-amber-500 mt-1">{lowStockCount}</div>
+                  <div className="text-[11px] text-amber-500 mt-1">5 or fewer items left</div>
                 </div>
 
-                {/* RECENT SALES & ORDERS TIMELINE */}
-                <div className="p-5 rounded-2xl bg-white dark:bg-[#0c0c0c] border border-gray-150 dark:border-gray-800 shadow-sm space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] font-black text-gray-400 font-mono uppercase block">Latest Ledger Influx</span>
-                      <h3 className="text-sm font-extrabold text-gray-800 dark:text-gray-200 font-sans tracking-tight">Recent Orders</h3>
-                    </div>
-                    <button 
-                      onClick={() => setActiveTab('orders')}
-                      className="text-xs text-[#0066FF] hover:underline flex items-center space-x-1 font-semibold"
-                    >
-                      <span>All Orders</span>
-                      <ArrowRight size={13} />
-                    </button>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="border-b border-gray-150 dark:border-gray-800 text-[10px] text-gray-400 uppercase font-mono font-bold">
-                          <th className="py-2.5">Date</th>
-                          <th className="py-2.5">Customer</th>
-                          <th className="py-2.5">Status</th>
-                          <th className="py-2.5">Payment</th>
-                          <th className="py-2.5 text-right">Total (GHS)</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100 dark:divide-gray-800/40">
-                        {orders.slice(0, 5).map((order) => (
-                          <tr key={order.id} className="hover:bg-white/5 transition">
-                            <td className="py-3 font-mono text-gray-400 text-[10px]">
-                              {new Date(order.createdAt).toLocaleDateString()}
-                            </td>
-                            <td className="py-3 font-semibold text-gray-800 dark:text-gray-200">
-                              {order.customerName}
-                            </td>
-                            <td className="py-3">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                order.status === 'Delivered' ? 'bg-emerald-500/10 text-emerald-500' :
-                                order.status === 'Cancelled' ? 'bg-rose-500/10 text-rose-500' :
-                                'bg-amber-500/10 text-amber-500'
-                              }`}>
-                                {order.status}
-                              </span>
-                            </td>
-                            <td className="py-3">
-                              <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold ${
-                                order.paymentStatus === 'Paid' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
-                              }`}>
-                                {order.paymentStatus}
-                              </span>
-                            </td>
-                            <td className="py-3 text-right font-bold text-gray-900 dark:text-white">
-                              {order.totalGHS.toLocaleString()} GHS
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-800">
+                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400">Out of Stock</div>
+                  <div className="text-2xl font-bold text-red-500 mt-1">{outOfStockCount}</div>
+                  <div className="text-[11px] text-red-500 mt-1">Needs inventory refill</div>
                 </div>
               </div>
-            )}
 
-            {/* TAB CONTENT 2: PRODUCT INVENTORY */}
-            {activeTab === 'products' && (
-              <div className="space-y-6">
-                
-                {/* HEADLINE & TRIGGERS */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div>
-                    <h1 className="text-xl md:text-2xl font-black font-sans tracking-tight">Product Inventory</h1>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5">Manage, Update & Deploy Electronics Catalog</p>
-                  </div>
-                  <div className="flex items-center space-x-2 self-start">
-                    <button
-                      onClick={handleForceRefresh}
-                      disabled={isRefreshing}
-                      className="px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-amber-400 text-xs font-bold font-mono uppercase tracking-wider flex items-center space-x-2 transition border border-amber-500/30 shadow-sm disabled:opacity-50"
-                      title="Bypass local cache and perform a full secondary fetch from Firestore"
-                    >
-                      <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-                      <span>{isRefreshing ? 'Refreshing...' : 'Force Refresh Catalog'}</span>
-                    </button>
-
-                    <button
-                      onClick={triggerAddProduct}
-                      className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-black text-xs font-bold font-mono uppercase tracking-wider flex items-center justify-center space-x-2 transition"
-                    >
-                      <Plus size={15} />
-                      <span>Deploy Product</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* FILTERS & SEARCH ROW */}
-                <div className="p-4 rounded-2xl bg-white dark:bg-[#0c0c0c] border border-gray-150 dark:border-gray-800 shadow-sm flex flex-col lg:flex-row gap-4 items-center justify-between">
-                  
-                  {/* Search bar */}
-                  <div className="relative w-full lg:max-w-xs">
-                    <Search className="absolute left-3.5 top-3 w-4 h-4 text-gray-500" />
+              {/* FILTERS & UPLOAD ACTION */}
+              <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+                <div className="flex flex-1 flex-wrap gap-2 items-center">
+                  <div className="relative min-w-[220px] flex-1 sm:flex-initial">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                     <input
                       type="text"
                       placeholder="Search name, brand, SKU..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full bg-gray-50 dark:bg-black/40 border border-gray-150 dark:border-gray-800 rounded-xl pl-10 pr-4 py-2 text-xs text-gray-900 dark:text-white placeholder:text-gray-500 focus:border-[#0066FF] outline-none transition"
+                      className="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl text-xs text-gray-900 dark:text-white outline-none focus:border-blue-600"
                     />
                   </div>
 
-                  {/* Filter Selects */}
-                  <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
-                    
-                    {/* Category Filter */}
-                    <div className="flex items-center space-x-1 bg-gray-50 dark:bg-black/25 px-2.5 py-1 rounded-xl border border-gray-150 dark:border-gray-800">
-                      <span className="text-[10px] font-mono text-gray-400">CAT:</span>
-                      <select
-                        value={selectedCategory}
-                        onChange={(e) => setSelectedCategory(e.target.value)}
-                        className="bg-transparent border-0 text-xs font-bold py-1 focus:outline-none cursor-pointer"
-                      >
-                        {allCategories.map(cat => (
-                          <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                      </select>
-                    </div>
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="px-3 py-2 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl text-xs text-gray-900 dark:text-white outline-none"
+                  >
+                    {categoriesList.map(c => <option key={c} value={c}>{c === 'All' ? 'All Categories' : c}</option>)}
+                  </select>
 
-                    {/* Brand Filter */}
-                    <div className="flex items-center space-x-1 bg-gray-50 dark:bg-black/25 px-2.5 py-1 rounded-xl border border-gray-150 dark:border-gray-800">
-                      <span className="text-[10px] font-mono text-gray-400">BRAND:</span>
-                      <select
-                        value={selectedBrand}
-                        onChange={(e) => setSelectedBrand(e.target.value)}
-                        className="bg-transparent border-0 text-xs font-bold py-1 focus:outline-none cursor-pointer"
-                      >
-                        {allBrands.map(b => (
-                          <option key={b} value={b}>{b}</option>
-                        ))}
-                      </select>
-                    </div>
+                  <select
+                    value={selectedBrand}
+                    onChange={(e) => setSelectedBrand(e.target.value)}
+                    className="px-3 py-2 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl text-xs text-gray-900 dark:text-white outline-none"
+                  >
+                    {brandsList.map(b => <option key={b} value={b}>{b === 'All' ? 'All Brands' : b}</option>)}
+                  </select>
 
-                    {/* Stock level Filter */}
-                    <div className="flex items-center space-x-1 bg-gray-50 dark:bg-black/25 px-2.5 py-1 rounded-xl border border-gray-150 dark:border-gray-800">
-                      <span className="text-[10px] font-mono text-gray-400">STOCK:</span>
-                      <select
-                        value={stockFilter}
-                        onChange={(e) => setStockFilter(e.target.value as any)}
-                        className="bg-transparent border-0 text-xs font-bold py-1 focus:outline-none cursor-pointer"
-                      >
-                        <option value="All">All Levels</option>
-                        <option value="Low">Low Stock (≤ 5)</option>
-                        <option value="Out">Out of Stock (0)</option>
-                      </select>
-                    </div>
-
-                  </div>
+                  <select
+                    value={stockFilter}
+                    onChange={(e) => setStockFilter(e.target.value as any)}
+                    className="px-3 py-2 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl text-xs text-gray-900 dark:text-white outline-none"
+                  >
+                    <option value="All">All Stock Levels</option>
+                    <option value="Low">Low Stock (&le; 5)</option>
+                    <option value="Out">Out of Stock (0)</option>
+                  </select>
                 </div>
 
-                {/* MODAL: ADD / EDIT PRODUCT DRAWER */}
-                <AnimatePresence>
-                  {isAddingProduct || editingProduct ? (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 15 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 15 }}
-                      className="p-6 rounded-2xl bg-white dark:bg-[#0c0c0c] border-2 border-amber-500/30 shadow-xl space-y-6"
+                <button
+                  onClick={handleOpenAddProduct}
+                  className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl flex items-center justify-center space-x-2 shadow-md shadow-emerald-600/20 transition"
+                >
+                  <Plus size={16} />
+                  <span>Upload Product</span>
+                </button>
+              </div>
+
+              {/* PRODUCTS TABLE */}
+              <div className="bg-white dark:bg-[#101014] border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-gray-50 dark:bg-gray-900/60 text-gray-500 uppercase font-mono text-[10px] tracking-wider border-b border-gray-200 dark:border-gray-800">
+                      <tr>
+                        <th className="px-4 py-3">Product</th>
+                        <th className="px-4 py-3">Category / Brand</th>
+                        <th className="px-4 py-3">Price (GHS / USD)</th>
+                        <th className="px-4 py-3">Stock</th>
+                        <th className="px-4 py-3">Status</th>
+                        <th className="px-4 py-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-800/60 font-sans">
+                      {filteredProducts.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="px-4 py-12 text-center text-gray-500">
+                            No matching products found. Click "Upload Product" to add items to your store catalog.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredProducts.map(prod => (
+                          <tr key={prod.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-900/30 transition">
+                            <td className="px-4 py-3">
+                              <div className="flex items-center space-x-3">
+                                <img 
+                                  src={prod.image} 
+                                  alt={prod.name}
+                                  className="w-12 h-12 rounded-lg object-cover border border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-900 shrink-0" 
+                                />
+                                <div>
+                                  <div className="font-semibold text-gray-900 dark:text-white line-clamp-1">
+                                    {prod.name}
+                                  </div>
+                                  <div className="text-[11px] text-gray-500 font-mono">
+                                    SKU: {prod.specs?.['SKU'] || prod.id}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            <td className="px-4 py-3">
+                              <div className="font-medium text-gray-900 dark:text-white">{prod.category}</div>
+                              <div className="text-[11px] text-gray-500">{prod.brand}</div>
+                            </td>
+
+                            <td className="px-4 py-3">
+                              <div className="font-bold text-gray-900 dark:text-white">
+                                GH₵ {prod.priceGHS.toLocaleString()}
+                              </div>
+                              <div className="text-[11px] text-gray-500">
+                                ${prod.priceUSD} USD
+                              </div>
+                            </td>
+
+                            <td className="px-4 py-3">
+                              <div className="flex items-center space-x-1.5">
+                                <button
+                                  onClick={() => handleQuickStock(prod.id, prod.stock, -1)}
+                                  className="w-6 h-6 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center font-bold"
+                                  title="Decrease Stock"
+                                >
+                                  -
+                                </button>
+                                <span className={`px-2 py-1 rounded-md text-xs font-mono font-bold ${
+                                  prod.stock === 0 ? 'bg-red-500/10 text-red-500' : prod.stock <= 5 ? 'bg-amber-500/10 text-amber-500' : 'bg-emerald-500/10 text-emerald-500'
+                                }`}>
+                                  {prod.stock}
+                                </span>
+                                <button
+                                  onClick={() => handleQuickStock(prod.id, prod.stock, 1)}
+                                  className="w-6 h-6 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center font-bold"
+                                  title="Increase Stock"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </td>
+
+                            <td className="px-4 py-3">
+                              <button
+                                onClick={() => handleQuickToggleStatus(prod)}
+                                className={`px-2.5 py-1 rounded-full text-[10px] font-semibold transition ${
+                                  prod.status === 'Draft' 
+                                    ? 'bg-gray-500/10 text-gray-400 border border-gray-500/20' 
+                                    : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                                }`}
+                              >
+                                {prod.status || 'Published'}
+                              </button>
+                            </td>
+
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex items-center justify-end space-x-1">
+                                <button
+                                  onClick={() => handleOpenEditProduct(prod)}
+                                  className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-blue-600 dark:text-blue-400 transition"
+                                  title="Edit Product"
+                                >
+                                  <Edit2 size={15} />
+                                </button>
+
+                                <button
+                                  onClick={() => handleDeleteProductConfirmed(prod.id, prod.name)}
+                                  className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition"
+                                  title="Delete Product Permanently"
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: COLLECTIONS */}
+          {activeTab === 'collections' && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                {/* Create / Edit Collection Form */}
+                <div className="p-5 rounded-2xl bg-white dark:bg-[#101014] border border-gray-200 dark:border-gray-800 space-y-4">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center space-x-2">
+                    <Layers size={16} className="text-blue-600" />
+                    <span>{selectedColId ? 'Edit Collection' : 'Create Custom Collection'}</span>
+                  </h3>
+
+                  <form onSubmit={handleCreateOrUpdateCollection} className="space-y-3 text-xs">
+                    <div>
+                      <label className="block text-gray-600 dark:text-gray-400 mb-1 font-medium">Collection Name</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Flagship Deals, Best Sellers"
+                        value={colName}
+                        onChange={(e) => setColName(e.target.value)}
+                        className="w-full p-2.5 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-xl outline-none focus:border-blue-600 text-gray-900 dark:text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-600 dark:text-gray-400 mb-1 font-medium">Description</label>
+                      <textarea
+                        rows={2}
+                        placeholder="Brief summary for storefront shoppers"
+                        value={colDesc}
+                        onChange={(e) => setColDesc(e.target.value)}
+                        className="w-full p-2.5 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-xl outline-none focus:border-blue-600 text-gray-900 dark:text-white"
+                      />
+                    </div>
+
+                    <label className="flex items-center space-x-2 cursor-pointer text-gray-700 dark:text-gray-300">
+                      <input
+                        type="checkbox"
+                        checked={colIsFeatured}
+                        onChange={(e) => setColIsFeatured(e.target.checked)}
+                        className="rounded text-blue-600"
+                      />
+                      <span>Feature on Storefront Homepage</span>
+                    </label>
+
+                    <button
+                      type="submit"
+                      className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition"
                     >
-                      <div className="flex items-center justify-between border-b border-gray-150 dark:border-gray-800 pb-3">
-                        <div className="flex items-center space-x-2">
-                          <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500">
-                            <Sparkles size={16} />
-                          </div>
-                          <h3 className="text-sm font-extrabold tracking-tight font-sans">
-                            {editingProduct ? `Edit Product: ${editingProduct.name}` : 'Deploy New Tech Product'}
-                          </h3>
+                      {selectedColId ? 'Update Collection' : 'Save Collection'}
+                    </button>
+
+                    {selectedColId && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedColId(null);
+                          setColName('');
+                          setColDesc('');
+                        }}
+                        className="w-full py-2 text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                      >
+                        Cancel Editing
+                      </button>
+                    )}
+                  </form>
+                </div>
+
+                {/* Collections List */}
+                <div className="md:col-span-2 space-y-4">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white">Active Collections</h3>
+                  {customCollections.map(col => (
+                    <div key={col.id} className="p-4 rounded-2xl bg-white dark:bg-[#101014] border border-gray-200 dark:border-gray-800 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-bold text-gray-900 dark:text-white text-sm">{col.name}</div>
+                          <div className="text-xs text-gray-500">{col.description} &bull; {col.productIds.length} products</div>
                         </div>
-                        <button
-                          onClick={() => { setIsAddingProduct(false); setEditingProduct(null); }}
-                          className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-750 transition"
-                        >
-                          <X size={14} />
-                        </button>
+
+                        <div className="flex items-center space-x-1">
+                          <button
+                            onClick={() => {
+                              setSelectedColId(col.id);
+                              setColName(col.name);
+                              setColDesc(col.description);
+                              setColIsFeatured(col.isFeaturedHome);
+                            }}
+                            className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-blue-600"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCollection(col.id)}
+                            className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </div>
 
-                      <form onSubmit={saveProductForm} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        
-                        {/* LEFT COLUMN FIELDS */}
-                        <div className="space-y-4">
-                          <div>
-                            <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1.5">
-                              Product Name *
-                            </label>
-                            <input
-                              type="text"
-                              required
-                              value={prodName}
-                              onChange={(e) => setProdName(e.target.value)}
-                              placeholder="e.g. iPhone 15 Pro Max (256GB)"
-                              className="w-full bg-gray-50 dark:bg-black/40 border border-gray-150 dark:border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-900 dark:text-white focus:border-[#0066FF] outline-none transition"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1.5">
-                              Description *
-                            </label>
-                            <textarea
-                              required
-                              rows={4}
-                              value={prodDesc}
-                              onChange={(e) => setProdDesc(e.target.value)}
-                              placeholder="Provide detailed sales description and specifications..."
-                              className="w-full bg-gray-50 dark:bg-black/40 border border-gray-150 dark:border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-900 dark:text-white focus:border-[#0066FF] outline-none transition resize-none"
-                            />
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1.5">
-                                Category *
-                              </label>
-                              <select
-                                value={prodCategory}
-                                onChange={(e) => setProdCategory(e.target.value)}
-                                className="w-full bg-gray-50 dark:bg-black/40 border border-gray-150 dark:border-gray-800 rounded-xl px-3 py-2.5 text-xs text-gray-900 dark:text-white focus:border-[#0066FF] outline-none cursor-pointer font-medium"
-                              >
-                                {STORE_CATEGORIES.map(c => (
-                                  <option key={c.id} value={c.id}>
-                                    {c.icon} {c.label}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-
-                            <div>
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1.5">
-                                Brand *
-                              </label>
-                              <input
-                                type="text"
-                                required
-                                value={prodBrand}
-                                onChange={(e) => setProdBrand(e.target.value)}
-                                placeholder="e.g. Apple, Samsung, HP"
-                                className="w-full bg-gray-50 dark:bg-black/40 border border-gray-150 dark:border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-900 dark:text-white focus:border-[#0066FF] outline-none transition"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1.5">
-                                Price GHS *
-                              </label>
-                              <input
-                                type="number"
-                                required
-                                min="1"
-                                value={prodPriceGHS}
-                                onChange={(e) => setProdPriceGHS(Number(e.target.value))}
-                                className="w-full bg-gray-50 dark:bg-black/40 border border-gray-150 dark:border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-900 dark:text-white focus:border-[#0066FF] outline-none transition"
-                              />
-                            </div>
-
-                            <div>
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1.5">
-                                Price USD *
-                              </label>
-                              <input
-                                type="number"
-                                required
-                                min="1"
-                                value={prodPriceUSD}
-                                onChange={(e) => setProdPriceUSD(Number(e.target.value))}
-                                className="w-full bg-gray-50 dark:bg-black/40 border border-gray-150 dark:border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-900 dark:text-white focus:border-[#0066FF] outline-none transition"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-3 gap-4">
-                            <div className="col-span-1">
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1.5">
-                                Stock *
-                              </label>
-                              <input
-                                type="number"
-                                required
-                                min="0"
-                                value={prodStock}
-                                onChange={(e) => setProdStock(Number(e.target.value))}
-                                className="w-full bg-gray-50 dark:bg-black/40 border border-gray-150 dark:border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-900 dark:text-white focus:border-[#0066FF] outline-none transition"
-                              />
-                            </div>
-
-                            <div className="col-span-2">
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1.5">
-                                SKU / Serial ID
-                              </label>
-                              <input
-                                type="text"
-                                required
-                                value={prodSKU}
-                                onChange={(e) => setProdSKU(e.target.value)}
-                                className="w-full bg-gray-50 dark:bg-black/40 border border-gray-150 dark:border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-900 dark:text-white focus:border-[#0066FF] outline-none transition font-mono"
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* RIGHT COLUMN FIELDS */}
-                        <div className="space-y-4">
-                          
-                          {/* Image Upload manager */}
-                          <div className="p-4 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-150 dark:border-gray-800 space-y-4">
-                            <span className="block text-[10px] font-bold text-gray-400 uppercase font-mono">
-                              Product Images & Cloud Compression
-                            </span>
-
-                            {/* Native Image Upload & Compression */}
-                            <div className="border border-dashed border-gray-250 dark:border-gray-800 hover:border-amber-500 rounded-xl p-6 text-center transition cursor-pointer relative">
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) compressAndUploadImage(file);
-                                }}
-                                className="absolute inset-0 opacity-0 cursor-pointer"
-                              />
-                              <Upload className="mx-auto w-6 h-6 text-gray-400 mb-2" />
-                              <span className="text-[11px] font-bold block text-gray-700 dark:text-gray-300">
-                                Click or drag image to compress & upload
-                              </span>
-                              <span className="text-[10px] text-gray-400 block mt-1">
-                                Max web resolution (800px) JPEG is automatically rendered.
-                              </span>
-                            </div>
-
-                            {/* Image loading / compression feedback */}
-                            {isUploading && (
-                              <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-xl space-y-2">
-                                <span className="text-[10px] font-mono font-bold block animate-pulse">
-                                  {compressionStatus}
-                                </span>
-                                {uploadProgress && (
-                                  <div className="w-full bg-black/25 rounded-full h-1">
-                                    <div className="bg-amber-500 h-1 rounded-full" style={{ width: `${uploadProgress}%` }} />
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Direct URL input */}
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                placeholder="Paste custom image URL..."
-                                value={prodImageInput}
-                                onChange={(e) => setProdImageInput(e.target.value)}
-                                className="flex-1 bg-gray-50 dark:bg-black/40 border border-gray-150 dark:border-gray-800 rounded-lg px-3 py-1.5 text-[11px] outline-none focus:border-[#0066FF]"
-                              />
+                      {/* Product selector tags inside collection */}
+                      <div className="pt-2 border-t border-gray-100 dark:border-gray-800/60">
+                        <div className="text-[11px] font-semibold text-gray-500 mb-2">Toggle Products in this Collection:</div>
+                        <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
+                          {products.map(p => {
+                            const isSelected = col.productIds.includes(p.id);
+                            return (
                               <button
-                                type="button"
-                                onClick={() => {
-                                  if (prodImageInput.trim()) {
-                                    setProdImages(prev => [...prev, prodImageInput.trim()]);
-                                    setProdImageInput('');
-                                  }
-                                }}
-                                className="px-3 bg-gray-200 dark:bg-gray-800 text-xs rounded-lg hover:bg-gray-300 transition"
+                                key={p.id}
+                                onClick={() => toggleProductInCollection(col.id, p.id)}
+                                className={`px-2 py-1 rounded-lg text-[10px] font-medium transition ${
+                                  isSelected 
+                                    ? 'bg-blue-600 text-white' 
+                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200'
+                                }`}
                               >
-                                Add
+                                {isSelected ? '✓ ' : '+ '}{p.name}
                               </button>
-                            </div>
-
-                            {/* Previews */}
-                            {prodImages.length > 0 && (
-                              <div className="grid grid-cols-4 gap-2 pt-2">
-                                {prodImages.map((img, index) => (
-                                  <div key={index} className="relative aspect-square rounded-lg border border-gray-250 dark:border-gray-800 overflow-hidden group bg-white">
-                                    <img src={img} alt="Product view" className="w-full h-full object-cover" />
-                                    <button
-                                      type="button"
-                                      onClick={() => setProdImages(prev => prev.filter((_, i) => i !== index))}
-                                      className="absolute top-1 right-1 p-0.5 bg-rose-500 text-white rounded hover:scale-105 transition"
-                                    >
-                                      <X size={10} />
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Assign to Collection */}
-                          <div>
-                            <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1.5">
-                              Assign to curated Collection group
-                            </label>
-                            <select
-                              value={prodCollection}
-                              onChange={(e) => setProdCollection(e.target.value)}
-                              className="w-full bg-gray-50 dark:bg-black/40 border border-gray-150 dark:border-gray-800 rounded-xl px-3 py-2.5 text-xs text-gray-900 dark:text-white focus:border-[#0066FF] outline-none cursor-pointer"
-                            >
-                              <option value="">-- No collection group --</option>
-                              {customCollections.map(col => (
-                                <option key={col.id} value={col.id}>{col.name}</option>
-                              ))}
-                            </select>
-                          </div>
-
-                          {/* Featured toggle */}
-                          <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-black/25 rounded-xl border border-gray-150 dark:border-gray-800">
-                            <input
-                              type="checkbox"
-                              id="prodFeatured"
-                              checked={prodIsFeatured}
-                              onChange={(e) => setProdIsFeatured(e.target.checked)}
-                              className="w-4 h-4 rounded text-[#0066FF] focus:ring-[#0066FF]"
-                            />
-                            <label htmlFor="prodFeatured" className="text-xs font-bold text-gray-700 dark:text-gray-300 select-none cursor-pointer">
-                              Feature this product on homepage catalog
-                            </label>
-                          </div>
-
-                          {/* Submit Actions */}
-                          <div className="flex gap-3 pt-6 justify-end">
-                            <button
-                              type="button"
-                              onClick={() => { setIsAddingProduct(false); setEditingProduct(null); }}
-                              className="px-5 py-2.5 rounded-xl bg-gray-200 dark:bg-gray-850 hover:bg-gray-300 dark:hover:bg-gray-800 text-xs font-bold font-mono uppercase tracking-wider transition"
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              type="submit"
-                              className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-black text-xs font-bold font-mono uppercase tracking-wider flex items-center space-x-2 transition"
-                            >
-                              <CheckCircle2 size={15} />
-                              <span>{editingProduct ? 'Update ProductSpecs' : 'Deploy ProductSpecs'}</span>
-                            </button>
-                          </div>
-
+                            );
+                          })}
                         </div>
-                      </form>
-                    </motion.div>
-                  ) : null}
-                </AnimatePresence>
-
-                {/* PRODUCT DATA LEDGER TABLE */}
-                <div className="bg-white dark:bg-[#0c0c0c] rounded-2xl border border-gray-150 dark:border-gray-800 overflow-hidden shadow-sm">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="border-b border-gray-150 dark:border-gray-800 bg-gray-50 dark:bg-[#121212]/50 text-[10px] text-gray-400 uppercase font-mono font-bold">
-                          <th className="p-4">SKU / Serial</th>
-                          <th className="p-4">Specs</th>
-                          <th className="p-4">Category</th>
-                          <th className="p-4">Price (GHS)</th>
-                          <th className="p-4">Price (USD)</th>
-                          <th className="p-4">Stock</th>
-                          <th className="p-4 text-center">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100 dark:divide-gray-800/40">
-                        {filteredProductCatalog.map((prod) => {
-                          const skuCode = prod.specs?.['SKU'] || prod.id.split('-')[1] || 'IMM-VAL';
-                          const isLowStock = prod.stock <= 5;
-                          return (
-                            <tr key={prod.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition">
-                              <td className="p-4 font-mono text-[10px] text-gray-400">
-                                {skuCode}
-                              </td>
-                              <td className="p-4">
-                                <div className="flex items-center space-x-3">
-                                  <img 
-                                    src={prod.image || 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?q=80&w=100&auto=format&fit=crop'} 
-                                    alt={prod.name} 
-                                    referrerPolicy="no-referrer"
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?q=80&w=100&auto=format&fit=crop';
-                                    }}
-                                    className="w-10 h-10 object-cover rounded-lg border border-gray-200 dark:border-gray-800 bg-white"
-                                  />
-                                  <div>
-                                    <span className="font-extrabold text-gray-900 dark:text-white block font-sans text-xs">
-                                      {prod.name}
-                                    </span>
-                                    <span className="text-[10px] text-gray-400 font-mono">
-                                      {prod.brand} {prod.isFeatured && '★ Featured'}
-                                    </span>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="p-4 font-semibold text-gray-500">
-                                {prod.category}
-                              </td>
-                              <td className="p-4 font-bold text-gray-900 dark:text-white">
-                                {prod.priceGHS.toLocaleString()} GHS
-                              </td>
-                              <td className="p-4 font-bold text-gray-900 dark:text-white">
-                                ${prod.priceUSD.toLocaleString()}
-                              </td>
-                              <td className="p-4">
-                                <div className="flex items-center space-x-2">
-                                  <span className={`w-2 h-2 rounded-full ${prod.stock === 0 ? 'bg-rose-500' : isLowStock ? 'bg-amber-500' : 'bg-emerald-500'}`} />
-                                  <span className={`font-mono font-extrabold ${prod.stock === 0 ? 'text-rose-500' : isLowStock ? 'text-amber-500' : 'text-gray-900 dark:text-gray-100'}`}>
-                                    {prod.stock}
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="p-4">
-                                <div className="flex items-center justify-center space-x-2">
-                                  <button
-                                    onClick={() => triggerEditProduct(prod)}
-                                    className="p-1.5 rounded bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-500 hover:text-[#0066FF] transition"
-                                    title="Edit ProductSpecs"
-                                  >
-                                    <Edit2 size={12} />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteProductConfirmed(prod.id)}
-                                    className="p-1.5 rounded bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/20 transition"
-                                    title="Delete Product"
-                                  >
-                                    <Trash2 size={12} />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
               </div>
-            )}
+            </div>
+          )}
 
-            {/* TAB CONTENT 3: COLLECTIONS STUDIO */}
-            {activeTab === 'collections' && (
-              <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          {/* TAB 3: CHECKOUT ORDERS */}
+          {activeTab === 'orders' && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white">Customer Storefront Orders</h3>
+              <div className="bg-white dark:bg-[#101014] border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-gray-50 dark:bg-gray-900/60 text-gray-500 uppercase font-mono text-[10px]">
+                    <tr>
+                      <th className="px-4 py-3">Order ID</th>
+                      <th className="px-4 py-3">Customer</th>
+                      <th className="px-4 py-3">Total Amount</th>
+                      <th className="px-4 py-3">Payment</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3 text-right">Update Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-800/60">
+                    {orders.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                          No checkout orders placed yet. Orders from storefront checkout will appear here live.
+                        </td>
+                      </tr>
+                    ) : (
+                      orders.map(order => (
+                        <tr key={order.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-900/30">
+                          <td className="px-4 py-3 font-mono font-bold text-gray-900 dark:text-white">
+                            {order.id}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="font-semibold text-gray-900 dark:text-white">{order.customerName}</div>
+                            <div className="text-[11px] text-gray-500">{order.customerPhone} &bull; {order.customerEmail}</div>
+                          </td>
+                          <td className="px-4 py-3 font-bold text-gray-900 dark:text-white">
+                            GH₵ {order.totalGHS.toLocaleString()} (${order.totalUSD} USD)
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                              order.paymentStatus === 'Paid' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'
+                            }`}>
+                              {order.paymentStatus || 'Pending'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 font-semibold text-gray-800 dark:text-gray-200">
+                            {order.status}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <select
+                              value={order.status}
+                              onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
+                              className="px-2 py-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs"
+                            >
+                              <option value="Pending">Pending</option>
+                              <option value="Processing">Processing</option>
+                              <option value="Shipped">Shipped</option>
+                              <option value="Delivered">Delivered</option>
+                              <option value="Cancelled">Cancelled</option>
+                            </select>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: REPAIRS & TRADE-INS */}
+          {activeTab === 'repairs' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">Customer Repair Requests</h3>
+                <div className="bg-white dark:bg-[#101014] border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-gray-50 dark:bg-gray-900/60 text-gray-500 uppercase font-mono text-[10px]">
+                      <tr>
+                        <th className="px-4 py-3">Device / Fault</th>
+                        <th className="px-4 py-3">Customer</th>
+                        <th className="px-4 py-3">Quote (GHS)</th>
+                        <th className="px-4 py-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-800/60">
+                      {repairs.length === 0 ? (
+                        <tr><td colSpan={4} className="p-4 text-center text-gray-500">No repair requests logged.</td></tr>
+                      ) : (
+                        repairs.map(rep => (
+                          <tr key={rep.id}>
+                            <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{rep.brand} {rep.model} - {rep.faultDescription}</td>
+                            <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{rep.customerName} ({rep.customerPhone})</td>
+                            <td className="px-4 py-3 font-bold">GH₵ {rep.quotationGHS}</td>
+                            <td className="px-4 py-3">{rep.status}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">Customer Trade-In Valuation Requests</h3>
+                <div className="bg-white dark:bg-[#101014] border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-gray-50 dark:bg-gray-900/60 text-gray-500 uppercase font-mono text-[10px]">
+                      <tr>
+                        <th className="px-4 py-3">Device Offered</th>
+                        <th className="px-4 py-3">Customer</th>
+                        <th className="px-4 py-3">Final Offer</th>
+                        <th className="px-4 py-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-800/60">
+                      {tradeins.length === 0 ? (
+                        <tr><td colSpan={4} className="p-4 text-center text-gray-500">No trade-in submissions.</td></tr>
+                      ) : (
+                        tradeins.map(ti => (
+                          <tr key={ti.id}>
+                            <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{ti.brand} {ti.model} ({ti.condition})</td>
+                            <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{ti.customerName} ({ti.customerPhone})</td>
+                            <td className="px-4 py-3 font-bold">GH₵ {ti.finalOfferGHS || ti.valuationEstimateGHS}</td>
+                            <td className="px-4 py-3">{ti.status}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: SETTINGS & COUPONS */}
+          {activeTab === 'settings' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* Store Configuration */}
+              <div className="p-5 rounded-2xl bg-white dark:bg-[#101014] border border-gray-200 dark:border-gray-800 space-y-4">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white">Storefront Contact & Configuration</h3>
+                <form onSubmit={handleSaveSettings} className="space-y-3 text-xs">
                   <div>
-                    <h1 className="text-xl md:text-2xl font-black font-sans tracking-tight">Collections Studio</h1>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5">Categorize, curate and bundle products for storefront showcases</p>
+                    <label className="block text-gray-600 dark:text-gray-400 mb-1 font-medium">Store Name</label>
+                    <input
+                      type="text"
+                      value={storeSettings.storeName}
+                      onChange={(e) => setStoreSettings(s => ({ ...s, storeName: e.target.value }))}
+                      className="w-full p-2.5 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-xl"
+                    />
                   </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-gray-600 dark:text-gray-400 mb-1 font-medium">Contact Phone</label>
+                      <input
+                        type="text"
+                        value={storeSettings.contactPhone}
+                        onChange={(e) => setStoreSettings(s => ({ ...s, contactPhone: e.target.value }))}
+                        className="w-full p-2.5 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-xl"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-600 dark:text-gray-400 mb-1 font-medium">WhatsApp Number</label>
+                      <input
+                        type="text"
+                        value={storeSettings.whatsappNumber}
+                        onChange={(e) => setStoreSettings(s => ({ ...s, whatsappNumber: e.target.value }))}
+                        className="w-full p-2.5 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-xl"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-600 dark:text-gray-400 mb-1 font-medium">Accra Local Delivery Fee (GHS)</label>
+                    <input
+                      type="number"
+                      value={storeSettings.accraDeliveryCostGHS}
+                      onChange={(e) => setStoreSettings(s => ({ ...s, accraDeliveryCostGHS: Number(e.target.value) || 0 }))}
+                      className="w-full p-2.5 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-xl"
+                    />
+                  </div>
+
                   <button
-                    onClick={() => setIsE2ETestModalOpen(true)}
-                    className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold font-mono uppercase tracking-wider flex items-center space-x-2 shadow-lg shadow-blue-500/20 transition self-start sm:self-auto"
+                    type="submit"
+                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl"
                   >
-                    <Sparkles size={14} className="animate-spin" />
-                    <span>Run Admin E2E Audit</span>
+                    Save Configuration
                   </button>
+                </form>
+              </div>
+
+              {/* Discount Coupons */}
+              <div className="p-5 rounded-2xl bg-white dark:bg-[#101014] border border-gray-200 dark:border-gray-800 space-y-4">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white">Store Discount Coupons</h3>
+                
+                <form onSubmit={handleCreateNewCoupon} className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Coupon Code e.g. ACCRA10"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    className="flex-1 p-2.5 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-xl text-xs uppercase font-mono"
+                  />
+                  <input
+                    type="number"
+                    placeholder="% Off"
+                    value={couponDiscount}
+                    onChange={(e) => setCouponDiscount(Number(e.target.value))}
+                    className="w-20 p-2.5 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-xl text-xs"
+                  />
+                  <button
+                    type="submit"
+                    className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shrink-0"
+                  >
+                    Add Coupon
+                  </button>
+                </form>
+
+                <div className="space-y-2 pt-2">
+                  {coupons.map(c => (
+                    <div key={c.code} className="p-3 rounded-xl bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-800 flex items-center justify-between text-xs">
+                      <div>
+                        <span className="font-mono font-bold text-gray-900 dark:text-white">{c.code}</span>
+                        <span className="ml-2 text-emerald-500 font-bold">{c.discountPercent}% OFF</span>
+                      </div>
+                      <span className="text-[10px] text-gray-500">{c.active ? 'Active' : 'Expired'}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          )}
+
+        </div>
+      </div>
+
+      {/* UPLOAD / EDIT PRODUCT MODAL */}
+      <AnimatePresence>
+        {isProductModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 15 }}
+              className="relative w-full max-w-2xl bg-white dark:bg-[#121216] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-2xl space-y-5 my-8"
+            >
+              <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-4">
+                <div>
+                  <h2 className="text-base font-bold text-gray-900 dark:text-white">
+                    {editingProduct ? 'Edit Storefront Product' : 'Upload New Product to Storefront'}
+                  </h2>
+                  <p className="text-xs text-gray-500">
+                    Product will publish immediately to live storefront upon saving
+                  </p>
                 </div>
 
-                {/* QUICK-CREATE FEATURED TEMPLATES ROW */}
-                <div className="p-4 rounded-2xl bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black text-amber-500 font-mono uppercase tracking-widest flex items-center space-x-1.5">
-                      <Zap size={12} className="animate-bounce" />
-                      <span>Quick-Create Featured Collection Presets</span>
-                    </span>
-                    <span className="text-[10px] text-gray-400 font-mono">1-Click Auto Catalog Binding</span>
+                <button
+                  onClick={() => setIsProductModalOpen(false)}
+                  className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveProduct} className="space-y-4 text-xs">
+                
+                {/* Title & Brand */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-1">Product Title *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. iPhone 16 Pro Max 256GB"
+                      value={prodName}
+                      onChange={(e) => setProdName(e.target.value)}
+                      className="w-full p-2.5 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-xl outline-none focus:border-blue-600 text-gray-900 dark:text-white"
+                    />
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-                    {FEATURED_COLLECTION_TEMPLATES.map((tmpl, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleQuickCreateTemplate(tmpl)}
-                        className="p-3 rounded-xl bg-white dark:bg-[#121212] border border-gray-200/80 dark:border-gray-800 hover:border-amber-500 dark:hover:border-amber-500 text-left transition shadow-sm hover:shadow-md group flex flex-col justify-between"
-                      >
-                        <div>
-                          <span className="text-xs font-black text-gray-900 dark:text-white block group-hover:text-amber-500 transition line-clamp-1">
-                            {tmpl.name}
-                          </span>
-                          <span className="text-[9px] text-gray-400 font-sans block mt-1 line-clamp-2">
-                            {tmpl.description}
-                          </span>
-                        </div>
-                        <span className="mt-2 text-[9px] text-amber-500 font-mono font-bold flex items-center space-x-1">
-                          <span>+ Auto-Create</span>
-                          <ArrowUpRight size={10} />
-                        </span>
-                      </button>
-                    ))}
+
+                  <div>
+                    <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-1">Brand *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Apple, Samsung, HP"
+                      value={prodBrand}
+                      onChange={(e) => setProdBrand(e.target.value)}
+                      className="w-full p-2.5 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-xl outline-none focus:border-blue-600 text-gray-900 dark:text-white"
+                    />
                   </div>
                 </div>
 
-                {/* BULK ACTIONS TOOLBAR FOR COLLECTIONS */}
-                <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-white dark:bg-[#0c0c0c] border border-gray-150 dark:border-gray-800 shadow-sm">
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={handleSelectAllBulkCollections}
-                      className="px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-xs font-mono font-bold text-gray-700 dark:text-gray-300 transition flex items-center space-x-1.5"
+                {/* Category, Status & Collection */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-1">Category *</label>
+                    <select
+                      value={prodCategory}
+                      onChange={(e) => setProdCategory(e.target.value)}
+                      className="w-full p-2.5 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-xl outline-none text-gray-900 dark:text-white"
                     >
-                      <CheckSquare size={13} />
-                      <span>{selectedBulkColIds.length === customCollections.length && customCollections.length > 0 ? 'Deselect All' : 'Select All'}</span>
-                    </button>
-                    <span className="text-xs font-mono text-gray-400">
-                      {selectedBulkColIds.length} of {customCollections.length} selected
-                    </span>
+                      {STORE_CATEGORIES.map(cat => <option key={cat.id} value={cat.label}>{cat.label}</option>)}
+                    </select>
                   </div>
 
-                  {selectedBulkColIds.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-2">
+                  <div>
+                    <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-1">Status</label>
+                    <select
+                      value={prodStatus}
+                      onChange={(e) => setProdStatus(e.target.value as any)}
+                      className="w-full p-2.5 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-xl outline-none text-gray-900 dark:text-white"
+                    >
+                      <option value="Published">Published (Visible)</option>
+                      <option value="Draft">Draft (Hidden)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-1">Collection</label>
+                    <select
+                      value={prodCollection}
+                      onChange={(e) => setProdCollection(e.target.value)}
+                      className="w-full p-2.5 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-xl outline-none text-gray-900 dark:text-white"
+                    >
+                      <option value="">None (Standard Catalog)</option>
+                      {customCollections.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Pricing & Stock */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 bg-gray-50 dark:bg-gray-900/40 rounded-xl border border-gray-200 dark:border-gray-800">
+                  <div>
+                    <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-1">Price (GHS) *</label>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      placeholder="18500"
+                      value={prodPriceGHS}
+                      onChange={(e) => handleGHSPriceChange(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-full p-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg outline-none font-bold text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-1">Price (USD)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      placeholder="1233"
+                      value={prodPriceUSD}
+                      onChange={(e) => setProdPriceUSD(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-full p-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg outline-none text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-1">Sale Discount (GHS)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      placeholder="e.g. 17500"
+                      value={prodSaleGHS}
+                      onChange={(e) => setProdSaleGHS(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-full p-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg outline-none text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-1">Stock Qty *</label>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      placeholder="10"
+                      value={prodStock}
+                      onChange={(e) => setProdStock(Number(e.target.value))}
+                      className="w-full p-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg outline-none font-bold text-gray-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Images upload & URL input */}
+                <div>
+                  <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-1">Product Gallery Photos</label>
+                  
+                  <div className="flex flex-col sm:flex-row gap-2 mb-2">
+                    <label className="flex-1 p-2.5 border-2 border-dashed border-gray-300 dark:border-gray-800 rounded-xl flex items-center justify-center space-x-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900/50 transition">
+                      <Upload size={16} className="text-blue-600" />
+                      <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                        {isUploading ? uploadStatus : 'Upload Image File (Compressed & Saved)'}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={isUploading}
+                        onChange={(e) => e.target.files?.[0] && compressAndUploadImage(e.target.files[0])}
+                        className="hidden"
+                      />
+                    </label>
+
+                    <div className="flex items-center space-x-1 sm:w-1/2">
+                      <input
+                        type="url"
+                        placeholder="Or paste image URL"
+                        value={prodImageUrlInput}
+                        onChange={(e) => setProdImageUrlInput(e.target.value)}
+                        className="flex-1 p-2.5 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-xl outline-none"
+                      />
                       <button
-                        onClick={() => handleBulkPublishCollections(true)}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500 hover:text-white text-emerald-500 text-xs font-mono font-bold border border-emerald-500/20 transition flex items-center space-x-1"
+                        type="button"
+                        onClick={handleAddImageUrl}
+                        className="px-3 py-2.5 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold rounded-xl"
                       >
-                        <Eye size={12} />
-                        <span>Publish Selected ({selectedBulkColIds.length})</span>
+                        Add
                       </button>
-                      <button
-                        onClick={() => handleBulkPublishCollections(false)}
-                        className="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-mono font-bold transition flex items-center space-x-1"
-                      >
-                        <EyeOff size={12} />
-                        <span>Unpublish</span>
-                      </button>
-                      <button
-                        onClick={handleBulkDeleteCollections}
-                        className="px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-500 text-xs font-mono font-bold border border-rose-500/20 transition flex items-center space-x-1"
-                      >
-                        <Trash2 size={12} />
-                        <span>Delete Selected ({selectedBulkColIds.length})</span>
-                      </button>
+                    </div>
+                  </div>
+
+                  {/* Gallery Thumbnails */}
+                  {prodImages.length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {prodImages.map((img, idx) => (
+                        <div key={idx} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800">
+                          <img src={img} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(idx)}
+                            className="absolute top-0.5 right-0.5 p-1 rounded-full bg-black/70 text-white opacity-90 hover:opacity-100"
+                          >
+                            <X size={10} />
+                          </button>
+                          {idx === 0 && (
+                            <span className="absolute bottom-0 inset-x-0 bg-blue-600 text-white text-[8px] font-bold text-center py-0.5">
+                              Main Photo
+                            </span>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  
-                  {/* COLLECTION CONSTRUCTOR FORM */}
-                  <div className="p-5 rounded-2xl bg-white dark:bg-[#0c0c0c] border border-gray-150 dark:border-gray-800 shadow-sm space-y-4 self-start">
-                    <span className="text-[10px] font-black text-amber-500 font-mono uppercase block">
-                      {selectedColId ? '[Update Custom Collection]' : '[Create Collection Group]'}
-                    </span>
-                    
-                    <form onSubmit={handleCreateOrUpdateCollection} className="space-y-4">
-                      <div>
-                        <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1.5">
-                          Collection Name *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={colName}
-                          onChange={(e) => setColName(e.target.value)}
-                          placeholder="e.g. Flagship iPhones, Gaming Rigs"
-                          className="w-full bg-gray-50 dark:bg-black/40 border border-gray-150 dark:border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-900 dark:text-white outline-none focus:border-[#0066FF]"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1.5">
-                          Description
-                        </label>
-                        <textarea
-                          rows={3}
-                          value={colDesc}
-                          onChange={(e) => setColDesc(e.target.value)}
-                          placeholder="Short tagline showcasing collection benefit..."
-                          className="w-full bg-gray-50 dark:bg-black/40 border border-gray-150 dark:border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-900 dark:text-white outline-none focus:border-[#0066FF] resize-none"
-                        />
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id="colFeaturedCheck"
-                          checked={colIsFeatured}
-                          onChange={(e) => setColIsFeatured(e.target.checked)}
-                          className="w-4 h-4 rounded text-amber-500 focus:ring-amber-500 cursor-pointer"
-                        />
-                        <label htmlFor="colFeaturedCheck" className="text-xs font-bold text-gray-300 select-none cursor-pointer">
-                          Featured on Store Homepage Category Row
-                        </label>
-                      </div>
-
-                      <div className="flex gap-2 pt-2">
-                        {selectedColId && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedColId(null);
-                              setColName('');
-                              setColDesc('');
-                            }}
-                            className="flex-1 py-2 rounded-lg bg-gray-200 dark:bg-gray-800 text-xs font-bold"
-                          >
-                            Cancel
-                          </button>
-                        )}
-                        <button
-                          type="submit"
-                          className="flex-1 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-black text-xs font-bold font-mono uppercase tracking-wider"
-                        >
-                          {selectedColId ? 'Save Specs' : 'Initialize Group'}
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-
-                  {/* COLLECTIONS LIST & PRODUCTS BINDING */}
-                  <div className="lg:col-span-2 space-y-4">
-                    {customCollections.map((col) => {
-                      const isSelected = selectedBulkColIds.includes(col.id);
-                      return (
-                        <div 
-                          key={col.id} 
-                          className={`p-5 rounded-2xl bg-white dark:bg-[#0c0c0c] border transition shadow-sm space-y-4 ${
-                            isSelected 
-                              ? 'border-[#0066FF] ring-2 ring-[#0066FF]/20 bg-blue-500/5' 
-                              : 'border-gray-150 dark:border-gray-800'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-start space-x-3">
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() => handleToggleSelectBulkCollection(col.id)}
-                                className="mt-1 w-4 h-4 rounded text-[#0066FF] focus:ring-[#0066FF] cursor-pointer"
-                              />
-                              <div>
-                                <div className="flex items-center space-x-2">
-                                  <h3 className="text-sm font-extrabold text-gray-900 dark:text-white font-sans">
-                                    {col.name}
-                                  </h3>
-                                  {col.isFeaturedHome ? (
-                                    <span className="text-[8px] bg-emerald-500/15 text-emerald-500 px-1.5 py-0.5 rounded font-mono font-black uppercase">
-                                      Home Featured
-                                    </span>
-                                  ) : (
-                                    <span className="text-[8px] bg-gray-500/15 text-gray-400 px-1.5 py-0.5 rounded font-mono font-bold uppercase">
-                                      Unpublished
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-[11px] text-gray-400 mt-1">{col.description}</p>
-                              </div>
-                            </div>
-
-                            <div className="flex space-x-1">
-                              <button
-                                onClick={() => {
-                                  setSelectedColId(col.id);
-                                  setColName(col.name);
-                                  setColDesc(col.description);
-                                  setColIsFeatured(col.isFeaturedHome);
-                                }}
-                                className="p-1.5 rounded bg-gray-100 hover:bg-gray-250 dark:bg-gray-800 text-xs text-gray-500 hover:text-amber-500 transition"
-                                title="Edit Collection"
-                              >
-                                <Edit2 size={12} />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteCollection(col.id)}
-                                className="p-1.5 rounded bg-rose-500/10 hover:bg-rose-500 hover:text-white border border-rose-500/20 text-rose-500 text-xs transition"
-                                title="Delete Collection"
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Product checklist binder inside each collection */}
-                          <div className="pt-2 border-t border-gray-150 dark:border-gray-800/40">
-                            <span className="block text-[10px] font-bold text-gray-400 font-mono uppercase mb-2">
-                              Bind / Unbind store items: ({col.productIds.length} currently assigned)
-                            </span>
-                            
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-32 overflow-y-auto pr-2">
-                              {products.map(prod => {
-                                const isChecked = col.productIds.includes(prod.id);
-                                return (
-                                  <button
-                                    key={prod.id}
-                                    onClick={() => toggleProductInCollection(col.id, prod.id)}
-                                    className={`p-2 rounded-lg text-left text-[10px] border transition flex items-center justify-between ${
-                                      isChecked 
-                                        ? 'bg-[#0066FF]/10 text-[#0066FF] border-[#0066FF]/40 font-bold' 
-                                        : 'bg-gray-50/50 dark:bg-black/10 border-gray-150 dark:border-gray-800 text-gray-400'
-                                    }`}
-                                  >
-                                    <span className="truncate pr-1">{prod.name}</span>
-                                    {isChecked && <Check size={10} className="shrink-0" />}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                </div>
-              </div>
-            )}
-
-            {/* TAB CONTENT 4: SALES & ORDERS */}
-            {activeTab === 'orders' && (
-              <div className="space-y-6">
+                {/* Detailed Specifications */}
                 <div>
-                  <h1 className="text-xl md:text-2xl font-black font-sans tracking-tight">Sales & Orders Ledger</h1>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5">Track shipping statuses, payment verifications and fulfillments</p>
+                  <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-1">Key Specifications</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <input
+                      type="text"
+                      placeholder="Processor e.g. A18 Pro"
+                      value={specProcessor}
+                      onChange={(e) => setSpecProcessor(e.target.value)}
+                      className="p-2 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-lg"
+                    />
+                    <input
+                      type="text"
+                      placeholder="RAM e.g. 8GB Unified"
+                      value={specRam}
+                      onChange={(e) => setSpecRam(e.target.value)}
+                      className="p-2 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-lg"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Storage e.g. 256GB"
+                      value={specStorage}
+                      onChange={(e) => setSpecStorage(e.target.value)}
+                      className="p-2 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-lg"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Display e.g. 6.9-inch OLED"
+                      value={specDisplay}
+                      onChange={(e) => setSpecDisplay(e.target.value)}
+                      className="p-2 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-lg"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Battery e.g. All-Day Battery"
+                      value={specBattery}
+                      onChange={(e) => setSpecBattery(e.target.value)}
+                      className="p-2 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-lg"
+                    />
+                    <input
+                      type="text"
+                      placeholder="SKU Code"
+                      value={prodSKU}
+                      onChange={(e) => setProdSKU(e.target.value)}
+                      className="p-2 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-lg font-mono"
+                    />
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  
-                  {/* ORDERS LEDGER */}
-                  <div className="lg:col-span-2 space-y-3">
-                    {orders.map((order) => (
-                      <div 
-                        key={order.id} 
-                        onClick={() => setSelectedOrder(order)}
-                        className={`p-4 rounded-2xl bg-white dark:bg-[#0c0c0c] border cursor-pointer transition flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
-                          selectedOrder?.id === order.id 
-                            ? 'border-amber-500 ring-2 ring-amber-500/10' 
-                            : 'border-gray-150 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700'
-                        }`}
-                      >
-                        <div className="space-y-1">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-[10px] font-mono text-gray-400 block uppercase">
-                              #{order.trackingNumber || order.id.split('-')[1]}
-                            </span>
-                            <span className="text-[10px] text-gray-400 font-mono">• {new Date(order.createdAt).toLocaleDateString()}</span>
-                          </div>
-                          <span className="text-xs font-bold text-gray-900 dark:text-white block">
-                            {order.customerName}
-                          </span>
-                          <span className="text-[10px] text-gray-500 block">
-                            {order.items.length} items purchased ({order.deliveryOption})
-                          </span>
-                        </div>
-
-                        <div className="flex items-center space-x-4">
-                          <div className="text-right">
-                            <span className="text-xs font-bold block">{order.totalGHS.toLocaleString()} GHS</span>
-                            <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-mono font-bold mt-1 ${
-                              order.paymentStatus === 'Paid' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
-                            }`}>
-                              {order.paymentStatus}
-                            </span>
-                          </div>
-
-                          <div>
-                            <span className={`px-2.5 py-1 rounded text-[10px] font-extrabold uppercase font-mono tracking-wider block ${
-                              order.status === 'Delivered' ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/35' :
-                              order.status === 'Cancelled' ? 'bg-rose-500/15 text-rose-500 border border-rose-500/35' :
-                              'bg-amber-500/15 text-amber-500 border border-amber-500/35'
-                            }`}>
-                              {order.status}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* FULFILLMENT PANEL VIEW */}
-                  <div className="p-5 rounded-2xl bg-white dark:bg-[#0c0c0c] border border-gray-150 dark:border-gray-800 shadow-sm space-y-6">
-                    {selectedOrder ? (
-                      <div className="space-y-6">
-                        
-                        {/* Order Identity info */}
-                        <div>
-                          <span className="text-[9px] font-black text-amber-500 font-mono uppercase block">[Fulfillment Dispatch Console]</span>
-                          <h2 className="text-sm font-extrabold text-gray-900 dark:text-white mt-1">
-                            Order #{selectedOrder.trackingNumber || selectedOrder.id.split('-')[1]}
-                          </h2>
-                          <span className="text-[11px] text-gray-400 font-mono block mt-0.5">
-                            Placed on {new Date(selectedOrder.createdAt).toUTCString()}
-                          </span>
-                        </div>
-
-                        {/* Customer Info */}
-                        <div className="p-3.5 rounded-xl bg-gray-50 dark:bg-black/25 border border-gray-150 dark:border-gray-800 space-y-2.5">
-                          <span className="block text-[10px] font-bold text-gray-400 uppercase font-mono">
-                            Customer Matrix Details
-                          </span>
-                          <div className="space-y-1.5 text-xs">
-                            <span className="block font-bold">{selectedOrder.customerName}</span>
-                            <div className="flex items-center space-x-2 text-gray-400 font-mono text-[10px]">
-                              <Mail size={12} />
-                              <span>{selectedOrder.customerEmail}</span>
-                            </div>
-                            <div className="flex items-center space-x-2 text-gray-400 font-mono text-[10px]">
-                              <Phone size={12} />
-                              <span>{selectedOrder.customerPhone}</span>
-                            </div>
-                            <div className="flex items-center space-x-2 text-gray-400 font-mono text-[10px] items-start">
-                              <MapPin size={12} className="shrink-0 mt-0.5" />
-                              <span className="leading-snug">{selectedOrder.address}, {selectedOrder.city}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Purchase Ledger Items */}
-                        <div className="space-y-2">
-                          <span className="block text-[10px] font-bold text-gray-400 uppercase font-mono">
-                            Receipt Items ({selectedOrder.items.length})
-                          </span>
-                          <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                            {selectedOrder.items.map((item, idx) => (
-                              <div key={idx} className="flex justify-between items-center text-xs p-2 bg-white/5 rounded-lg border border-white/5">
-                                <div className="space-y-0.5 pr-2">
-                                  <span className="font-semibold block truncate max-w-xs">{item.product.name}</span>
-                                  <span className="text-[10px] text-gray-400 font-mono">Qty: {item.quantity} • {item.selectedColor || 'Default'}</span>
-                                </div>
-                                <span className="font-bold shrink-0">{item.product.priceGHS.toLocaleString()} GHS</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Status updating panel */}
-                        <div className="space-y-3 pt-4 border-t border-gray-150 dark:border-gray-800/40">
-                          <span className="block text-[10px] font-bold text-gray-400 uppercase font-mono">
-                            Dispatch Progression Controls
-                          </span>
-                          
-                          <div className="grid grid-cols-2 gap-2">
-                            {[
-                              { label: 'Mark Processing', status: 'Processing' },
-                              { label: 'Mark Shipped', status: 'Shipped' },
-                              { label: 'Mark Out for Delivery', status: 'Out for Delivery' },
-                              { label: 'Mark Delivered', status: 'Delivered' }
-                            ].map((btn, idx) => (
-                              <button
-                                key={idx}
-                                onClick={() => handleUpdateOrderStatus(selectedOrder.id, btn.status)}
-                                className={`py-1.5 rounded-lg text-[10px] font-mono font-bold uppercase border transition ${
-                                  selectedOrder.status === btn.status 
-                                    ? 'bg-[#0066FF] text-white border-[#0066FF]' 
-                                    : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-[#0066FF] text-gray-400 hover:text-[#0066FF]'
-                                }`}
-                              >
-                                {btn.label}
-                              </button>
-                            ))}
-                          </div>
-
-                          <div className="flex gap-2 pt-2">
-                            <button
-                              onClick={() => handleTogglePaymentStatus(selectedOrder)}
-                              className="flex-1 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 text-[10px] font-mono font-bold uppercase border border-gray-200 dark:border-gray-700"
-                            >
-                              Toggle Payment
-                            </button>
-                            <button
-                              onClick={() => handleUpdateOrderStatus(selectedOrder.id, 'Cancelled')}
-                              className="flex-1 py-2 rounded-lg bg-rose-500/10 text-rose-500 border border-rose-500/20 text-[10px] font-mono font-bold uppercase hover:bg-rose-500 hover:text-white transition"
-                            >
-                              Cancel Order
-                            </button>
-                          </div>
-                        </div>
-
-                      </div>
-                    ) : (
-                      <div className="text-center py-20 text-gray-500 flex flex-col items-center justify-center space-y-3">
-                        <ShoppingCart className="w-10 h-10 text-gray-400" />
-                        <p className="text-xs font-mono">Select any order from the left ledger to audit shipping, payment tracking and dispatch progression.</p>
-                      </div>
-                    )}
-                  </div>
-
-                </div>
-              </div>
-            )}
-
-            {/* TAB CONTENT 5: CUSTOMER MATRIX */}
-            {activeTab === 'customers' && (
-              <div className="space-y-6">
+                {/* Description */}
                 <div>
-                  <h1 className="text-xl md:text-2xl font-black font-sans tracking-tight">Customer Matrix</h1>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5">Aggregate user spendings, order counts, repair files and trade-in valuations</p>
+                  <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-1">Description</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Provide overview details for storefront buyers..."
+                    value={prodDesc}
+                    onChange={(e) => setProdDesc(e.target.value)}
+                    className="w-full p-2.5 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-xl outline-none"
+                  />
                 </div>
 
-                {/* CUSTOMER MATRIX GRID TABLE */}
-                <div className="bg-white dark:bg-[#0c0c0c] rounded-2xl border border-gray-150 dark:border-gray-800 shadow-sm overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="border-b border-gray-150 dark:border-gray-800 bg-gray-50 dark:bg-[#121212]/50 text-[10px] text-gray-400 uppercase font-mono font-bold">
-                          <th className="p-4">Customer Matrix Signature</th>
-                          <th className="p-4">Email Address</th>
-                          <th className="p-4">Contact Phone</th>
-                          <th className="p-4">Origin Hub</th>
-                          <th className="p-4 text-center">Fulfillments</th>
-                          <th className="p-4 text-right">Lifetime GHS Value</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100 dark:divide-gray-800/40">
-                        {customerList.map((cust, idx) => (
-                          <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-white/5 transition">
-                            <td className="p-4 font-extrabold text-gray-900 dark:text-white font-sans text-xs">
-                              {cust.name}
-                            </td>
-                            <td className="p-4 font-mono text-gray-400 text-[11px]">
-                              {cust.email}
-                            </td>
-                            <td className="p-4 font-mono text-gray-400 text-[11px]">
-                              {cust.phone}
-                            </td>
-                            <td className="p-4">
-                              <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
-                                cust.source === 'Store Order' ? 'bg-blue-500/10 text-blue-500' :
-                                cust.source === 'Repair Station' ? 'bg-amber-500/10 text-amber-500' :
-                                'bg-purple-500/10 text-purple-500'
-                              }`}>
-                                {cust.source}
-                              </span>
-                            </td>
-                            <td className="p-4 text-center font-mono font-bold text-gray-800 dark:text-gray-300">
-                              {cust.ordersCount}
-                            </td>
-                            <td className="p-4 text-right font-black text-emerald-500 font-mono text-xs">
-                              {cust.totalSpendGHS.toLocaleString()} GHS
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-800">
+                  <label className="flex items-center space-x-2 cursor-pointer text-gray-700 dark:text-gray-300">
+                    <input
+                      type="checkbox"
+                      checked={prodIsFeatured}
+                      onChange={(e) => setProdIsFeatured(e.target.checked)}
+                      className="rounded text-blue-600"
+                    />
+                    <span>Highlight as Featured Item on Storefront</span>
+                  </label>
 
-              </div>
-            )}
-
-            {/* TAB CONTENT 6: CMS EDITORIAL */}
-            {activeTab === 'blogs' && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h1 className="text-xl md:text-2xl font-black font-sans tracking-tight">CMS Editorial Studio</h1>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5">Author articles, guides, and phone reviews without editing code</p>
-                  </div>
-                </div>
-
-                <div className="bg-amber-500/10 border border-amber-500/20 text-amber-500 p-4 rounded-xl text-xs font-mono flex items-center justify-between">
-                  <span>To author premium articles, guides or tutorials, please use the live CMS editor directly on the main dashboard site or create custom posts in Firestore.</span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {blogs.map((b) => (
-                    <div key={b.id} className="p-4 bg-white dark:bg-[#0c0c0c] border border-gray-150 dark:border-gray-800 rounded-xl space-y-2 relative">
-                      <span className="text-[9px] bg-blue-500/10 text-blue-500 px-1.5 py-0.5 rounded font-bold font-mono uppercase">{b.category}</span>
-                      <h3 className="text-sm font-extrabold">{b.title}</h3>
-                      <p className="text-xs text-gray-400 line-clamp-3">{b.content}</p>
-                      <div className="flex items-center justify-between text-[10px] text-gray-400 font-mono pt-2">
-                        <span>By: {b.author} • {b.readTime}</span>
-                        {onDeleteBlog && (
-                          <button
-                            onClick={async () => {
-                              if (confirm('Delete this editorial blog article?')) {
-                                await onDeleteBlog(b.id);
-                                alert('Editorial piece removed.');
-                              }
-                            }}
-                            className="p-1 rounded bg-rose-500/10 text-rose-500 border border-rose-500/20 text-[10px] uppercase font-bold"
-                          >
-                            Delete
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* TAB CONTENT 7: STORE SETTINGS */}
-            {activeTab === 'settings' && (
-              <div className="space-y-6 max-w-4xl">
-                <div>
-                  <h1 className="text-xl md:text-2xl font-black font-sans tracking-tight">Global Store Configuration</h1>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5">Manage brand identifiers, contact points, default currencies, and delivery rules</p>
-                </div>
-
-                <form onSubmit={handleSaveSettings} className="p-6 bg-white dark:bg-[#0c0c0c] border border-gray-150 dark:border-gray-800 rounded-2xl shadow-sm space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    
-                    {/* Brand configs */}
-                    <div className="space-y-4">
-                      <h3 className="text-xs font-bold text-amber-500 font-mono uppercase border-b border-gray-850 pb-2">
-                        1. Brand specifications
-                      </h3>
-
-                      <div>
-                        <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1.5">
-                          E-Commerce Store Name
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={storeSettings.storeName}
-                          onChange={(e) => setStoreSettings(prev => ({ ...prev, storeName: e.target.value }))}
-                          className="w-full bg-gray-50 dark:bg-black/40 border border-gray-150 dark:border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-900 dark:text-white outline-none focus:border-[#0066FF]"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1.5">
-                          Logo / Image URL
-                        </label>
-                        <input
-                          type="text"
-                          value={storeSettings.logoUrl}
-                          onChange={(e) => setStoreSettings(prev => ({ ...prev, logoUrl: e.target.value }))}
-                          placeholder="Paste link to custom store logo image..."
-                          className="w-full bg-gray-50 dark:bg-black/40 border border-gray-150 dark:border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-900 dark:text-white outline-none focus:border-[#0066FF]"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1.5">
-                          Store Street Address
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={storeSettings.address}
-                          onChange={(e) => setStoreSettings(prev => ({ ...prev, address: e.target.value }))}
-                          className="w-full bg-gray-50 dark:bg-black/40 border border-gray-150 dark:border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-900 dark:text-white outline-none focus:border-[#0066FF]"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Contact points */}
-                    <div className="space-y-4">
-                      <h3 className="text-xs font-bold text-amber-500 font-mono uppercase border-b border-gray-850 pb-2">
-                        2. Contact & Social Integrations
-                      </h3>
-
-                      <div>
-                        <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1.5">
-                          Support Email Address
-                        </label>
-                        <input
-                          type="email"
-                          required
-                          value={storeSettings.contactEmail}
-                          onChange={(e) => setStoreSettings(prev => ({ ...prev, contactEmail: e.target.value }))}
-                          className="w-full bg-gray-50 dark:bg-black/40 border border-gray-150 dark:border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-900 dark:text-white outline-none focus:border-[#0066FF]"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1.5">
-                            Business Phone
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            value={storeSettings.contactPhone}
-                            onChange={(e) => setStoreSettings(prev => ({ ...prev, contactPhone: e.target.value }))}
-                            className="w-full bg-gray-50 dark:bg-black/40 border border-gray-150 dark:border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-900 dark:text-white outline-none focus:border-[#0066FF]"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1.5">
-                            WhatsApp Line
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            value={storeSettings.whatsappNumber}
-                            onChange={(e) => setStoreSettings(prev => ({ ...prev, whatsappNumber: e.target.value }))}
-                            className="w-full bg-gray-50 dark:bg-black/40 border border-gray-150 dark:border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-900 dark:text-white outline-none focus:border-[#0066FF]"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1.5">
-                          TikTok Brand Channel
-                        </label>
-                        <input
-                          type="text"
-                          value={storeSettings.tiktokUrl}
-                          onChange={(e) => setStoreSettings(prev => ({ ...prev, tiktokUrl: e.target.value }))}
-                          placeholder="e.g. https://tiktok.com/@immortal"
-                          className="w-full bg-gray-50 dark:bg-black/40 border border-gray-150 dark:border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-900 dark:text-white outline-none focus:border-[#0066FF]"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Financial & Delivery metrics */}
-                  <div className="space-y-4 pt-6 border-t border-gray-150 dark:border-gray-800/40">
-                    <h3 className="text-xs font-bold text-amber-500 font-mono uppercase pb-2">
-                      3. Operational Cost Matrix & Currencies
-                    </h3>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1.5">
-                          Accra Standard Delivery (GHS)
-                        </label>
-                        <input
-                          type="number"
-                          required
-                          value={storeSettings.accraDeliveryCostGHS}
-                          onChange={(e) => setStoreSettings(prev => ({ ...prev, accraDeliveryCostGHS: Number(e.target.value) }))}
-                          className="w-full bg-gray-50 dark:bg-black/40 border border-gray-150 dark:border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-900 dark:text-white outline-none focus:border-[#0066FF]"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1.5">
-                          Expedited Motorcycle Delivery (GHS)
-                        </label>
-                        <input
-                          type="number"
-                          required
-                          value={storeSettings.expeditedDeliveryCostGHS}
-                          onChange={(e) => setStoreSettings(prev => ({ ...prev, expeditedDeliveryCostGHS: Number(e.target.value) }))}
-                          className="w-full bg-gray-50 dark:bg-black/40 border border-gray-150 dark:border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-900 dark:text-white outline-none focus:border-[#0066FF]"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1.5">
-                          Store Default Currency
-                        </label>
-                        <select
-                          value={storeSettings.defaultCurrency}
-                          onChange={(e) => setStoreSettings(prev => ({ ...prev, defaultCurrency: e.target.value as any }))}
-                          className="w-full bg-gray-50 dark:bg-black/40 border border-gray-150 dark:border-gray-800 rounded-xl px-3 py-2.5 text-xs text-gray-900 dark:text-white outline-none focus:border-[#0066FF] cursor-pointer"
-                        >
-                          <option value="GHS">GHS (Ghana Cedi)</option>
-                          <option value="USD">USD (US Dollar)</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end pt-4">
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsProductModalOpen(false)}
+                      className="px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 text-gray-700 dark:text-gray-300 font-semibold rounded-xl"
+                    >
+                      Cancel
+                    </button>
                     <button
                       type="submit"
-                      className="px-8 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-black text-xs font-bold font-mono uppercase tracking-wider transition"
+                      disabled={isSavingProduct}
+                      className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-md shadow-emerald-600/20 transition disabled:opacity-50"
                     >
-                      Save Configuration
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-
-            {activeTab === 'system_status' && (
-              <SystemStatusDashboard />
-            )}
-
-          </div>
-        </div>
-
-        {/* INTERACTIVE ADMIN E2E SYSTEM AUDIT MODAL */}
-        <AnimatePresence>
-          {isE2ETestModalOpen && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
-            >
-              <motion.div
-                initial={{ scale: 0.95, y: 10 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.95, y: 10 }}
-                className="w-full max-w-xl bg-white dark:bg-[#09090b] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-2xl space-y-5"
-              >
-                <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800/80 pb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-500">
-                      <Terminal size={20} />
-                    </div>
-                    <div>
-                      <h2 className="text-base font-black text-gray-900 dark:text-white font-sans tracking-tight">
-                        Admin Portal End-to-End Test Suite
-                      </h2>
-                      <p className="text-[10px] text-gray-400 font-mono mt-0.5">
-                        Automated Integration Verification: Login, Create Product, Image Upload, Assign Collection & Storefront Publish
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setIsE2ETestModalOpen(false)}
-                    disabled={e2eTestRunning}
-                    className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-400 hover:text-white transition disabled:opacity-50"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-
-                <div className="space-y-3 font-mono">
-                  {e2eTestSteps.map((step) => (
-                    <div
-                      key={step.id}
-                      className={`p-3.5 rounded-xl border transition ${
-                        step.status === 'success'
-                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                          : step.status === 'running'
-                          ? 'bg-blue-500/10 border-blue-500/40 text-blue-400 animate-pulse'
-                          : step.status === 'failed'
-                          ? 'bg-rose-500/10 border-rose-500/30 text-rose-400'
-                          : 'bg-gray-50 dark:bg-gray-900/40 border-gray-200 dark:border-gray-800 text-gray-400'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold">{step.title}</span>
-                        {step.status === 'running' && (
-                          <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded font-bold animate-spin">
-                            ⏳ RUNNING...
-                          </span>
-                        )}
-                        {step.status === 'success' && (
-                          <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-bold flex items-center space-x-1">
-                            <CheckCircle2 size={12} />
-                            <span>PASS</span>
-                          </span>
-                        )}
-                        {step.status === 'idle' && (
-                          <span className="text-[10px] text-gray-500 font-bold">READY</span>
-                        )}
-                      </div>
-                      {step.log && (
-                        <p className="text-[10px] mt-1.5 opacity-90 leading-relaxed border-t border-emerald-500/20 pt-1.5">
-                          {step.log}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex items-center justify-between pt-2">
-                  <span className="text-[10px] text-gray-400 font-mono">
-                    CLI Mode: run <code className="text-amber-500 font-bold">npm test</code> in terminal
-                  </span>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => setIsE2ETestModalOpen(false)}
-                      disabled={e2eTestRunning}
-                      className="px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-mono font-bold text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-                    >
-                      Close
-                    </button>
-                    <button
-                      onClick={runE2ETests}
-                      disabled={e2eTestRunning}
-                      className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-black text-xs font-mono font-black uppercase tracking-wider flex items-center space-x-2 shadow-lg shadow-amber-500/20 transition disabled:opacity-50"
-                    >
-                      {e2eTestRunning ? (
-                        <>
-                          <span className="animate-spin border-2 border-black border-t-transparent rounded-full w-3.5 h-3.5" />
-                          <span>Running Audit...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Play size={14} />
-                          <span>Start E2E Test Suite</span>
-                        </>
-                      )}
+                      {isSavingProduct ? 'Publishing...' : (editingProduct ? 'Save Changes' : 'Publish Product')}
                     </button>
                   </div>
                 </div>
-              </motion.div>
+
+              </form>
             </motion.div>
-          )}
-        </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      </div>
     </div>
   );
 }

@@ -382,7 +382,7 @@ export async function fetchFirestoreWithRetry<T>(
             else if (Array.isArray(parsed.items)) items = parsed.items;
           }
 
-          if (Array.isArray(items) && items.length > 0) {
+          if (Array.isArray(items)) {
             return items;
           }
         }
@@ -723,11 +723,14 @@ export function useDataStore() {
   const handleCreateProduct = useCallback(async (productData: Product) => {
     const { product: sanitizedProduct } = validateAndDiagnoseProduct(productData);
     sanitizedProduct.status = sanitizedProduct.status || 'Published';
+    
+    // Update local React state and IndexedDB immediately
     setProducts(prev => {
       const updated = [sanitizedProduct, ...prev.filter(p => p.id !== sanitizedProduct.id)];
       offlineStore.saveCollection('products', updated).catch(() => {});
       return updated;
     });
+
     try {
       const res = await fetch('/api/products', {
         method: 'POST',
@@ -735,13 +738,20 @@ export function useDataStore() {
         body: JSON.stringify(sanitizedProduct)
       });
       const result = res.ok ? await res.json().catch(() => ({})) : {};
-      await fetchInitialData();
-      return result;
+      if (result && result.id) {
+        setProducts(prev => {
+          const updated = [result, ...prev.filter(p => p.id !== result.id)];
+          offlineStore.saveCollection('products', updated).catch(() => {});
+          return updated;
+        });
+        return result;
+      }
+      return sanitizedProduct;
     } catch (err) {
       console.error('Error creating product:', err);
-      return {};
+      return sanitizedProduct;
     }
-  }, [fetchInitialData]);
+  }, []);
 
   const handleEditProduct = useCallback(async (productId: string, productData: Partial<Product>) => {
     const sanitizedPatch: Partial<Product> = { ...productData };
@@ -769,6 +779,7 @@ export function useDataStore() {
       offlineStore.saveCollection('products', updated).catch(() => {});
       return updated;
     });
+
     try {
       const res = await fetch(`/api/products/${productId}`, {
         method: 'PATCH',
@@ -776,13 +787,20 @@ export function useDataStore() {
         body: JSON.stringify(sanitizedPatch)
       });
       const result = res.ok ? await res.json().catch(() => ({})) : {};
-      await fetchInitialData();
-      return result;
+      if (result && result.id) {
+        setProducts(prev => {
+          const updated = prev.map(p => p.id === productId ? { ...p, ...result } : p);
+          offlineStore.saveCollection('products', updated).catch(() => {});
+          return updated;
+        });
+        return result;
+      }
+      return { id: productId, ...sanitizedPatch };
     } catch (err) {
       console.error('Error editing product:', err);
-      return {};
+      return { id: productId, ...sanitizedPatch };
     }
-  }, [fetchInitialData]);
+  }, []);
 
   const handleDeleteProduct = useCallback(async (productId: string) => {
     setProducts(prev => {
@@ -790,18 +808,18 @@ export function useDataStore() {
       offlineStore.saveCollection('products', updated).catch(() => {});
       return updated;
     });
+
     try {
       const res = await fetch(`/api/products/${productId}`, {
         method: 'DELETE'
       });
       const result = res.ok ? await res.json().catch(() => ({})) : {};
-      await fetchInitialData();
       return result;
     } catch (err) {
       console.error('Error deleting product:', err);
       return {};
     }
-  }, [fetchInitialData]);
+  }, []);
 
   const handleUpdateStock = useCallback(async (productId: string, newStock: number) => {
     setProducts(prev => {
