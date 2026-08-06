@@ -8,7 +8,7 @@ import {
   ShoppingBag, Trash2, X, Percent, Check, AlertCircle, Phone, MapPin, CreditCard, 
   Sparkles, ShieldCheck, Heart, ArrowRight, HelpCircle, Building2, GitCompare,
   Copy, Search, Info, QrCode, Mic, MicOff, Share2, ArrowUpDown, Sliders, Filter,
-  Loader2, ChevronLeft, ChevronRight, ArrowUp
+  Loader2, ChevronLeft, ChevronRight, ArrowUp, RotateCcw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Navbar from './components/Navbar';
@@ -247,7 +247,35 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedBrand, setSelectedBrand] = useState('All');
   const [inStockOnly, setInStockOnly] = useState(false);
-  const [sortBy, setSortBy] = useState<string>('default');
+  const [sortBy, setSortBy] = useState<string>(() => {
+    try {
+      return localStorage.getItem('immortal_shop_sort_by') || 'default';
+    } catch {
+      return 'default';
+    }
+  });
+
+  // Save sort preference to localStorage
+  useEffect(() => {
+    try {
+      if (sortBy === 'default') {
+        localStorage.removeItem('immortal_shop_sort_by');
+      } else {
+        localStorage.setItem('immortal_shop_sort_by', sortBy);
+      }
+    } catch (e) {
+      console.warn('Could not save sort preference to localStorage:', e);
+    }
+  }, [sortBy]);
+
+  const handleResetSort = () => {
+    setSortBy('default');
+    try {
+      localStorage.removeItem('immortal_shop_sort_by');
+    } catch (e) {
+      console.warn('Could not remove sort preference from localStorage:', e);
+    }
+  };
 
   // Curated Collections States
   const [customCollections, setCustomCollections] = useState<any[]>([]);
@@ -1316,6 +1344,21 @@ export default function App() {
                         ▼
                       </div>
                     </div>
+                    <button
+                      id="shop-sort-reset-btn"
+                      type="button"
+                      onClick={handleResetSort}
+                      disabled={sortBy === 'default'}
+                      className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1 shadow-sm ${
+                        sortBy !== 'default'
+                          ? 'bg-gray-100 dark:bg-gray-850 hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 cursor-pointer'
+                          : 'bg-gray-50 dark:bg-gray-900/50 text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50'
+                      }`}
+                      title="Reset sorting preference to default"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      <span>Reset</span>
+                    </button>
                   </div>
 
                   {/* Brand Selector Dropdown */}
