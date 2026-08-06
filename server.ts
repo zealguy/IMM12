@@ -3639,15 +3639,11 @@ async function startServer() {
   // Always serve src/assets/images statically
   app.use('/src/assets/images', express.static(path.join(process.cwd(), 'src/assets/images')));
 
-  if (process.env.VERCEL) {
-    console.log('[Immortal Full-Stack] Running in Vercel Serverless environment. Skipping app.listen and static SPA hosting.');
-    return;
-  }
-
   const distPath = path.join(process.cwd(), 'dist');
+  const isProd = process.env.NODE_ENV === 'production' || fs.existsSync(path.join(distPath, 'index.html'));
 
-  // In production mode, serve static assets and SPA fallback
-  if (process.env.NODE_ENV === 'production') {
+  // In production mode or when dist build exists, serve static assets and SPA fallback
+  if (isProd) {
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
       const indexPath = path.join(distPath, 'index.html');
@@ -3679,9 +3675,13 @@ async function startServer() {
     }
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`[Immortal Full-Stack] Server booting on port ${PORT}`);
     console.log(`Database seeded and active at: ${DB_FILE}`);
+  });
+
+  server.on('error', (err: any) => {
+    console.error('[Server] Server listen error on port 3000:', err);
   });
 }
 
